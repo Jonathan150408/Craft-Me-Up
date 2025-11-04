@@ -41,7 +41,7 @@ namespace ShootMeUp
         /// <summary>
         /// The number of barrier blocks shown on screen
         /// </summary>
-        private static int _intBorderSize = 29;
+        private static readonly int BORDER_SIZE = 29;
 
         /// <summary>
         /// The player
@@ -89,15 +89,6 @@ namespace ShootMeUp
         private int _intScore;
 
         /// <summary>
-        /// The player's score
-        /// </summary>
-        public int Score
-        {
-            get { return _intScore; }
-            set { _intScore = value; }
-        }
-
-        /// <summary>
         /// The game's title screen
         /// </summary>
         private Label? _titleLabel;
@@ -109,6 +100,15 @@ namespace ShootMeUp
 
         private BufferedGraphicsContext currentContext;
         private BufferedGraphics playspace;
+
+        /// <summary>
+        /// The player's score
+        /// </summary>
+        public int Score
+        {
+            get { return _intScore; }
+            set { _intScore = value; }
+        }
 
         public ShootMeUp()
         {
@@ -225,7 +225,7 @@ namespace ShootMeUp
 
             // Calculate the bottom-center, related to the player
             float fltLeftBound = 32;
-            float fltRightBound = (_intBorderSize + 4) * 32;
+            float fltRightBound = (BORDER_SIZE + 4) * 32;
 
             float fltAreaCenterX = (fltLeftBound + fltRightBound) / 2.0f;
 
@@ -233,20 +233,17 @@ namespace ShootMeUp
             float characterX = fltAreaCenterX - (DEFAULT_CHARACTER_SIZE / 2);
 
             // Create a new player
-            _player = new Character((int)characterX, _intBorderSize * 32 + (32 - DEFAULT_CHARACTER_SIZE), DEFAULT_CHARACTER_SIZE, "player", GAMESPEED);
+            _player = new Character((int)characterX, BORDER_SIZE * 32 + (32 - DEFAULT_CHARACTER_SIZE), DEFAULT_CHARACTER_SIZE, "player", GAMESPEED);
             _characterHandler.AddCharacter(_player);
 
-            // Define the play area size in increments of 32
-            _intBorderSize = 29;
-
             // Create a new border, piece by piece
-            for (int x = 0; x <= _intBorderSize; x++)
-                for (int y = 0; y <= _intBorderSize; y++)
-                    if (x == 0 || x == _intBorderSize || y == 0 || y == _intBorderSize)
+            for (int x = 0; x <= BORDER_SIZE; x++)
+                for (int y = 0; y <= BORDER_SIZE; y++)
+                    if (x == 0 || x == BORDER_SIZE || y == 0 || y == BORDER_SIZE)
                         _collisionHandler.AddObstacle(new Obstacle(32 * (2 + x), 32 * (2 + y), 32, 0, "border"));
 
             // Create a variable to store the border's size
-            int intBorderLength = _intBorderSize * 32 + 32;
+            int intBorderLength = BORDER_SIZE * 32 + 32;
 
             //// Creating the world environment ////
 
@@ -425,7 +422,7 @@ namespace ShootMeUp
             {
                 playspace.Graphics.Clear(Color.FromArgb(217, 217, 217));
 
-                playspace.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(250, 231, 172)), new Rectangle(64, 64, 32 * _intBorderSize + 32, 32 * _intBorderSize + 32));
+                playspace.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(250, 231, 172)), new Rectangle(64, 64, 32 * BORDER_SIZE + 32, 32 * BORDER_SIZE + 32));
 
                 // Render all the enemies
                 foreach (Character character in _characterHandler.Characters)
@@ -570,11 +567,6 @@ namespace ShootMeUp
             {
                 _lst_keysHeldDown.Remove(e.KeyCode);
             }
-        }
-
-        private void ShootMeUp_Load(object sender, EventArgs e)
-        {
-
         }
 
         private void ShootMeUp_MouseClick(object sender, MouseEventArgs e)

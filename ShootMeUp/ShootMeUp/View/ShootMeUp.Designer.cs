@@ -46,7 +46,6 @@
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Name = "ShootMeUp";
             Text = "Shoot Me Up";
-            Load += ShootMeUp_Load;
             KeyDown += ShootMeUp_KeyDown;
             KeyUp += ShootMeUp_KeyUp;
             MouseClick += ShootMeUp_MouseClick;
