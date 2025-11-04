@@ -314,34 +314,34 @@ namespace ShootMeUp
             // Top barriers
             for (int x = 0; x < 2; x++)
             {
-                _collisionHandler.AddObstacle(new Obstacle(448 + (128 * x), 192, OBSTACLE_SIZE * 2, OBSTACLE_SIZE, intBarrierHealth));
+                _collisionHandler.AddObstacle(new Obstacle(448 + (128 * x), 192, OBSTACLE_SIZE * 2, intBarrierHealth));
             }
 
-            _collisionHandler.AddObstacle(new Obstacle(512, 352, OBSTACLE_SIZE * 2, OBSTACLE_SIZE, intBarrierHealth));
+            _collisionHandler.AddObstacle(new Obstacle(512, 352, OBSTACLE_SIZE * 2, intBarrierHealth));
 
             // Left barriers
             for (int x = 0; x < 2; x++)
             {
-                _collisionHandler.AddObstacle(new Obstacle(192, 448 + (128 * x), OBSTACLE_SIZE, OBSTACLE_SIZE * 2, intBarrierHealth));
+                _collisionHandler.AddObstacle(new Obstacle(192, 448 + (128 * x), OBSTACLE_SIZE, intBarrierHealth));
             }
 
-            _collisionHandler.AddObstacle(new Obstacle(352, 512, OBSTACLE_SIZE, OBSTACLE_SIZE * 2, intBarrierHealth));
+            _collisionHandler.AddObstacle(new Obstacle(352, 512, OBSTACLE_SIZE, intBarrierHealth));
 
             // Right barriers
             for (int x = 0; x < 2; x++)
             {
-                _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 128, 448 + (128 * x), OBSTACLE_SIZE, OBSTACLE_SIZE * 2, intBarrierHealth));
+                _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 128, 448 + (128 * x), OBSTACLE_SIZE, intBarrierHealth));
             }
 
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 256, 512, OBSTACLE_SIZE, OBSTACLE_SIZE * 2, intBarrierHealth));
+            _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 256, 512, OBSTACLE_SIZE, intBarrierHealth));
 
             // Bottom barriers
             for (int x = 0; x < 2; x++)
             {
-                _collisionHandler.AddObstacle(new Obstacle(448 + (128 * x), intBorderLength - 128, OBSTACLE_SIZE * 2, OBSTACLE_SIZE, intBarrierHealth));
+                _collisionHandler.AddObstacle(new Obstacle(448 + (128 * x), intBorderLength - 128, OBSTACLE_SIZE * 2, intBarrierHealth));
             }
 
-            _collisionHandler.AddObstacle(new Obstacle(512, intBorderLength - 256, OBSTACLE_SIZE * 2, OBSTACLE_SIZE, intBarrierHealth));
+            _collisionHandler.AddObstacle(new Obstacle(512, intBorderLength - 256, OBSTACLE_SIZE * 2, intBarrierHealth));
 
 
             // The smaller obstacles' health
@@ -390,8 +390,8 @@ namespace ShootMeUp
                         return;
 
                     // Put the enemy in the right spot
-                    enemy.FloatX = 512 + OBSTACLE_SIZE/2 + enemy.length/4;
-                    enemy.FloatY = 512 + OBSTACLE_SIZE/2 + enemy.length/4;
+                    enemy.X = 512 + OBSTACLE_SIZE/2 + enemy.Size / 4;
+                    enemy.Y = 512 + OBSTACLE_SIZE/2 + enemy.Size / 4;
 
                     // Add the enemy to the character handler
                     _characterHandler.AddCharacter(enemy);

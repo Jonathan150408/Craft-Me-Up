@@ -70,32 +70,6 @@ namespace ShootMeUp.Model
         /// <param name="x">The obstacle's X pos</param>
         /// <param name="y">The obstacle's Y pos</param>
         /// <param name="intLength">The obstacle's Length</param>
-        /// <param name="intHeight">The obstacle's height</param>
-        /// <param name="intHealth">The obstacle's max health</param>
-        public Obstacle(int x, int y, int intLength, int intHeight, int intHealth) : base(x, y, intLength, intHeight)
-        {
-            if (intHealth == 0)
-            {
-                _blnInvincible = true;
-                _intHealth = int.MaxValue;
-            }
-            else
-            {
-                _blnInvincible = false;
-                _intHealth = intHealth;
-            }
-
-            _intMaxHealth = _intHealth;
-            _strType = "default";
-            _blnCanCollide = true;
-        }
-
-        /// <summary>
-        /// The obstacle constructor
-        /// </summary>
-        /// <param name="x">The obstacle's X pos</param>
-        /// <param name="y">The obstacle's Y pos</param>
-        /// <param name="intLength">The obstacle's Length</param>
         /// <param name="intHealth">The obstacle's max health</param>
         public Obstacle(int x, int y, int intLength, int intHealth) : base(x, y, intLength)
         {
@@ -115,8 +89,6 @@ namespace ShootMeUp.Model
             _blnCanCollide = true;
         }
 
-
-
         /// <summary>
         /// The obstacle constructor
         /// </summary>
@@ -126,7 +98,7 @@ namespace ShootMeUp.Model
         /// <param name="intHeight">The obstacle's height</param>
         /// <param name="intHealth">The obstacle's max health</param>
         /// <param name="strType">The obstacle's type (border/default)</param>
-        public Obstacle(int x, int y, int intLength, int intHeight, int intHealth, string strType) : base(x, y, intLength, intHeight)
+        public Obstacle(int x, int y, int intLength, int intHeight, int intHealth, string strType) : base(x, y, intLength)
         {
             if (intHealth == 0)
             {
@@ -184,39 +156,39 @@ namespace ShootMeUp.Model
             {
                 if (_blnInvincible)
                 {
-                    drawingSpace.Graphics.DrawImage(Resources.ObstacleUnbreakable, FloatX, FloatY, length, height);
+                    drawingSpace.Graphics.DrawImage(Resources.ObstacleUnbreakable, X, Y, Size, Size);
                     _intHealth = int.MaxValue;
                 }
                 else if (_intMaxHealth > 10)
                 {
-                    drawingSpace.Graphics.DrawImage(Resources.ObstacleStrong, FloatX, FloatY, length, height);
+                    drawingSpace.Graphics.DrawImage(Resources.ObstacleStrong, X, Y, Size, Size);
                 }
                 else if (_intMaxHealth > 5)
                 {
-                    drawingSpace.Graphics.DrawImage(Resources.ObstacleNormal, FloatX, FloatY, length, height);
+                    drawingSpace.Graphics.DrawImage(Resources.ObstacleNormal, X, Y, Size, Size);
                 }
                 else
                 {
-                    drawingSpace.Graphics.DrawImage(Resources.ObstacleWeak, FloatX, FloatY, length, height);
+                    drawingSpace.Graphics.DrawImage(Resources.ObstacleWeak, X, Y, Size, Size);
                 }
 
                 // Get the text's size
                 SizeF textSize = drawingSpace.Graphics.MeasureString($"{this}", TextHelpers.drawFont);
 
                 // Calculate the X coordinate to center the text
-                float centeredX = FloatX + (length / 2f) - (textSize.Width/ 2f);
+                float centeredX = X + (Size / 2f) - (textSize.Width/ 2f);
 
                 // Center the text above the obstacle
-                drawingSpace.Graphics.DrawString($"{this}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX, FloatY - 16);
+                drawingSpace.Graphics.DrawString($"{this}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX, Y - 16);
             }
             else if (_strType == "spawner")
             {
-                drawingSpace.Graphics.DrawImage(Resources.ObstacleSpawner, FloatX, FloatY, length, height);
+                drawingSpace.Graphics.DrawImage(Resources.ObstacleSpawner, X, Y, Size, Size);
                 _intHealth = int.MaxValue;
             }
             else if (_strType == "border")
             {
-                drawingSpace.Graphics.DrawImage(Resources.ObstacleBorder, FloatX, FloatY, length, height);
+                drawingSpace.Graphics.DrawImage(Resources.ObstacleBorder, X, Y, Size, Size);
                 _intHealth = int.MaxValue;
             }
 

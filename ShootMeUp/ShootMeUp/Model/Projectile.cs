@@ -75,8 +75,7 @@ namespace ShootMeUp.Model
             get { return _blnActive; }
         }
 
-
-        public Projectile(string strType, float X, float Y, int intLength, int intHeight, Character ShotBy, int intTargetX, int intTargetY, int GAMESPEED) : base(X, Y, intLength, intHeight)
+        public Projectile(string strType, float X, float Y, int intLength, Character ShotBy, int intTargetX, int intTargetY, int GAMESPEED) : base(X, Y, intLength)
         {
             _strType = strType;
             _shotBy = ShotBy;
@@ -110,8 +109,8 @@ namespace ShootMeUp.Model
             _fltMovementSpeed *= GAMESPEED;
 
             // Calculate direction to target
-            float deltaX = _intTargetX - FloatX;
-            float deltaY = _intTargetY - FloatY;
+            float deltaX = _intTargetX - X;
+            float deltaY = _intTargetY - Y;
 
             // Calculate rotation angle in degrees
             // We add 90 here because the image faces upwards
@@ -155,8 +154,8 @@ namespace ShootMeUp.Model
             // Move the arrow if it wouldn't hit anything
             if (!(tab_blnCharacterColliding[0] || tab_blnCharacterColliding[1] || tab_blnObstaclesColliding[0] || tab_blnObstaclesColliding[1]))
             {
-                FloatX += _fltXSpeed;
-                FloatY += _fltYSpeed;
+                X += _fltXSpeed;
+                Y += _fltYSpeed;
             }
             else
             {
@@ -207,13 +206,13 @@ namespace ShootMeUp.Model
             GraphicsState state = drawingSpace.Graphics.Save();
 
             // Move origin to center of projectile
-            drawingSpace.Graphics.TranslateTransform(FloatX + length / 2f, FloatY + height / 2f);
+            drawingSpace.Graphics.TranslateTransform(X + Size / 2f, Y + Size / 2f);
 
             // Rotate around center
             drawingSpace.Graphics.RotateTransform(_fltRotationAngle);
 
             // Draw image centered at new origin
-            drawingSpace.Graphics.DrawImage(imgProjectile, -length / 2f, -height / 2f, length, height);
+            drawingSpace.Graphics.DrawImage(imgProjectile, -Size / 2f, -Size / 2f, Size, Size);
 
             // Restore transform
             drawingSpace.Graphics.Restore(state);

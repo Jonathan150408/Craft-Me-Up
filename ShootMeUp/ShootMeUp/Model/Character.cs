@@ -115,10 +115,10 @@ namespace ShootMeUp.Model
 
             // Use the speed variables to change the character's position if the requirements are met.
             if (!tab_blnColliding[0])
-                FloatX += (float)(_fltXSpeed * dblMultiplicator);
+                X += (float)(_fltXSpeed * dblMultiplicator);
             
             if (!tab_blnColliding[1])
-                FloatY += (float)(_fltYSpeed * dblMultiplicator);
+                Y += (float)(_fltYSpeed * dblMultiplicator);
         }
 
         /// <summary>
@@ -143,43 +143,24 @@ namespace ShootMeUp.Model
             // Shoot an arrow from the player's position to the cursor's position if they are alive
             if (Lives > 0)
             {
-                // Create variables used for the projectile's generation
-                float fltProjectileX = FloatX;
-                float fltProjectileY = FloatY;
 
                 int intTargetX = clientPos.X;
                 int intTargetY = clientPos.Y;
 
-                int intProjectileLength = length;
-                int intProjectileHeight = height;
-
-                // Get the character's center
-                float fltCharacterCenterX = FloatX + (length / 2f);
-                float fltCharacterCenterY = FloatY + (height / 2f);
-
-                // The projectile should start centered on the character
-                fltProjectileX = fltCharacterCenterX;
-                fltProjectileY = fltCharacterCenterY - (intProjectileHeight / 2f);
-
-                // Resize the projectile if the aspect ratio is different
-                if (strType == "arrow")
-                {
-                    // 8:29 aspect ratio
-                    intProjectileLength = (intProjectileHeight * 8) / 29;
-                }
+                int intProjectileLength = Size;
 
                 // Send the corresponding projectile if the character is allowed to
                 if (strType == "arrow" && now - _lastArrowShotTime >= ArrowCooldown)
                 {
                     _lastArrowShotTime = now;
 
-                    return new Projectile(strType, fltProjectileX, fltProjectileY, intProjectileLength, intProjectileHeight, this, intTargetX, intTargetY, GAMESPEED);
+                    return new Projectile(strType, X, Y, intProjectileLength, this, intTargetX, intTargetY, GAMESPEED);
                 }
                 else if (strType == "fireball" && now - _lastFireballShotTime >= FireballCooldown)
                 {
                     _lastFireballShotTime = now;
 
-                    return new Projectile(strType, fltProjectileX, fltProjectileY, intProjectileLength, intProjectileHeight, this, intTargetX, intTargetY, GAMESPEED);
+                    return new Projectile(strType, X, Y, intProjectileLength, this, intTargetX, intTargetY, GAMESPEED);
                 }
             }
 
@@ -191,7 +172,7 @@ namespace ShootMeUp.Model
             // Only draw the character if they're alive
             if (Lives > 0)
             {
-                drawingSpace.Graphics.DrawImage(Resources.CharacterPlayer, FloatX, FloatY, length, height);
+                drawingSpace.Graphics.DrawImage(Resources.CharacterPlayer, X, Y, Size, Size);
             }
 
             // Draw the lives of the character

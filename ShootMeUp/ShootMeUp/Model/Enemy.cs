@@ -199,7 +199,7 @@ namespace ShootMeUp.Model
                     return;
 
                 // Shoot an arrow using the enemy's shoot method and add it to the projetile list
-                Projectile? possibleProjectile = Shoot(new Point(player.X, player.Y), _strProjectileType, _GAMESPEED);
+                Projectile? possibleProjectile = Shoot(new Point((int)player.X, (int)player.Y), _strProjectileType, _GAMESPEED);
                 //
                 if (possibleProjectile != null)
                 {
@@ -221,8 +221,8 @@ namespace ShootMeUp.Model
         public void Move(Character player)
         {
             // Calculate direction to target
-            float deltaX = player.FloatX - FloatX;
-            float deltaY = player.FloatY - FloatY;
+            float deltaX = player.X - X;
+            float deltaY = player.Y - Y;
 
             // Normalize direction
             float length = (float)Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -250,34 +250,16 @@ namespace ShootMeUp.Model
             // Shoot an arrow from the player's position to the cursor's position if they are alive
             if (Lives > 0)
             {
-                // Create variables used for the projectile's generation
-                float fltProjectileX = FloatX;
-                float fltProjectileY = FloatY;
-
                 int intTargetX = clientPos.X;
                 int intTargetY = clientPos.Y;
 
-                int intProjectileLength = length;
-                int intProjectileHeight = height;
+                int intProjectileLength = Size;
 
-                // Get the enemy's center
-                float fltEnemyCenterX = FloatX + (length / 2f);
-                float fltEnemyCenterY = FloatY + (height / 2f);
-
-                // The projectile should start centered on the enemy
-                fltProjectileX = fltEnemyCenterX;
-                fltProjectileY = fltEnemyCenterY - (intProjectileHeight / 2f);
-
-                // Resize the projectile if the aspect ratio is different
-                if (strType == "arrow")
-                {
-                    // 8:29 aspect ratio
-                    intProjectileLength = (intProjectileHeight * 8) / 29;
-                }
-                else if (strType == "fireball")
+                // Resize the projectile if needed
+                if (strType == "fireball")
                 {
                     // Make the fireball smaller
-                    intProjectileHeight /= 2;
+                    intProjectileLength /= 2;
                     intProjectileLength /= 2;
                 }
 
@@ -285,7 +267,7 @@ namespace ShootMeUp.Model
                 int intFakeGameSpeed = GAMESPEED/2;
 
                 // Fire a new projectile if possible
-                return new Projectile(strType, fltProjectileX, fltProjectileY, intProjectileLength, intProjectileHeight, this, intTargetX, intTargetY, intFakeGameSpeed);
+                return new Projectile(strType, X, Y, intProjectileLength, this, intTargetX, intTargetY, intFakeGameSpeed);
             }
 
             return null;
@@ -317,20 +299,20 @@ namespace ShootMeUp.Model
                 switch (_strType)
                 {
                     case "skeleton":
-                        drawingSpace.Graphics.DrawImage(Resources.EnemySkeleton, FloatX, FloatY, length, height);
+                        drawingSpace.Graphics.DrawImage(Resources.EnemySkeleton, X, Y, Size, Size);
 
                         break;
                     case "babyzombie":
                     case "zombie":
-                        drawingSpace.Graphics.DrawImage(Resources.EnemyZombie, FloatX, FloatY, length, height);
+                        drawingSpace.Graphics.DrawImage(Resources.EnemyZombie, X, Y, Size, Size);
 
                         break;
                     case "blaze":
-                        drawingSpace.Graphics.DrawImage(Resources.EnemyBlaze, FloatX, FloatY, length, height);
+                        drawingSpace.Graphics.DrawImage(Resources.EnemyBlaze, X, Y, Size, Size);
 
                         break;
                     case "zombiepigman":
-                        drawingSpace.Graphics.DrawImage(Resources.EnemyZombiePigman, FloatX, FloatY, length, height);
+                        drawingSpace.Graphics.DrawImage(Resources.EnemyZombiePigman, X, Y, Size, Size);
 
                         break;
                     default:
@@ -341,10 +323,10 @@ namespace ShootMeUp.Model
                 SizeF textSize = drawingSpace.Graphics.MeasureString($"{this}", TextHelpers.drawFont);
 
                 // Calculate the X coordinate to center the text
-                float centeredX = FloatX + (length / 2f) - (textSize.Width / 2f);
+                float centeredX = X + (Size / 2f) - (textSize.Width / 2f);
 
                 // Center the text above the obstacle
-                drawingSpace.Graphics.DrawString($"{this}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX, FloatY - 16);
+                drawingSpace.Graphics.DrawString($"{this}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX, Y - 16);
             }
         }
 

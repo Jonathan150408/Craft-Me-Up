@@ -24,8 +24,8 @@ namespace ShootMeUp.Model
         /// <returns></returns>
         protected bool IsOverlapping(CFrame cfrA, CFrame cfrB)
         {
-            bool overlapX = cfrA.FloatX < cfrB.FloatX + cfrB.length && cfrA.FloatX + cfrA.length > cfrB.FloatX;
-            bool overlapY = cfrA.FloatY < cfrB.FloatY + cfrB.height && cfrA.FloatY + cfrA.height > cfrB.FloatY;
+            bool overlapX = cfrA.X < cfrB.X + cfrB.Size && cfrA.X + cfrA.Size > cfrB.X;
+            bool overlapY = cfrA.Y < cfrB.Y + cfrB.Size && cfrA.Y + cfrA.Size > cfrB.Y;
             return overlapX && overlapY;
         }
     }

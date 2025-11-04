@@ -65,8 +65,8 @@ namespace ShootMeUp.Model
             bool[] blnColliding = new bool[2] { false, false };
 
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame(Coordinates.FloatX + fltXMovement, Coordinates.FloatY, Coordinates.length, Coordinates.height);
-            CFrame cfrY = new CFrame(Coordinates.FloatX, Coordinates.FloatY + fltYMovement, Coordinates.length, Coordinates.height);
+            CFrame cfrX = new CFrame(Coordinates.X + fltXMovement, Coordinates.Y, Coordinates.Size);
+            CFrame cfrY = new CFrame(Coordinates.X, Coordinates.Y + fltYMovement, Coordinates.Size);
 
             foreach (Obstacle obstacle in _lst_Obstacles)
             {
@@ -102,8 +102,8 @@ namespace ShootMeUp.Model
         public Obstacle? GetCollidingObject(CFrame Coordinates, float fltXMovement, float fltYMovement)
         {
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame(Coordinates.FloatX + fltXMovement, Coordinates.FloatY, Coordinates.length, Coordinates.height);
-            CFrame cfrY = new CFrame(Coordinates.FloatX, Coordinates.FloatY + fltYMovement, Coordinates.length, Coordinates.height);
+            CFrame cfrX = new CFrame(Coordinates.X + fltXMovement, Coordinates.Y, Coordinates.Size);
+            CFrame cfrY = new CFrame(Coordinates.X, Coordinates.Y + fltYMovement, Coordinates.Size);
 
             foreach (Obstacle obstacle in _lst_Obstacles)
             {
