@@ -19,7 +19,7 @@ Issue #3 - Pseudo-infinite map
 
 As a player, I would like the map to seem infinite, so that I have more freedom of movement.
 
--[] The map consists of generated 8x8 chunks that all have 1 or 2 obstacles inside of them
+-[] The map consists of generated 8x8 chunks that all have 0 to 16 obstacles inside of them
 -[] There is a border at the end of every chunk
 
 
