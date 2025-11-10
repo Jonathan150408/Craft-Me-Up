@@ -13,7 +13,13 @@ namespace ShootMeUp.Model
         /// <summary>
         /// The projectile's type (arrow, ...)
         /// </summary>
-        private string _strType;
+        public enum Type
+        {
+            Arrow,
+            Fireball,
+        }
+        
+        private Type _type;
 
         /// <summary>
         /// The character that shot the projectile
@@ -75,10 +81,14 @@ namespace ShootMeUp.Model
             get { return _blnActive; }
         }
 
+<<<<<<< Updated upstream
 
         public Projectile(string strType, float X, float Y, int intLength, int intHeight, Character ShotBy, int intTargetX, int intTargetY, int GAMESPEED) : base(X, Y, intLength, intHeight)
+=======
+        public Projectile(Type type, float X, float Y, int intLength, Character ShotBy, int intTargetX, int intTargetY, int GAMESPEED) : base(X, Y, intLength)
+>>>>>>> Stashed changes
         {
-            _strType = strType;
+            _type = type;
             _shotBy = ShotBy;
             _intTargetX = intTargetX;
             _intTargetY = intTargetY;

@@ -9,60 +9,28 @@ namespace ShootMeUp.Model
     /// </summary>
     public class Character : CFrame
     {
-        /// <summary>
-        /// The character's health
-        /// </summary>
-        protected int _intHealth;
+        protected int _GAMESPEED;
 
         /// <summary>
-        /// The character's speed in the X direction
+        /// The character's speed in the X and Y direction
         /// </summary>
-        protected float _fltXSpeed;
-
-        /// <summary>
-        /// The character's speed in the Y direction
-        /// </summary>
-        protected float _fltYSpeed;
+        protected (float X, float Y) _fltSpeed;
 
         /// <summary>
         /// The character's type (player, ...)
         /// </summary>
-        protected string _strType;
+        public enum Type
+        {
+            Player,
+            Enemy
+        }
+
+        protected Type _Type;
 
         /// <summary>
         /// The character's base speed
         /// </summary>
         protected float _fltBaseSpeed;
-
-        /// <summary>
-        /// A collision handler to check for collisions
-        /// </summary>
-        protected CollisionHandler _colCollisionHandler;        
-        
-        /// <summary>
-        /// The character's remaining lives
-        /// </summary>
-        public int Lives
-        {
-            get { return _intHealth; }
-            set { _intHealth = value; }
-        }
-
-        // <summary>
-        /// The character's type (player, ...)
-        /// </summary>
-        public string Type 
-        {
-            get { return _strType; }
-        }
-
-        /// <summary>
-        /// The character's base speed
-        /// </summary>
-        public float BaseSpeed
-        {
-            get { return _fltBaseSpeed; }
-        }
 
         // Variables used for projectile cooldown
         protected DateTime _lastArrowShotTime = DateTime.MinValue;
@@ -71,6 +39,18 @@ namespace ShootMeUp.Model
         protected TimeSpan ArrowCooldown = TimeSpan.FromSeconds(3);
         protected TimeSpan FireballCooldown = TimeSpan.FromSeconds(9);
 
+        /// <summary>
+        /// The character's remaining lives
+        /// </summary>
+        public int Lives { get; set; }
+
+        // <summary>
+        /// The character's type (player, ...)
+        /// </summary>
+        public Type CurrentType 
+        {
+            get { return _Type; }
+        }
 
         /// <summary>
         /// The character's constructor
@@ -78,13 +58,13 @@ namespace ShootMeUp.Model
         /// <param name="x">Its starting X position</param>
         /// <param name="y">Its starting Y position</param>
         /// <param name="length">The length of the character</param>
-        /// <param name="strType">The character's type (player, zombie, skeleton, ...)</param>
+        /// <param name="type">The character's type (player, enemy)</param>
         /// <param name="GAMESPEED">The game's speed</param>
-        public Character(int x, int y, int length, string strType, int GAMESPEED) : base(x, y, length)
+        public Character(int x, int y, int length, Character.Type type, int GAMESPEED) : base(x, y, length)
         {
-            _intHealth = 10;
-            _colCollisionHandler = new CollisionHandler();
-            _strType = strType;
+            _GAMESPEED = GAMESPEED;
+            Lives = 10;
+            _Type = type;
             _fltBaseSpeed = 1f;
 
             ArrowCooldown = TimeSpan.FromSeconds(ArrowCooldown.TotalSeconds / GAMESPEED);
@@ -104,21 +84,28 @@ namespace ShootMeUp.Model
             CFrame currentCFrame = (CFrame)this;
 
             // Check to see if the character is gonna clip in anything
-            bool[] tab_blnColliding = _colCollisionHandler.CheckForCollisions(currentCFrame, _fltXSpeed, _fltYSpeed);
+            bool[] tab_blnColliding = _colCollisionHandler.CheckForCollisions(currentCFrame, _fltSpeed.X, _fltSpeed.Y);
             
 
             // Change the multiplicator for double-axis movement
-            if (_fltXSpeed != 0 && _fltYSpeed != 0)
+            if (_fltSpeed.X != 0 && _fltSpeed.Y != 0)
             {
                 dblMultiplicator = 0.7;           
             }
 
             // Use the speed variables to change the character's position if the requirements are met.
             if (!tab_blnColliding[0])
+<<<<<<< Updated upstream
                 FloatX += (float)(_fltXSpeed * dblMultiplicator);
             
             if (!tab_blnColliding[1])
                 FloatY += (float)(_fltYSpeed * dblMultiplicator);
+=======
+                X += (float)(_fltSpeed.X * dblMultiplicator);
+            
+            if (!tab_blnColliding[1])
+                Y += (float)(_fltSpeed.Y * dblMultiplicator);
+>>>>>>> Stashed changes
         }
 
         /// <summary>
@@ -130,12 +117,18 @@ namespace ShootMeUp.Model
         {
             if (Lives > 0)
             {
-                _fltXSpeed = x * BaseSpeed;
-                _fltYSpeed = y * BaseSpeed;
+                _fltSpeed.X = x * _fltBaseSpeed;
+                _fltSpeed.Y = y * _fltBaseSpeed;
             }
         }
 
-        virtual public Projectile? Shoot(Point clientPos, string strType, int GAMESPEED)
+        /// <summary>
+        /// Shoot a projectile
+        /// </summary>
+        /// <param name="target">The projectile's target</param>
+        /// <param name="type">The projectile type</param>
+        /// <returns>A projectile if it shot, otherwise none</returns>
+        virtual public Projectile? Shoot(PictureBox target, Projectile.Type type)
         {
             // Store the current time
             DateTime now = DateTime.Now;
@@ -147,8 +140,8 @@ namespace ShootMeUp.Model
                 float fltProjectileX = FloatX;
                 float fltProjectileY = FloatY;
 
-                int intTargetX = clientPos.X;
-                int intTargetY = clientPos.Y;
+                int intTargetX = target.Location.X;
+                int intTargetY = target.Location.Y;
 
                 int intProjectileLength = length;
                 int intProjectileHeight = height;
@@ -169,17 +162,25 @@ namespace ShootMeUp.Model
                 }
 
                 // Send the corresponding projectile if the character is allowed to
-                if (strType == "arrow" && now - _lastArrowShotTime >= ArrowCooldown)
+                if (type == Projectile.Type.Arrow && now - _lastArrowShotTime >= ArrowCooldown)
                 {
                     _lastArrowShotTime = now;
 
+<<<<<<< Updated upstream
                     return new Projectile(strType, fltProjectileX, fltProjectileY, intProjectileLength, intProjectileHeight, this, intTargetX, intTargetY, GAMESPEED);
+=======
+                    return new Projectile(type, X, Y, intProjectileLength, this, intTargetX, intTargetY, _GAMESPEED);
+>>>>>>> Stashed changes
                 }
-                else if (strType == "fireball" && now - _lastFireballShotTime >= FireballCooldown)
+                else if (type == Projectile.Type.Fireball && now - _lastFireballShotTime >= FireballCooldown)
                 {
                     _lastFireballShotTime = now;
 
+<<<<<<< Updated upstream
                     return new Projectile(strType, fltProjectileX, fltProjectileY, intProjectileLength, intProjectileHeight, this, intTargetX, intTargetY, GAMESPEED);
+=======
+                    return new Projectile(type, X, Y, intProjectileLength, this, intTargetX, intTargetY, _GAMESPEED);
+>>>>>>> Stashed changes
                 }
             }
 
