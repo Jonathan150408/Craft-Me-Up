@@ -82,8 +82,12 @@ namespace ShootMeUp.Model
         }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
         public Projectile(string strType, float X, float Y, int intLength, int intHeight, Character ShotBy, int intTargetX, int intTargetY, int GAMESPEED) : base(X, Y, intLength, intHeight)
+=======
+        public Projectile(Type type, float X, float Y, int intLength, Character ShotBy, int intTargetX, int intTargetY, int GAMESPEED) : base(X, Y, intLength)
+>>>>>>> Stashed changes
 =======
         public Projectile(Type type, float X, float Y, int intLength, Character ShotBy, int intTargetX, int intTargetY, int GAMESPEED) : base(X, Y, intLength)
 >>>>>>> Stashed changes

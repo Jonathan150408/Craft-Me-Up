@@ -96,10 +96,17 @@ namespace ShootMeUp.Model
             // Use the speed variables to change the character's position if the requirements are met.
             if (!tab_blnColliding[0])
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                 FloatX += (float)(_fltXSpeed * dblMultiplicator);
             
             if (!tab_blnColliding[1])
                 FloatY += (float)(_fltYSpeed * dblMultiplicator);
+=======
+                X += (float)(_fltSpeed.X * dblMultiplicator);
+            
+            if (!tab_blnColliding[1])
+                Y += (float)(_fltSpeed.Y * dblMultiplicator);
+>>>>>>> Stashed changes
 =======
                 X += (float)(_fltSpeed.X * dblMultiplicator);
             
@@ -167,7 +174,11 @@ namespace ShootMeUp.Model
                     _lastArrowShotTime = now;
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                     return new Projectile(strType, fltProjectileX, fltProjectileY, intProjectileLength, intProjectileHeight, this, intTargetX, intTargetY, GAMESPEED);
+=======
+                    return new Projectile(type, X, Y, intProjectileLength, this, intTargetX, intTargetY, _GAMESPEED);
+>>>>>>> Stashed changes
 =======
                     return new Projectile(type, X, Y, intProjectileLength, this, intTargetX, intTargetY, _GAMESPEED);
 >>>>>>> Stashed changes
@@ -177,7 +188,11 @@ namespace ShootMeUp.Model
                     _lastFireballShotTime = now;
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                     return new Projectile(strType, fltProjectileX, fltProjectileY, intProjectileLength, intProjectileHeight, this, intTargetX, intTargetY, GAMESPEED);
+=======
+                    return new Projectile(type, X, Y, intProjectileLength, this, intTargetX, intTargetY, _GAMESPEED);
+>>>>>>> Stashed changes
 =======
                     return new Projectile(type, X, Y, intProjectileLength, this, intTargetX, intTargetY, _GAMESPEED);
 >>>>>>> Stashed changes
