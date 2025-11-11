@@ -17,11 +17,6 @@ namespace ShootMeUp.Model
     public class Obstacle : CFrame
     {
         /// <summary>
-        /// The obstacle's max health
-        /// </summary>
-        private int _intMaxHealth;
-
-        /// <summary>
         /// The obstacle's type (border, ...)
         /// </summary>
         private enum Type
@@ -32,7 +27,8 @@ namespace ShootMeUp.Model
             Spawner,
             Border,
             Bedrock,
-            Bush
+            Bush,
+            Undefined
         }
         private Type _type;
 
@@ -74,39 +70,57 @@ namespace ShootMeUp.Model
         public Obstacle(int x, int y, int intLength, int intHealth) : base(x, y, intLength)
         {
             //default values
-            _intMaxHealth = _health;
             _canCollide = true;
             _invincible = false;
 
             switch (intHealth)
             {
                 case -3:
+                    DisplayedImage.Image = Resources.ObstacleBush;
+
                     _type = Type.Bush;
                     _canCollide = false;
                     _health = int.MaxValue;
                     break;
                 case -2:
+                    DisplayedImage.Image = Resources.ObstacleUnbreakable;
+
                     _type = Type.Bedrock;
                     _invincible = true;
                     _health = int.MaxValue;
                     break;
                 case -1 :
+                    DisplayedImage.Image = Resources.ObstacleBorder;
+
                     _type = Type.Border;
                     _invincible = true;
                     _health = int.MaxValue;
                     break;
                 case 0:
+                    DisplayedImage.Image = Resources.ObstacleSpawner;
+
                     _type = Type.Spawner;
                     _canCollide = false;
                     break;
                 case 5:
+                    DisplayedImage.Image = Resources.ObstacleWeak;
+
                     _type = Type.Dirt;
                     break;
                 case 10:
+                    DisplayedImage.Image = Resources.ObstacleNormal;
+
                     _type = Type.Wood;
                     break;
                 case 25:
+                    DisplayedImage.Image = Resources.ObstacleStrong;
+
                     _type = Type.Stone;
+                    break;
+                default:
+                    _invincible = true;
+                    _canCollide = false;
+                    _type = Type.Undefined;
                     break;
             }
         }
