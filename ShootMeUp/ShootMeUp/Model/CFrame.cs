@@ -44,6 +44,17 @@ namespace ShootMeUp.Model
             DisplayedImage.Height = intSize;
         }
 
+        /// <summary>
+        /// Create a new CFrame
+        /// </summary>
+        /// <param name="X">The x pos</param>
+        /// <param name="Y">The y pos</param>
+        public CFrame(int X, int Y)
+        {
+            DisplayedImage = new PictureBox();
+
+            DisplayedImage.Location = new Point(X, Y);
+        }
 
         public override string ToString()
         {
