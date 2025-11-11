@@ -70,6 +70,9 @@ namespace ShootMeUp.Model
 
             ArrowCooldown = TimeSpan.FromSeconds(ArrowCooldown.TotalSeconds / GAMESPEED);
             FireballCooldown = TimeSpan.FromSeconds(FireballCooldown.TotalSeconds / GAMESPEED);
+
+            if (_Type == Type.Player)
+                DisplayedImage.Image = Resources.CharacterPlayer;            
         }
 
         private (bool X, bool Y) CheckObstacleCollision(List<Obstacle> obstacleList)
@@ -168,16 +171,9 @@ namespace ShootMeUp.Model
                 int intTargetX = target.Location.X;
                 int intTargetY = target.Location.Y;
 
-                int intProjectileLength = DisplayedImage.Width;
-                int intProjectileHeight = DisplayedImage.Height;
-
                 // Get the character's center
                 int intCharacterCenterX = DisplayedImage.Location.X + (DisplayedImage.Width / 2);
                 int intCharacterCenterY = DisplayedImage.Location.Y + (DisplayedImage.Height / 2);
-
-                // The projectile should start centered on the character
-                intProjectileX = intCharacterCenterX;
-                intProjectileY = intCharacterCenterY - (intProjectileHeight / 2);
 
 
                 // Send the corresponding projectile if the character is allowed to
@@ -185,13 +181,13 @@ namespace ShootMeUp.Model
                 {
                     _lastArrowShotTime = now;
 
-                    return new Projectile(type, DisplayedImage.Location.X, DisplayedImage.Location.Y, intProjectileLength, this, intTargetX, intTargetY, _GAMESPEED);
+                    return new Projectile(type, this, intTargetX, intTargetY, _GAMESPEED);
                 }
                 else if (type == Projectile.Type.Fireball && now - _lastFireballShotTime >= FireballCooldown)
                 {
                     _lastFireballShotTime = now;
 
-                    return new Projectile(type, DisplayedImage.Location.X, DisplayedImage.Location.Y, intProjectileLength, this, intTargetX, intTargetY, _GAMESPEED);
+                    return new Projectile(type, this, intTargetX, intTargetY, _GAMESPEED);
                 }
             }
 
