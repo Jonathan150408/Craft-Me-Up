@@ -11,54 +11,43 @@ namespace ShootMeUp.Model
     /// </summary>
     public class CFrame
     {
-        private float _fltX;
-        private float _fltY;
+        public PictureBox DisplayedImage;
 
-        private int _intSize;
-
-        public float X
+        /// <summary>
+        /// Create a new CFrame
+        /// </summary>
+        /// <param name="X">The x pos</param>
+        /// <param name="Y">The y pos</param>
+        /// <param name="intWidth">The width</param>
+        /// <param name="intHeight">The height</param>
+        public CFrame(int X, int Y, int intWidth, int intHeight)
         {
-            get { return _fltX; }
-            set
-            {
-                _fltX = value;
-            }
+            DisplayedImage = new PictureBox();
+
+            DisplayedImage.Location = new Point(X, Y);
+            DisplayedImage.Width = intWidth;
+            DisplayedImage.Height = intHeight;
         }
 
-        public float Y
+        /// <summary>
+        /// Create a new CFrame
+        /// </summary>
+        /// <param name="X">The x pos</param>
+        /// <param name="Y">The y pos</param>
+        /// <param name="intSize">The x/y size</param>
+        public CFrame(int X, int Y, int intSize)
         {
-            get { return _fltY; }
-            set
-            {
-                _fltY = value;
-            }
+            DisplayedImage = new PictureBox();
+
+            DisplayedImage.Location = new Point(X, Y);
+            DisplayedImage.Width = intSize;
+            DisplayedImage.Height = intSize;
         }
 
-        public int Size
-        {
-            get { return _intSize; }
-            set { _intSize = value; }
-        }
-
-        public CFrame(int X, int Y, int intLength)
-        {
-            this.X = X;
-            this.Y = Y;
-
-            Size = intLength;
-        }
-
-        public CFrame(float X, float Y, int intLength)
-        {
-            this.X = X;
-            this.Y = Y;
-
-            Size = intLength;
-        }
 
         public override string ToString()
         {
-            return $"{{{X},{Y}}},{{{Size},{Size}}}";
+            return $"{{{DisplayedImage.Location.X},{DisplayedImage.Location.Y}}},{{{DisplayedImage.Height},{DisplayedImage.Width}}}";
         }
     }
 }
