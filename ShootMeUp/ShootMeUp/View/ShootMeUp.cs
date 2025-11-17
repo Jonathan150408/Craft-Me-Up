@@ -140,6 +140,7 @@ namespace ShootMeUp
         private void Main()
         {
             ShowTitle();
+            StartGame();
         }
 
 
@@ -174,12 +175,14 @@ namespace ShootMeUp
                 Top = _titleLabel.Bottom + 256
             };
 
-            // Add event handling
-            _playButton.Click += (s, e) => StartGame();
-
             // Add controls to the form
             this.Controls.Add(_titleLabel);
             this.Controls.Add(_playButton);
+
+            // Add event handling
+            bool clicked = false;
+
+            //finish this method -> do while (not click)
         }
 
         /// <summary>
@@ -245,7 +248,7 @@ namespace ShootMeUp
             for (int x = 0; x <= BORDER_SIZE; x++)
                 for (int y = 0; y <= BORDER_SIZE; y++)
                     if (x == 0 || x == BORDER_SIZE || y == 0 || y == BORDER_SIZE)
-                        Obstacles.Add(new Obstacle(32 * (2 + x), 32 * (2 + y), 32, -1));
+                        Obstacles.Add(new Obstacle(32 * (2 + x), 32 * (2 + y), 32, Obstacle.Type.Border));
 
             // Create a variable to store the border's size
             int intBorderLength = BORDER_SIZE * 32 + 32;
@@ -375,7 +378,7 @@ namespace ShootMeUp
 
         private List<Enemy> GenerateWaves(int waveNumber)
         {
-            return null;
+            return new List<Enemy>();
         }
 
         /// <summary>
