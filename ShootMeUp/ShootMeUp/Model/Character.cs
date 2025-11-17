@@ -42,7 +42,11 @@ namespace ShootMeUp.Model
         public enum Type
         {
             Player,
-            Enemy
+            Zombie,
+            Skeleton,
+            Baby_Zombie,
+            Blaze,
+            Zombie_Pigman
         }
 
         // <summary>
