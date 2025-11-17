@@ -52,7 +52,7 @@ namespace ShootMeUp.Model
         // <summary>
         /// The character's current type
         /// </summary>
-        public Type CurrentType
+        public Type CharType
         {
             get { return _Type; }
         }
@@ -79,7 +79,7 @@ namespace ShootMeUp.Model
                 DisplayedImage.Image = Resources.CharacterPlayer;            
         }
 
-        private (bool X, bool Y) CheckObstacleCollision(List<Obstacle> obstacleList)
+        protected (bool X, bool Y) CheckObstacleCollision()
         {
             (bool X, bool Y) blnColliding = (false, false);
 
@@ -87,7 +87,7 @@ namespace ShootMeUp.Model
             CFrame cfrX = new CFrame(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y, DisplayedImage.Width, DisplayedImage.Height);
             CFrame cfrY = new CFrame(DisplayedImage.Location.X, DisplayedImage.Location.Y + _intSpeed.Y, DisplayedImage.Width, DisplayedImage.Height);
 
-            foreach (Obstacle obstacle in obstacleList)
+            foreach (Obstacle obstacle in ShootMeUp.Obstacles)
             {
                 // Skip the current obstacle if it has no collisions
                 if (!obstacle.CanCollide)
@@ -134,7 +134,7 @@ namespace ShootMeUp.Model
                 CFrame currentCFrame = (CFrame)this;
 
                 // Check to see if the character is gonna clip in anything
-                (bool X, bool Y) blnColliding = CheckObstacleCollision(ShootMeUp.Characters);
+                (bool X, bool Y) blnColliding = CheckObstacleCollision();
 
 
                 // Change the multiplicator for double-axis movement

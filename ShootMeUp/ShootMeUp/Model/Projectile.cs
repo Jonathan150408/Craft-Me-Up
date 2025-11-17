@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace ShootMeUp.Model
 {
@@ -131,12 +132,12 @@ namespace ShootMeUp.Model
             CFrame currentCFrame = (CFrame)this;
 
             // Check to see if the projectile is gonna clip in anything
-            (bool X, bool Y) blnColliding;
+            bool blnColliding;
 
-            blnColliding = CheckCollisions(ShootMeUp.Obstacles, ShootMeUp.Characters);
+            blnColliding = CheckCollisions();
 
             // Move the arrow if it wouldn't hit anything
-            if (!(blnColliding.X || blnColliding.Y))
+            if (!blnColliding)
             {
                 DisplayedImage.Location = new Point(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y + _intSpeed.Y);
             }
@@ -146,7 +147,7 @@ namespace ShootMeUp.Model
                 Active = false;
 
                 // Get the object and/or character that's been hit
-                CFrame? Hit = GetColliding(ShootMeUp.Obstacles, ShootMeUp.Characters);
+                CFrame? Hit = GetColliding();
 
                 if (Hit != null)
                 {
@@ -168,22 +169,103 @@ namespace ShootMeUp.Model
                     }
                 }
             }
-
         }
 
-        //// Save current transform
-        //GraphicsState state = drawingSpace.Graphics.Save();
+        /// <summary>
+        /// Check to see if the projectile has hit anything
+        /// </summary>
+        /// <returns>true or false depending on if it hit anything or not</returns>
+        public bool CheckCollisions()
+        {
+            bool blnColliding = false;
 
-        //// Move origin to center of projectile
-        //drawingSpace.Graphics.TranslateTransform(FloatX + length / 2f, FloatY + height / 2f);
+            // Create hypothetical CFrames to simulate movement along each axis independently
+            CFrame cfrX = new CFrame(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrY = new CFrame(DisplayedImage.Location.X, DisplayedImage.Location.Y + _intSpeed.Y, DisplayedImage.Width, DisplayedImage.Height);
 
-        //// Rotate around center
-        //drawingSpace.Graphics.RotateTransform(_fltRotationAngle);
+            // Create a list that contains both obstacles and characters
+            List<CFrame> listCFrames = new List<CFrame>();
+            listCFrames = ShootMeUp.Characters.Cast<CFrame>().ToList();
+            listCFrames.AddRange(ShootMeUp.Obstacles.Cast<CFrame>().ToList());
 
-        //// Draw image centered at new origin
-        //drawingSpace.Graphics.DrawImage(imgProjectile, -length / 2f, -height / 2f, length, height);
+            // Check for collision
+            foreach (CFrame singularCFrame in listCFrames)
+            {
+                // Check to see if the current CFrame is an obstacle
+                if (singularCFrame is Obstacle)
+                {
+                    Obstacle obstacle = (Obstacle)singularCFrame;
 
-        //// Restore transform
-        //drawingSpace.Graphics.Restore(state);
+                    // Skip the current obstacle if it has no collisions
+                    if (!obstacle.CanCollide)
+                        continue;
+                }
+
+                if (ShootMeUp.IsOverlapping(cfrX, singularCFrame))
+                {
+                    blnColliding = true;
+                }
+
+                if (ShootMeUp.IsOverlapping(cfrY, singularCFrame))
+                {
+                    blnColliding = true;
+                }
+
+                // Early exit if collision detected
+                if (blnColliding)
+                    break;
+            }
+
+            return blnColliding;
+        }
+
+        public CFrame? GetColliding()
+        {
+            // Create hypothetical CFrames to simulate movement along each axis independently
+            CFrame cfrX = new CFrame(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrY = new CFrame(DisplayedImage.Location.X, DisplayedImage.Location.Y + _intSpeed.Y, DisplayedImage.Width, DisplayedImage.Height);
+
+            // Create a list that contains both obstacles and characters
+            List<CFrame> listCFrames = new List<CFrame>();
+            listCFrames = ShootMeUp.Characters.Cast<CFrame>().ToList();
+            listCFrames.AddRange(ShootMeUp.Obstacles.Cast<CFrame>().ToList());
+
+            foreach (CFrame singularCFrame in listCFrames)
+            {
+                // Check to see if the current CFrame is a character
+                if (singularCFrame is Character)
+                {
+                    Character character = (Character)singularCFrame;
+
+                    // Skip the ignored character
+                    if (character == _shotBy)
+                        continue;
+                }
+
+
+                // Check to see if the current CFrame is an obstacle
+                if (singularCFrame is Obstacle)
+                {
+                    Obstacle obstacle = (Obstacle)singularCFrame;
+
+                    // Skip the current obstacle if it has no collisions
+                    if (!obstacle.CanCollide)
+                        continue;
+                }
+
+
+                if (ShootMeUp.IsOverlapping(cfrX, singularCFrame))
+                {
+                    return singularCFrame;
+                }
+
+                if (ShootMeUp.IsOverlapping(cfrY, singularCFrame))
+                {
+                    return singularCFrame;
+                }
+            }
+
+            return null;
+        }
     }
 }
