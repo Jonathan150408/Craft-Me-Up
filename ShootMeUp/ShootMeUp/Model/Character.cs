@@ -160,7 +160,7 @@ namespace ShootMeUp.Model
         /// <param name="target">The projectile's target</param>
         /// <param name="type">The projectile type</param>
         /// <returns>A projectile if it shot, otherwise none</returns>
-        virtual public Projectile? Shoot(PictureBox target, Projectile.Type type)
+        public Projectile? Shoot(Point target, Projectile.Type type)
         {
             // Store the current time
             DateTime now = DateTime.Now;
@@ -172,8 +172,8 @@ namespace ShootMeUp.Model
                 int intProjectileX = DisplayedImage.Location.X;
                 int intProjectileY = DisplayedImage.Location.Y;
 
-                int intTargetX = target.Location.X;
-                int intTargetY = target.Location.Y;
+                int intTargetX = target.X;
+                int intTargetY = target.Y;
 
                 // Get the character's center
                 int intCharacterCenterX = DisplayedImage.Location.X + (DisplayedImage.Width / 2);

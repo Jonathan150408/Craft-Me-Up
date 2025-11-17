@@ -198,11 +198,10 @@ namespace ShootMeUp.Model
 
                 // Get the character or obstacle in front of the enemy
                 bool blnPlayerCollision = CheckPlayerCollision();
-                (bool X, bool Y) blnObstacleColliding = CheckObstacleCollision();
                 Obstacle? obstacleHit = GetCollidingObstacle();
 
                 // Set the cooldown to the next update if there's anything in front of the enemy
-                if (!blnPlayerCollision || (!(blnObstacleColliding.X && blnObstacleColliding.Y) && (obstacleHit != null && !obstacleHit.Invincible)))
+                if (blnPlayerCollision || (obstacleHit != null && !obstacleHit.Invincible))
                 {
                     // Set the cooldown to the next update
                     _nextUpdateTime = DateTime.Now + DamageCooldown;
