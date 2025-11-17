@@ -44,6 +44,17 @@ namespace ShootMeUp
         private static readonly int BORDER_SIZE = 29;
 
         /// <summary>
+        /// The current state of the game
+        /// </summary>
+        private enum Gamestate
+        {
+            running, 
+            paused,
+            finished
+        }
+        private Gamestate _gamestate;
+
+        /// <summary>
         /// The player
         /// </summary>
         private Character? _player;
@@ -51,42 +62,12 @@ namespace ShootMeUp
         /// <summary>
         /// The list of keys currently held down
         /// </summary>
-        private List<Keys> _lst_keysHeldDown;
-
-        /// <summary>
-        /// A character handler to store every character
-        /// </summary>
-        private CharacterHandler _characterHandler;
-
-        /// <summary>
-        /// A collision handler to create obstacles
-        /// </summary>
-        private CollisionHandler _collisionHandler;
-
-        /// <summary>
-        /// A projectile handler to store every projectile
-        /// </summary>
-        private ProjectileHandler _projectileHandler;
-
-        /// <summary>
-        /// The WaveData class, that stores every enemy in every wave
-        /// </summary>
-        private WaveData _waveData;
-
-        /// <summary>
-        /// Whether the player is in game or not
-        /// </summary>
-        private bool _blnInGame;
+        private List<Keys> _keysHeldDown;
 
         /// <summary>
         /// The current wave number
         /// </summary>
         private int _intWaveNumber;
-
-        /// <summary>
-        /// The player's score
-        /// </summary>
-        private int _intScore;
 
         /// <summary>
         /// The game's title screen
@@ -98,12 +79,40 @@ namespace ShootMeUp
         /// </summary>
         private Button? _playButton;
 
-        private BufferedGraphicsContext currentContext;
-        private BufferedGraphics playspace;
+        /// <summary>
+        /// A list that contains all the projectiles
+        /// </summary>
+        private List<Projectile> _projectiles;
+        public List<Projectile> Projectiles
+        {
+            get { return _projectiles; }
+            set { _projectiles = value; }
+        }
+
+        /// <summary>
+        /// A list that contains all the obstacles
+        /// </summary>
+        private List<Obstacle> _obstacles;
+        public List<Obstacle> Obstacles
+        {
+            get { return _obstacles; }
+            set { _obstacles = value; }
+        }
+
+        /// <summary>
+        /// A list that contains all the characters
+        /// </summary>
+        private List<Character> _characters;
+        public List<Character> Characters
+        {
+            get { return _characters; }
+            set { _characters = value; }
+        }
 
         /// <summary>
         /// The player's score
         /// </summary>
+        private int _intScore;
         public int Score
         {
             get { return _intScore; }
@@ -116,66 +125,58 @@ namespace ShootMeUp
 
             InitializeComponent();
             ClientSize = new Size(WIDTH, HEIGHT);
-
-            // Gets a reference to the current BufferedGraphicsContext
-            currentContext = BufferedGraphicsManager.Current;
-
-            // Creates a BufferedGraphics instance associated with this form, and with
-            // dimensions the same size as the drawing surface of the form.
-            playspace = currentContext.Allocate(this.CreateGraphics(), this.DisplayRectangle);
-
-            _characterHandler = new CharacterHandler();
-            _collisionHandler = new CollisionHandler();
-            _projectileHandler = new ProjectileHandler();
-            _waveData = new WaveData(DEFAULT_CHARACTER_SIZE, GAMESPEED);
-
             _intWaveNumber = 1;
 
             // Create a new list of keys held down
-            _lst_keysHeldDown = new List<Keys>();
+            _keysHeldDown = new List<Keys>();
+            // Create a new list of obstacles
+            _obstacles = new List<Obstacle>();
+            // Create a new list of characters
+            _characters = new List<Character>();
 
-            // Show the game's title screen
+            // run the main method
+            Main();
+        }
+
+        /// <summary>
+        /// the Main method contains all the necessary stuff to run the game
+        /// </summary>
+        private void Main()
+        {
             ShowTitle();
         }
+
 
         /// <summary>
         /// Shows the game's title screen
         /// </summary>
         private void ShowTitle()
         {
-            // Clear playspace background
-            playspace.Graphics.Clear(Color.FromArgb(217, 217, 217));
-            playspace.Render();
-
             // Remove any previous controls
             this.Controls.Clear();
 
             // Create the text and add some style to it
-            _titleLabel = new Label();
-            _titleLabel.Text = "Craft Me Up";
-            _titleLabel.Font = new Font("Consolas", 48, FontStyle.Bold);
-            _titleLabel.ForeColor = Color.Black;
-            _titleLabel.AutoSize = true;
-            _titleLabel.BackColor = Color.Transparent;
-
-            // Force layout so PreferredSize is accurate
-            _titleLabel.CreateControl();
-            _titleLabel.Left = (ClientSize.Width - _titleLabel.PreferredSize.Width) / 2;
-            _titleLabel.Top = ClientSize.Height / 3 - _titleLabel.PreferredSize.Height / 2;
+            _titleLabel = new Label
+            {
+                Text = "Craft Me Up",
+                Font = new Font("Consolas", 48, FontStyle.Bold),
+                ForeColor = Color.Black,
+                AutoSize = true,
+                BackColor = Color.Transparent,
+                Left = (ClientSize.Width - PreferredSize.Width) / 2,
+                Top = ClientSize.Height / 3 - PreferredSize.Height / 2
+            };
 
             // Create and style Play button
-            _playButton = new Button();
-            _playButton.Text = "Play the game";
-            _playButton.Font = new Font("Consolas", 24, FontStyle.Bold);
-            _playButton.AutoSize = true;
-
-            // Measure size automatically
-            _playButton.CreateControl();
-            _playButton.Size = _playButton.PreferredSize;
-
-            // Center below the title
-            _playButton.Left = (ClientSize.Width - _playButton.Width) / 2;
-            _playButton.Top = _titleLabel.Bottom + 256;
+            _playButton = new Button
+            {
+                Text = "Play the game",
+                Font = new Font("Consolas", 24, FontStyle.Bold),
+                AutoSize = true,
+                Size = PreferredSize,
+                Left = (ClientSize.Width - Width) / 2,
+                Top = _titleLabel.Bottom + 256
+            };
 
             // Add event handling
             _playButton.Click += (s, e) => StartGame();
@@ -183,6 +184,26 @@ namespace ShootMeUp
             // Add controls to the form
             this.Controls.Add(_titleLabel);
             this.Controls.Add(_playButton);
+        }
+
+        /// <summary>
+        /// pauses the game and displays the pause menu
+        /// </summary>
+        private void DisplayPauseMenu()
+        {
+            //create a modale and display it
+            PictureBox pauseModale = new()
+            {
+                Top = 0,
+                Left = 0,
+                Width = this.ClientRectangle.Width,
+                Height = this.ClientRectangle.Height,
+                BackColor = Color.FromArgb(100, 100, 100, 100)
+            };
+            this.Controls.Add(pauseModale);
+
+            //stops the ticker to pause the game
+            this.ticker.Stop();
         }
 
         /// <summary>
@@ -194,19 +215,7 @@ namespace ShootMeUp
             this.Controls.Remove(_titleLabel);
             this.Controls.Remove(_playButton);
 
-            // Remove the title screen
-            _titleLabel = null;
-            _playButton = null;
-
-            // Create a new CharacterHandler, CollisionHandler and ProjectileHandler
-            _characterHandler = new CharacterHandler();
-            _collisionHandler = new CollisionHandler();
-            _projectileHandler = new ProjectileHandler();
-
-            // Reset the game
-            _characterHandler.RemoveAllCharacters();
-            _collisionHandler.RemoveAllObstacles();
-            _projectileHandler.RemoveAllProjectiles();
+            //general variables
             Score = 0;
             _intWaveNumber = 1;
 
@@ -221,7 +230,7 @@ namespace ShootMeUp
         private void GenerateWorld()
         {
             // Set the game state to true
-            _blnInGame = true;
+            _gamestate = Gamestate.running;
 
             // Calculate the bottom-center, related to the player
             float fltLeftBound = 32;
@@ -233,14 +242,14 @@ namespace ShootMeUp
             float characterX = fltAreaCenterX - (DEFAULT_CHARACTER_SIZE / 2);
 
             // Create a new player
-            _player = new Character((int)characterX, BORDER_SIZE * 32 + (32 - DEFAULT_CHARACTER_SIZE), DEFAULT_CHARACTER_SIZE, "player", GAMESPEED);
-            _characterHandler.AddCharacter(_player);
+            _player = new Character((int)characterX, BORDER_SIZE * 32 + (32 - DEFAULT_CHARACTER_SIZE), DEFAULT_CHARACTER_SIZE, Character.Type.Player, GAMESPEED);
+            Characters.Add( _player );
 
             // Create a new border, piece by piece
             for (int x = 0; x <= BORDER_SIZE; x++)
                 for (int y = 0; y <= BORDER_SIZE; y++)
                     if (x == 0 || x == BORDER_SIZE || y == 0 || y == BORDER_SIZE)
-                        _collisionHandler.AddObstacle(new Obstacle(32 * (2 + x), 32 * (2 + y), 32, 0, "border"));
+                        Obstacles.Add(new Obstacle(32 * (2 + x), 32 * (2 + y), 32, -1));
 
             // Create a variable to store the border's size
             int intBorderLength = BORDER_SIZE * 32 + 32;
@@ -248,35 +257,35 @@ namespace ShootMeUp
             //// Creating the world environment ////
 
             // Top left corner
-            _collisionHandler.AddObstacle(new Obstacle(32 * 3, 32 * 3, OBSTACLE_SIZE, 0));
-            _collisionHandler.AddObstacle(new Obstacle(32 * 4, 32 * 3, OBSTACLE_SIZE, 0));
-            _collisionHandler.AddObstacle(new Obstacle(32 * 3, 32 * 4, OBSTACLE_SIZE, 0));
+            Obstacles.Add(new Obstacle(32 * 3, 32 * 3, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(32 * 4, 32 * 3, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(32 * 3, 32 * 4, OBSTACLE_SIZE, -2));
 
             // Top right corner
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength, 32 * 3, OBSTACLE_SIZE, 0));
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 32, 32 * 3, OBSTACLE_SIZE, 0));
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength, 32 * 4, OBSTACLE_SIZE, 0));
+            Obstacles.Add(new Obstacle(intBorderLength, 32 * 3, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(intBorderLength - 32, 32 * 3, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(intBorderLength, 32 * 4, OBSTACLE_SIZE, -2));
 
             // Bottom left corner
-            _collisionHandler.AddObstacle(new Obstacle(32 * 3, intBorderLength, OBSTACLE_SIZE, 0));
-            _collisionHandler.AddObstacle(new Obstacle(32 * 4, intBorderLength, OBSTACLE_SIZE, 0));
-            _collisionHandler.AddObstacle(new Obstacle(32 * 3, intBorderLength - 32, OBSTACLE_SIZE, 0));
+            Obstacles.Add(new Obstacle(32 * 3, intBorderLength, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(32 * 4, intBorderLength, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(32 * 3, intBorderLength - 32, OBSTACLE_SIZE, -2));
 
             // Bottom right corner
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength, intBorderLength, OBSTACLE_SIZE, 0));
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 32, intBorderLength, OBSTACLE_SIZE, 0));
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength, intBorderLength - 32, OBSTACLE_SIZE, 0));
+            Obstacles.Add(new Obstacle(intBorderLength, intBorderLength, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(intBorderLength - 32, intBorderLength, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(intBorderLength, intBorderLength - 32, OBSTACLE_SIZE, -2));
 
 
             // The pillars' health value
-            int intPillarHealth = 25;
+            const int COBBLE = 25;
 
             // Top left pillars
             for (int x = 0; x < 2; x++)
             {
                 for (int y = 0; y < 2; y++)
                 {
-                    _collisionHandler.AddObstacle(new Obstacle(192 + (160 * x), 192 + (160 * y), OBSTACLE_SIZE * 2, intPillarHealth));
+                    Obstacles.Add(new Obstacle(192 + (160 * x), 192 + (160 * y), OBSTACLE_SIZE * 2, COBBLE));
                 }
             }
 
@@ -285,7 +294,7 @@ namespace ShootMeUp
             {
                 for (int y = 0; y < 2; y++)
                 {
-                    _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 128 - (160 * x), 192 + (160 * y), OBSTACLE_SIZE * 2, intPillarHealth));
+                    Obstacles.Add(new Obstacle(intBorderLength - 128 - (160 * x), 192 + (160 * y), OBSTACLE_SIZE * 2, COBBLE));
                 }
             }
 
@@ -294,7 +303,7 @@ namespace ShootMeUp
             {
                 for (int y = 0; y < 2; y++)
                 {
-                    _collisionHandler.AddObstacle(new Obstacle(192 + (160 * x), intBorderLength - 128 - (160 * y), OBSTACLE_SIZE * 2, intPillarHealth));
+                    Obstacles.Add(new Obstacle(192 + (160 * x), intBorderLength - 128 - (160 * y), OBSTACLE_SIZE * 2, COBBLE));
                 }
             }
 
@@ -303,70 +312,72 @@ namespace ShootMeUp
             {
                 for (int y = 0; y < 2; y++)
                 {
-                    _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 128 - (160 * x), intBorderLength - 128 - (160 * y), OBSTACLE_SIZE * 2, intPillarHealth));
+                    Obstacles.Add(new Obstacle(intBorderLength - 128 - (160 * x), intBorderLength - 128 - (160 * y), OBSTACLE_SIZE * 2, COBBLE));
                 }
             }
 
 
             // The barriers' health
-            int intBarrierHealth = 10;
+            const int WOOD = 10;
 
             // Top barriers
             for (int x = 0; x < 2; x++)
             {
-                _collisionHandler.AddObstacle(new Obstacle(448 + (128 * x), 192, OBSTACLE_SIZE * 2, intBarrierHealth));
+                Obstacles.Add(new Obstacle(448 + (128 * x), 192, OBSTACLE_SIZE * 2, WOOD));
             }
 
-            _collisionHandler.AddObstacle(new Obstacle(512, 352, OBSTACLE_SIZE * 2, intBarrierHealth));
+            Obstacles.Add(new Obstacle(512, 352, OBSTACLE_SIZE * 2, WOOD));
 
             // Left barriers
             for (int x = 0; x < 2; x++)
             {
-                _collisionHandler.AddObstacle(new Obstacle(192, 448 + (128 * x), OBSTACLE_SIZE, intBarrierHealth));
+                Obstacles.Add(new Obstacle(192, 448 + (128 * x), OBSTACLE_SIZE, WOOD));
             }
 
-            _collisionHandler.AddObstacle(new Obstacle(352, 512, OBSTACLE_SIZE, intBarrierHealth));
+            Obstacles.Add(new Obstacle(352, 512, OBSTACLE_SIZE, WOOD));
 
             // Right barriers
             for (int x = 0; x < 2; x++)
             {
-                _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 128, 448 + (128 * x), OBSTACLE_SIZE, intBarrierHealth));
+                Obstacles.Add(new Obstacle(intBorderLength - 128, 448 + (128 * x), OBSTACLE_SIZE, WOOD));
             }
 
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 256, 512, OBSTACLE_SIZE, intBarrierHealth));
+            Obstacles.Add(new Obstacle(intBorderLength - 256, 512, OBSTACLE_SIZE, WOOD));
 
             // Bottom barriers
             for (int x = 0; x < 2; x++)
             {
-                _collisionHandler.AddObstacle(new Obstacle(448 + (128 * x), intBorderLength - 128, OBSTACLE_SIZE * 2, intBarrierHealth));
+                Obstacles.Add(new Obstacle(448 + (128 * x), intBorderLength - 128, OBSTACLE_SIZE * 2, WOOD));
             }
 
-            _collisionHandler.AddObstacle(new Obstacle(512, intBorderLength - 256, OBSTACLE_SIZE * 2, intBarrierHealth));
+            Obstacles.Add(new Obstacle(512, intBorderLength - 256, OBSTACLE_SIZE * 2, WOOD));
 
 
             // The smaller obstacles' health
-            int intSmallObstacleHealth = 5;
+            const int DIRT = 5;
 
             // Top left small obstacle
-            _collisionHandler.AddObstacle(new Obstacle(288, 288, OBSTACLE_SIZE, intSmallObstacleHealth));
+            Obstacles.Add(new Obstacle(288, 288, OBSTACLE_SIZE, DIRT));
 
             // Top right small obstacle
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 192, 288, OBSTACLE_SIZE, intSmallObstacleHealth));
+            Obstacles.Add(new Obstacle(intBorderLength - 192, 288, OBSTACLE_SIZE, DIRT));
 
             // Bottom left small obstacle
-            _collisionHandler.AddObstacle(new Obstacle(288, intBorderLength - 192, OBSTACLE_SIZE, intSmallObstacleHealth));
+            Obstacles.Add(new Obstacle(288, intBorderLength - 192, OBSTACLE_SIZE, DIRT));
 
             // Bottom right small obstacle
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 192, intBorderLength - 192, OBSTACLE_SIZE, intSmallObstacleHealth));
+            Obstacles.Add(new Obstacle(intBorderLength - 192, intBorderLength - 192, OBSTACLE_SIZE, DIRT));
 
             // Middle small obstacles
-            _collisionHandler.AddObstacle(new Obstacle(448, 448, OBSTACLE_SIZE, intSmallObstacleHealth));
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 352, 448, OBSTACLE_SIZE, intSmallObstacleHealth));
-            _collisionHandler.AddObstacle(new Obstacle(448, intBorderLength - 352, OBSTACLE_SIZE, intSmallObstacleHealth));
-            _collisionHandler.AddObstacle(new Obstacle(intBorderLength - 352, intBorderLength - 352, OBSTACLE_SIZE, intSmallObstacleHealth));
+            Obstacles.Add(new Obstacle(448, 448, OBSTACLE_SIZE, DIRT));
+            Obstacles.Add(new Obstacle(intBorderLength - 352, 448, OBSTACLE_SIZE, DIRT));
+            Obstacles.Add(new Obstacle(448, intBorderLength - 352, OBSTACLE_SIZE, DIRT));
+            Obstacles.Add(new Obstacle(intBorderLength - 352, intBorderLength - 352, OBSTACLE_SIZE, DIRT));
+        }
 
-            // Create the spawner
-            _collisionHandler.AddObstacle(new Obstacle(512, 512, OBSTACLE_SIZE * 2, 0, "spawner"));
+        private List<Enemy> GenerateWaves(int waveNumber)
+        {
+            return null;
         }
 
         /// <summary>
@@ -377,34 +388,32 @@ namespace ShootMeUp
             for (_intWaveNumber = 1; ; _intWaveNumber++)
             {
                 // End the wave system if the game stopped
-                if (!_blnInGame)
+                if (_gamestate != Gamestate.running)
                     return;
 
                 // Add a small wait before starting the current wave
                 await Task.Delay(8000 / GAMESPEED);
 
-                foreach (Enemy enemy in _waveData.GetWaveEnemies(_intWaveNumber))
+                foreach (Enemy enemy in GenerateWaves(_intWaveNumber))
                 {
                     // End the wave system if the game stopped
-                    if (!_blnInGame)
+                    if (_gamestate != Gamestate.running)
                         return;
 
                     // Put the enemy in the right spot
-                    enemy.X = 512 + OBSTACLE_SIZE/2 + enemy.Size / 4;
-                    enemy.Y = 512 + OBSTACLE_SIZE/2 + enemy.Size / 4;
+                    enemy.DisplayedImage.Location = new Point(512 + OBSTACLE_SIZE/2 + enemy.DisplayedImage.Size.Width / 4, 512 + OBSTACLE_SIZE / 2 + enemy.DisplayedImage.Size.Height / 4);
 
                     // Add the enemy to the character handler
-                    _characterHandler.AddCharacter(enemy);
+                    Characters.Add(enemy);
 
                     // Add a wait before adding the next enemy
                     await Task.Delay(16000 / GAMESPEED);
                 }
 
-
-                while (_characterHandler.Characters.Count != 1)
+                while (Characters.Count != 1)
                 {
                     // End the wave system if the game stopped
-                    if (!_blnInGame)
+                    if (_gamestate != Gamestate.running)
                         return;
 
                     await Task.Delay(25);
@@ -413,71 +422,37 @@ namespace ShootMeUp
         }
 
         /// <summary>
-        /// Render the playspace along with the player
+        /// Tests if the 2 entities are overlapping
         /// </summary>
-        private void Render()
+        /// <param name="entity1"></param>
+        /// <param name="entity2"></param>
+        /// <returns>A bool that is true if the entities are overlapping</returns>
+        public bool IsOverlapping(CFrame entity1, CFrame entity2)
         {
-            // Render the playspace if the player is in game
-            if (_blnInGame && _player != null)
-            {
-                playspace.Graphics.Clear(Color.FromArgb(217, 217, 217));
-
-                playspace.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(250, 231, 172)), new Rectangle(64, 64, 32 * BORDER_SIZE + 32, 32 * BORDER_SIZE + 32));
-
-                // Render all the enemies
-                foreach (Character character in _characterHandler.Characters)
-                {
-                    if (character.Type == "player")
-                    {
-                        continue;
-                    }
-
-                    character.Render(playspace);
-                }
-
-                // Loop through all of the obstacles and render them
-                foreach (Obstacle obstacle in _collisionHandler.Obstacles)
-                {
-                    obstacle.Render(playspace);
-                }
-
-                // Render the player
-                _player.Render(playspace);
-
-                // Render the projectiles if they are active
-                foreach (Projectile projectile in _projectileHandler.Projectiles)
-                {
-                    projectile.Render(playspace);
-                }
-
-                // Draw the score in the top left
-                playspace.Graphics.DrawString($"Wave {_intWaveNumber} | Score: {Score} | Lives remaining: {_player.Lives}", TextHelpers.drawFont, TextHelpers.writingBrush, 8, 8);
-
-                playspace.Render();
-            }
+            return entity1.DisplayedImage.DisplayRectangle.IntersectsWith(entity2.DisplayedImage.DisplayRectangle);
         }
 
         // Calcul du nouvel état après que 'interval' millisecondes se sont écoulées
-        private void Update(int interval)
+        private void NewFrame()
         {
             // Update the playspace if the player is in game
-            if (_blnInGame && _player != null)
+            if (_gamestate == Gamestate.running && _player != null)
             {
                 // Remove any inactive projectiles/obstacles
-                _projectileHandler.Projectiles.RemoveAll(projectile => !projectile.Active);
-                _collisionHandler.Obstacles.RemoveAll(obstacle => obstacle.Health <= 0);
+                Projectiles.RemoveAll(projectile => !projectile.Active);
+                Obstacles.RemoveAll(obstacle => obstacle.Health <= 0);
 
                 // Change the score if there's a dead enemy
                 // Also restart the game if the player died
-                foreach (Character character in _characterHandler.Characters)
+                foreach (Character character in Characters)
                 {
                     if (character.Lives <= 0 && character is Enemy enemy)
                     {
                         Score += enemy.Score;
                     }
-                    else if (character.Type == "player" && character.Lives <= 0)
+                    else if (character.CharType == Character.Type.Player && character.Lives <= 0)
                     {
-                        _blnInGame = false;
+                        _gamestate = Gamestate.paused;
 
                         ShowTitle();
 
@@ -485,13 +460,13 @@ namespace ShootMeUp
                     }
                 }
 
-                _characterHandler.Characters.RemoveAll(character => character.Lives <= 0);
+                Characters.RemoveAll(character => character.Lives <= 0);
 
                 // Create movement-related boolean variables
-                bool blnLeftHeld = _lst_keysHeldDown.Contains(Keys.A) || _lst_keysHeldDown.Contains(Keys.Left);
-                bool blnRightHeld = _lst_keysHeldDown.Contains(Keys.D) || _lst_keysHeldDown.Contains(Keys.Right);
-                bool blnUpHeld = _lst_keysHeldDown.Contains(Keys.W) || _lst_keysHeldDown.Contains(Keys.Up);
-                bool blnDownHeld = _lst_keysHeldDown.Contains(Keys.S) || _lst_keysHeldDown.Contains(Keys.Down);
+                bool blnLeftHeld = _keysHeldDown.Contains(Keys.A) || _keysHeldDown.Contains(Keys.Left);
+                bool blnRightHeld = _keysHeldDown.Contains(Keys.D) || _keysHeldDown.Contains(Keys.Right);
+                bool blnUpHeld = _keysHeldDown.Contains(Keys.W) ||      _keysHeldDown.Contains(Keys.Up);
+                bool blnDownHeld = _keysHeldDown.Contains(Keys.S) || _keysHeldDown.Contains(Keys.Down);
 
                 // Create movement-related int variables
                 int intMoveX = 0;
@@ -524,71 +499,80 @@ namespace ShootMeUp
 
                 // Move the player
                 _player.Move(intMoveX, intMoveY);
-                _player.Update();
 
                 // Update the projectiles
-                foreach (Projectile projectile in _projectileHandler.Projectiles)
+                foreach (Projectile projectile in Projectiles)
                 {
                     projectile.Update();
                 }
 
                 // Update the enemies
-                foreach (Character character in _characterHandler.Characters)
+                foreach (Character character in Characters)
                 {
-                    if (character.Type != "player" && character is Enemy enemy)
-                    {
+                    if (character.CharType != Character.Type.Player && character is Enemy enemy)
                         enemy.Move(_player);
-                        enemy.Update();
-                    }
                 }
             }
-        }
-
-        // Méthode appelée à chaque frame
-        private void NewFrame(object sender, EventArgs e)
-        {
-            this.Update(ticker.Interval);
-            this.Render();
         }
 
         private void ShootMeUp_KeyDown(object sender, KeyEventArgs e)
         {
             // Add the key to the list if it's not already in there
-            if (!_lst_keysHeldDown.Contains(e.KeyCode))
+            if (!_keysHeldDown.Contains(e.KeyCode))
             {
-                _lst_keysHeldDown.Add(e.KeyCode);
+                _keysHeldDown.Add(e.KeyCode);
             }
         }
 
         private void ShootMeUp_KeyUp(object sender, KeyEventArgs e)
         {
             // Remove the key from the list if it's in there
-            if (_lst_keysHeldDown.Contains(e.KeyCode))
+            if (_keysHeldDown.Contains(e.KeyCode))
             {
-                _lst_keysHeldDown.Remove(e.KeyCode);
+                _keysHeldDown.Remove(e.KeyCode);
             }
         }
 
         private void ShootMeUp_MouseClick(object sender, MouseEventArgs e)
         {
             // Only try and shoot something if the player is in game
-            if (_blnInGame && _player != null)
+            if (_gamestate == Gamestate.running && _player != null)
             {
-                string strType = "";
+                //default is arrow
+                Projectile.Type type = Projectile.Type.Arrow;
 
                 // If it's a left click, strType is "arrow". if its a right click, strType is "fireball".
                 if (e.Button == MouseButtons.Left)
-                    strType = "arrow";
+                    type = Projectile.Type.Arrow;
                 else if (e.Button == MouseButtons.Right)
-                    strType = "fireball";
+                    type = Projectile.Type.Fireball;
 
                 // Shoot an arrow using the player's shoot method and add it to the projetile list
-                Projectile? possibleProjectile = _player.Shoot(this.PointToClient(Cursor.Position), strType, GAMESPEED);
+                Projectile? possibleProjectile = _player.Shoot(this.PointToClient(Cursor.Position), type);
 
                 if (possibleProjectile != null)
                 {
-                    _projectileHandler.Projectiles.Add(possibleProjectile);
+                    Projectiles.Add(possibleProjectile);
                 }
+            }
+        }
+
+        private void DisplayControls()
+        {
+            //displays the projectiles
+            foreach (Projectile projectile in Projectiles)
+            {
+                this.Controls.Add(projectile.DisplayedImage);
+            }
+            //displays the characters
+            foreach (Character character in Characters)
+            {
+                this.Controls.Add(character.DisplayedImage);
+            }
+            //displays the obstacles
+            foreach (Obstacle obstacle in Obstacles)
+            {
+                this.Controls.Add(obstacle.DisplayedImage);
             }
         }
     }
