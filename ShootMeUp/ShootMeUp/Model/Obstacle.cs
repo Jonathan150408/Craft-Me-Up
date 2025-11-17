@@ -19,7 +19,7 @@ namespace ShootMeUp.Model
         /// <summary>
         /// The obstacle's type (border, ...)
         /// </summary>
-        private enum Type
+        public enum Type
         {
             Dirt,
             Wood,
@@ -30,7 +30,6 @@ namespace ShootMeUp.Model
             Bush,
             Undefined
         }
-        private Type _type;
 
         /// <summary>
         /// The obstacle's health (set to int.MaxValue if invincible)
@@ -67,60 +66,57 @@ namespace ShootMeUp.Model
         /// <param name="y">The obstacle's Y pos</param>
         /// <param name="intLength">The obstacle's Length</param>
         /// <param name="intHealth">The obstacle's max health</param>
-        public Obstacle(int x, int y, int intLength, int intHealth) : base(x, y, intLength)
+        public Obstacle(int x, int y, int intLength, Obstacle.Type type) : base(x, y, intLength)
         {
             //default values
             _canCollide = true;
             _invincible = false;
 
-            switch (intHealth)
+            switch (type)
             {
-                case -3:
+                case Type.Bush:
                     DisplayedImage.Image = Resources.ObstacleBush;
 
-                    _type = Type.Bush;
                     _canCollide = false;
                     _health = int.MaxValue;
                     break;
-                case -2:
+                case Type.Bedrock:
                     DisplayedImage.Image = Resources.ObstacleUnbreakable;
 
-                    _type = Type.Bedrock;
                     _invincible = true;
                     _health = int.MaxValue;
                     break;
-                case -1 :
+                case Type.Border:
                     DisplayedImage.Image = Resources.ObstacleBorder;
 
-                    _type = Type.Border;
                     _invincible = true;
                     _health = int.MaxValue;
                     break;
-                case 0:
+                case Type.Spawner:
                     DisplayedImage.Image = Resources.ObstacleSpawner;
 
-                    _type = Type.Spawner;
+                    _invincible = true;
+                    _health = int.MaxValue;
                     _canCollide = false;
                     break;
-                case 5:
+                case Type.Dirt:
                     DisplayedImage.Image = Resources.ObstacleWeak;
 
-                    _type = Type.Dirt;
+                    _health = 5;
                     break;
-                case 10:
+                case Type.Wood:
                     DisplayedImage.Image = Resources.ObstacleNormal;
 
-                    _type = Type.Wood;
+                    _health = 10;
                     break;
-                case 25:
+                case Type.Stone:
                     DisplayedImage.Image = Resources.ObstacleStrong;
 
-                    _type = Type.Stone;
+                    _health = 25;
                     break;
                 default:
                     _invincible = true;
                     _canCollide = false;
-                    _type = Type.Undefined;
                     break;
             }
         }
