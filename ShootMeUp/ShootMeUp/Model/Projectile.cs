@@ -131,13 +131,11 @@ namespace ShootMeUp.Model
             // Get the current CFrame
             CFrame currentCFrame = (CFrame)this;
 
-            // Check to see if the projectile is gonna clip in anything
-            bool blnColliding;
-
-            blnColliding = CheckCollisions();
+            // Check to see if the projectile is gonna hit anything
+            CFrame? Hit = GetColliding();
 
             // Move the arrow if it wouldn't hit anything
-            if (!blnColliding)
+            if (Hit == null)
             {
                 DisplayedImage.Location = new Point(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y + _intSpeed.Y);
             }
@@ -146,77 +144,21 @@ namespace ShootMeUp.Model
                 // Mark the projectile as inactive
                 Active = false;
 
-                // Get the object and/or character that's been hit
-                CFrame? Hit = GetColliding();
-
-                if (Hit != null)
+                if (Hit is Character)
                 {
-                    if (Hit is Character)
-                    {
-                        Character characterHit = (Character)Hit;
+                    Character characterHit = (Character)Hit;
 
-                        // Deal damage to the character
-                        characterHit.Lives -= _intDamage;
-                    }
-                    else
-                    {
-                        Obstacle obstacleHit = (Obstacle)Hit;
+                    // Deal damage to the character
+                    characterHit.Lives -= _intDamage;
+                }
+                else
+                {
+                    Obstacle obstacleHit = (Obstacle)Hit;
 
-                        // Deal damage to the obstacle
-                        obstacleHit.Health -= _intDamage;
-
-
-                    }
+                    // Deal damage to the obstacle
+                    obstacleHit.Health -= _intDamage;
                 }
             }
-        }
-
-        /// <summary>
-        /// Check to see if the projectile has hit anything
-        /// </summary>
-        /// <returns>true or false depending on if it hit anything or not</returns>
-        public bool CheckCollisions()
-        {
-            bool blnColliding = false;
-
-            // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y, DisplayedImage.Width, DisplayedImage.Height);
-            CFrame cfrY = new CFrame(DisplayedImage.Location.X, DisplayedImage.Location.Y + _intSpeed.Y, DisplayedImage.Width, DisplayedImage.Height);
-
-            // Create a list that contains both obstacles and characters
-            List<CFrame> listCFrames = new List<CFrame>();
-            listCFrames = ShootMeUp.Characters.Cast<CFrame>().ToList();
-            listCFrames.AddRange(ShootMeUp.Obstacles.Cast<CFrame>().ToList());
-
-            // Check for collision
-            foreach (CFrame singularCFrame in listCFrames)
-            {
-                // Check to see if the current CFrame is an obstacle
-                if (singularCFrame is Obstacle)
-                {
-                    Obstacle obstacle = (Obstacle)singularCFrame;
-
-                    // Skip the current obstacle if it has no collisions
-                    if (!obstacle.CanCollide)
-                        continue;
-                }
-
-                if (ShootMeUp.IsOverlapping(cfrX, singularCFrame))
-                {
-                    blnColliding = true;
-                }
-
-                if (ShootMeUp.IsOverlapping(cfrY, singularCFrame))
-                {
-                    blnColliding = true;
-                }
-
-                // Early exit if collision detected
-                if (blnColliding)
-                    break;
-            }
-
-            return blnColliding;
         }
 
         public CFrame? GetColliding()
