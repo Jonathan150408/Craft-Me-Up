@@ -82,8 +82,8 @@ namespace ShootMeUp
         /// <summary>
         /// A list that contains all the projectiles
         /// </summary>
-        private List<Projectile> _projectiles;
-        public List<Projectile> Projectiles
+        private static List<Projectile> _projectiles = new List<Projectile>();
+        public static List<Projectile> Projectiles
         {
             get { return _projectiles; }
             set { _projectiles = value; }
@@ -92,8 +92,8 @@ namespace ShootMeUp
         /// <summary>
         /// A list that contains all the obstacles
         /// </summary>
-        private List<Obstacle> _obstacles;
-        public List<Obstacle> Obstacles
+        private static List<Obstacle> _obstacles = new List<Obstacle>();
+        public static List<Obstacle> Obstacles
         {
             get { return _obstacles; }
             set { _obstacles = value; }
@@ -102,8 +102,8 @@ namespace ShootMeUp
         /// <summary>
         /// A list that contains all the characters
         /// </summary>
-        private List<Character> _characters;
-        public List<Character> Characters
+        private static List<Character> _characters = new List<Character>();
+        public static List<Character> Characters
         {
             get { return _characters; }
             set { _characters = value; }
@@ -129,10 +129,6 @@ namespace ShootMeUp
 
             // Create a new list of keys held down
             _keysHeldDown = new List<Keys>();
-            // Create a new list of obstacles
-            _obstacles = new List<Obstacle>();
-            // Create a new list of characters
-            _characters = new List<Character>();
 
             // run the main method
             Main();
@@ -257,28 +253,30 @@ namespace ShootMeUp
             //// Creating the world environment ////
 
             // Top left corner
-            Obstacles.Add(new Obstacle(32 * 3, 32 * 3, OBSTACLE_SIZE, -2));
-            Obstacles.Add(new Obstacle(32 * 4, 32 * 3, OBSTACLE_SIZE, -2));
-            Obstacles.Add(new Obstacle(32 * 3, 32 * 4, OBSTACLE_SIZE, -2));
+            const Obstacle.Type BORDER = Obstacle.Type.Border;
+
+            Obstacles.Add(new Obstacle(32 * 3, 32 * 3, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(32 * 4, 32 * 3, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(32 * 3, 32 * 4, OBSTACLE_SIZE, BORDER));
 
             // Top right corner
-            Obstacles.Add(new Obstacle(intBorderLength, 32 * 3, OBSTACLE_SIZE, -2));
-            Obstacles.Add(new Obstacle(intBorderLength - 32, 32 * 3, OBSTACLE_SIZE, -2));
-            Obstacles.Add(new Obstacle(intBorderLength, 32 * 4, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(intBorderLength, 32 * 3, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(intBorderLength - 32, 32 * 3, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(intBorderLength, 32 * 4, OBSTACLE_SIZE, BORDER));
 
             // Bottom left corner
-            Obstacles.Add(new Obstacle(32 * 3, intBorderLength, OBSTACLE_SIZE, -2));
-            Obstacles.Add(new Obstacle(32 * 4, intBorderLength, OBSTACLE_SIZE, -2));
-            Obstacles.Add(new Obstacle(32 * 3, intBorderLength - 32, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(32 * 3, intBorderLength, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(32 * 4, intBorderLength, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(32 * 3, intBorderLength - 32, OBSTACLE_SIZE, BORDER));
 
             // Bottom right corner
-            Obstacles.Add(new Obstacle(intBorderLength, intBorderLength, OBSTACLE_SIZE, -2));
-            Obstacles.Add(new Obstacle(intBorderLength - 32, intBorderLength, OBSTACLE_SIZE, -2));
-            Obstacles.Add(new Obstacle(intBorderLength, intBorderLength - 32, OBSTACLE_SIZE, -2));
+            Obstacles.Add(new Obstacle(intBorderLength, intBorderLength, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(intBorderLength - 32, intBorderLength, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(intBorderLength, intBorderLength - 32, OBSTACLE_SIZE, BORDER));
 
 
             // The pillars' health value
-            const int COBBLE = 25;
+            const Obstacle.Type COBBLE = Obstacle.Type.Stone;
 
             // Top left pillars
             for (int x = 0; x < 2; x++)
@@ -318,7 +316,7 @@ namespace ShootMeUp
 
 
             // The barriers' health
-            const int WOOD = 10;
+            const Obstacle.Type WOOD = Obstacle.Type.Wood;
 
             // Top barriers
             for (int x = 0; x < 2; x++)
@@ -354,7 +352,7 @@ namespace ShootMeUp
 
 
             // The smaller obstacles' health
-            const int DIRT = 5;
+            const Obstacle.Type DIRT = Obstacle.Type.Dirt;
 
             // Top left small obstacle
             Obstacles.Add(new Obstacle(288, 288, OBSTACLE_SIZE, DIRT));
@@ -427,13 +425,13 @@ namespace ShootMeUp
         /// <param name="entity1"></param>
         /// <param name="entity2"></param>
         /// <returns>A bool that is true if the entities are overlapping</returns>
-        public bool IsOverlapping(CFrame entity1, CFrame entity2)
+        public static bool IsOverlapping(CFrame entity1, CFrame entity2)
         {
             return entity1.DisplayedImage.DisplayRectangle.IntersectsWith(entity2.DisplayedImage.DisplayRectangle);
         }
 
         // Calcul du nouvel état après que 'interval' millisecondes se sont écoulées
-        private void NewFrame()
+        private void NewFrame(object sender, EventArgs e)
         {
             // Update the playspace if the player is in game
             if (_gamestate == Gamestate.running && _player != null)
@@ -448,7 +446,7 @@ namespace ShootMeUp
                 {
                     if (character.Lives <= 0 && character is Enemy enemy)
                     {
-                        Score += enemy.Score;
+                        Score += enemy.ScoreValue;
                     }
                     else if (character.CharType == Character.Type.Player && character.Lives <= 0)
                     {
