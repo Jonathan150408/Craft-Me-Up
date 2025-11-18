@@ -160,4 +160,13 @@
   <data name="ObstacleBush" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ObstacleBush.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="FloorGrass" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FloorGrass.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FloorSand" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FloorSand.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FloorStone" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FloorStone.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>
