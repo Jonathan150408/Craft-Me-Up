@@ -45,6 +45,7 @@
             ClientSize = new Size(528, 505);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Name = "ShootMeUp";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "Shoot Me Up";
             KeyDown += ShootMeUp_KeyDown;
             KeyUp += ShootMeUp_KeyUp;
