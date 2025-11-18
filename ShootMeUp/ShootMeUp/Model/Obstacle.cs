@@ -72,6 +72,12 @@ namespace ShootMeUp.Model
             _canCollide = true;
             _invincible = false;
 
+            HealthLabel = new Label();
+            HealthLabel.AutoSize = true;
+            HealthLabel.BackColor = Color.Transparent;
+            HealthLabel.ForeColor = Color.White;
+            HealthLabel.Font = new Font("Arial", 10, FontStyle.Bold);
+
             switch (type)
             {
                 case Type.Bush:

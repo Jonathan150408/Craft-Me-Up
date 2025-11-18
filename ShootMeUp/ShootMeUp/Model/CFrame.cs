@@ -13,6 +13,8 @@ namespace ShootMeUp.Model
     {
         public PictureBox DisplayedImage;
 
+        public Label? HealthLabel { get; set; }
+
         /// <summary>
         /// Create a new CFrame
         /// </summary>
@@ -27,6 +29,9 @@ namespace ShootMeUp.Model
             DisplayedImage.Location = new Point(X, Y);
             DisplayedImage.Width = intWidth;
             DisplayedImage.Height = intHeight;
+
+            DisplayedImage.SizeMode = PictureBoxSizeMode.StretchImage;
+            DisplayedImage.BackColor = Color.Transparent;
         }
 
         /// <summary>
@@ -42,6 +47,9 @@ namespace ShootMeUp.Model
             DisplayedImage.Location = new Point(X, Y);
             DisplayedImage.Width = intSize;
             DisplayedImage.Height = intSize;
+
+            DisplayedImage.SizeMode = PictureBoxSizeMode.StretchImage;
+            DisplayedImage.BackColor = Color.Transparent;
         }
 
         /// <summary>
@@ -54,6 +62,9 @@ namespace ShootMeUp.Model
             DisplayedImage = new PictureBox();
 
             DisplayedImage.Location = new Point(X, Y);
+
+            DisplayedImage.SizeMode = PictureBoxSizeMode.StretchImage;
+            DisplayedImage.BackColor = Color.Transparent;
         }
 
         public override string ToString()

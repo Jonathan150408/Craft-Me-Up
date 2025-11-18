@@ -19,6 +19,8 @@ namespace ShootMeUp.Model
         /// </summary>
         private Projectile.Type _ProjectileType;
 
+        private (float X, float Y) _fltPosition;
+
         /// <summary>
         /// The enemy's target
         /// </summary>
@@ -52,6 +54,9 @@ namespace ShootMeUp.Model
         {
             _Target = Target;
 
+            _fltPosition.X = x;
+            _fltPosition.Y = y;
+
             // Set up the enemy depending on the current type
             switch (type)
             {
@@ -60,6 +65,7 @@ namespace ShootMeUp.Model
                     Lives = 10;
                     _intBaseSpeed = 3;
 
+                    DisplayedImage.Image = Resources.EnemyZombie;
                     break;
                 case Character.Type.Skeleton:
                     ScoreValue = 3;
@@ -68,6 +74,7 @@ namespace ShootMeUp.Model
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Arrow;
 
+                    DisplayedImage.Image = Resources.EnemySkeleton;
                     break;
                 case Character.Type.Baby_Zombie:
                     ScoreValue = 2;
@@ -76,6 +83,7 @@ namespace ShootMeUp.Model
 
                     DamageCooldown = TimeSpan.FromSeconds(3);
 
+                    DisplayedImage.Image = Resources.EnemyZombie;
                     break;
                 case Character.Type.Blaze:
                     ScoreValue = 5;
@@ -84,6 +92,7 @@ namespace ShootMeUp.Model
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Fireball;
 
+                    DisplayedImage.Image = Resources.EnemyBlaze;
                     break;
                 case Character.Type.Zombie_Pigman:
                     ScoreValue = 5;
@@ -92,6 +101,7 @@ namespace ShootMeUp.Model
 
                     DamageCooldown = TimeSpan.FromSeconds(8);
 
+                    DisplayedImage.Image = Resources.EnemyZombiePigman;
                     break;
                 default:
                     break;
@@ -109,25 +119,18 @@ namespace ShootMeUp.Model
             bool blnColliding = false;
 
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y, DisplayedImage.Width, DisplayedImage.Height);
-            CFrame cfrY = new CFrame(DisplayedImage.Location.X, DisplayedImage.Location.Y + _intSpeed.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrX = new CFrame((int)(_fltPosition.X + _intSpeed.X), (int)_fltPosition.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrY = new CFrame((int)_fltPosition.X, (int)(_fltPosition.Y + _intSpeed.Y), DisplayedImage.Width, DisplayedImage.Height);
 
             // Check for collision
-            foreach (Character character in ShootMeUp.Characters)
+            if (ShootMeUp.IsOverlapping(cfrX, _Target))
             {
-                if (ShootMeUp.IsOverlapping(cfrX, character))
-                {
-                    blnColliding = true;
-                }
+                blnColliding = true;
+            }
 
-                if (ShootMeUp.IsOverlapping(cfrY, character))
-                {
-                    blnColliding = true;
-                }
-
-                // Early exit if collision detected
-                if (blnColliding)
-                    break;
+            if (ShootMeUp.IsOverlapping(cfrY, _Target))
+            {
+                blnColliding = true;
             }
 
             return blnColliding;
@@ -136,8 +139,8 @@ namespace ShootMeUp.Model
         public Obstacle? GetCollidingObstacle()
         {
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y, DisplayedImage.Width, DisplayedImage.Height);
-            CFrame cfrY = new CFrame(DisplayedImage.Location.X, DisplayedImage.Location.Y + _intSpeed.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrX = new CFrame((int)(_fltPosition.X + _intSpeed.X), (int)_fltPosition.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrY = new CFrame((int)_fltPosition.X, (int)(_fltPosition.Y + _intSpeed.Y), DisplayedImage.Width, DisplayedImage.Height);
 
             foreach (Obstacle obstacle in ShootMeUp.Obstacles)
             {
@@ -163,28 +166,42 @@ namespace ShootMeUp.Model
         /// <summary>
         /// Move the enemy to the player
         /// </summary>
-        /// <param name="player"></param>
-        public void Move(Character player)
+        public void Move()
         {
-            // Calculate direction to target
-            int deltaX = player.DisplayedImage.Location.X - DisplayedImage.Location.X;
-            int deltaY = player.DisplayedImage.Location.Y - DisplayedImage.Location.Y;
+            if (Lives <= 0) return;
 
-            // Normalize direction
-            int length = (int)Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+            // Calculate direction to target as floats
+            float deltaX = _Target.DisplayedImage.Location.X - _fltPosition.X;
+            float deltaY = _Target.DisplayedImage.Location.Y - _fltPosition.Y;
 
-            // Divide the delta positions by the length if it isn't equal to 0
+            float length = MathF.Sqrt(deltaX * deltaX + deltaY * deltaY);
+
             if (length != 0)
             {
-                deltaX /= length;
+                deltaX /= length; // normalize
                 deltaY /= length;
             }
 
-            // Multiply the movement variables to match the game speed
-            deltaX *= _GAMESPEED;
-            deltaY *= _GAMESPEED;
+            // Apply game speed and base speed
+            float speedX = deltaX * _GAMESPEED * _intBaseSpeed;
+            float speedY = deltaY * _GAMESPEED * _intBaseSpeed;
 
-            base.Move(deltaX, deltaY);
+            // Check collisions using integer CFrames
+            CFrame cfrX = new CFrame((int)(_fltPosition.X + speedX), (int)_fltPosition.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrY = new CFrame((int)_fltPosition.X, (int)(_fltPosition.Y + speedY), DisplayedImage.Width, DisplayedImage.Height);
+
+            (bool collX, bool collY) blnColliding = CheckObstacleCollision();
+
+            // Move only if no collision
+            if (!blnColliding.collX) _fltPosition.X += speedX;
+            if (!blnColliding.collY) _fltPosition.Y += speedY;
+
+            // Update displayed image
+            DisplayedImage.Location = new Point((int)_fltPosition.X, (int)_fltPosition.Y);
+
+            // Update speed for reference
+            _intSpeed.X = (int)speedX;
+            _intSpeed.Y = (int)speedY;
 
             // Only deal contact damage if the enemy isn't a shooter
             if (!_blnShoots)

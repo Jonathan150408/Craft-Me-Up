@@ -1,6 +1,7 @@
 using Accessibility;
 using ShootMeUp.Helpers;
 using ShootMeUp.Model;
+using ShootMeUp.Properties;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ namespace ShootMeUp
         /// <summary>
         /// The game's speed multiplier for movement, projectiles, etc.)
         /// </summary>
-        public static readonly int GAMESPEED = 6;
+        public static readonly int GAMESPEED = 1;
 
         /// <summary>
         /// Any obstacle's height and length
@@ -121,8 +122,6 @@ namespace ShootMeUp
 
         public ShootMeUp()
         {
-            this.WindowState = FormWindowState.Maximized;
-
             InitializeComponent();
             ClientSize = new Size(WIDTH, HEIGHT);
             _intWaveNumber = 1;
@@ -137,32 +136,41 @@ namespace ShootMeUp
         /// <summary>
         /// the Main method contains all the necessary stuff to run the game
         /// </summary>
-        private void Main()
+        private async void Main()
         {
-            ShowTitle();
-            StartGame();
+            // Change the background (TEMP TEST)
+            Bitmap resizedImage = new Bitmap(OBSTACLE_SIZE, OBSTACLE_SIZE);
+            using (Graphics graphics = Graphics.FromImage(resizedImage))
+            {
+                graphics.DrawImage(Resources.FloorStone, 0, 0, OBSTACLE_SIZE, OBSTACLE_SIZE);
+            }
+
+            BackgroundImage = resizedImage;
+            BackgroundImageLayout = ImageLayout.Tile;
+
+            await ShowTitle();
+            await StartGame();
         }
 
 
         /// <summary>
         /// Shows the game's title screen
         /// </summary>
-        private void ShowTitle()
+        private async Task ShowTitle()
         {
             // Remove any previous controls
-            this.Controls.Clear();
+            Controls.Clear();
 
             // Create the text and add some style to it
             _titleLabel = new Label
             {
                 Text = "Craft Me Up",
                 Font = new Font("Consolas", 48, FontStyle.Bold),
-                ForeColor = Color.Black,
+                ForeColor = Color.White,
                 AutoSize = true,
                 BackColor = Color.Transparent,
-                Left = (ClientSize.Width - PreferredSize.Width) / 2,
-                Top = ClientSize.Height / 3 - PreferredSize.Height / 2
             };
+
 
             // Create and style Play button
             _playButton = new Button
@@ -171,18 +179,28 @@ namespace ShootMeUp
                 Font = new Font("Consolas", 24, FontStyle.Bold),
                 AutoSize = true,
                 Size = PreferredSize,
-                Left = (ClientSize.Width - Width) / 2,
-                Top = _titleLabel.Bottom + 256
             };
 
             // Add controls to the form
-            this.Controls.Add(_titleLabel);
-            this.Controls.Add(_playButton);
+            Controls.Add(_titleLabel);
+            Controls.Add(_playButton);
 
-            // Add event handling
-            bool clicked = false;
+            _titleLabel.Left = (ClientSize.Width - _titleLabel.Width) / 2;
+            _titleLabel.Top = ClientSize.Height / 3 - _titleLabel.Height / 2;
 
-            //finish this method -> do while (not click)
+            _playButton.Left = (ClientSize.Width - _playButton.Width) / 2;
+
+            _playButton.Top = _titleLabel.Bottom + 256;
+
+            // Set up the button wait
+            TaskCompletionSource<bool> buttonClickedTcs = new TaskCompletionSource<bool>();
+
+            _playButton.Click += (s, e) =>
+            {
+                buttonClickedTcs.TrySetResult(true);
+            };
+
+            await buttonClickedTcs.Task;
         }
 
         /// <summary>
@@ -199,7 +217,7 @@ namespace ShootMeUp
                 Height = this.ClientRectangle.Height,
                 BackColor = Color.FromArgb(100, 100, 100, 100)
             };
-            this.Controls.Add(pauseModale);
+            Controls.Add(pauseModale);
 
             //stops the ticker to pause the game
             this.ticker.Stop();
@@ -211,8 +229,8 @@ namespace ShootMeUp
         private async Task StartGame()
         {
             // Remove title screen controls
-            this.Controls.Remove(_titleLabel);
-            this.Controls.Remove(_playButton);
+            Controls.Remove(_titleLabel);
+            Controls.Remove(_playButton);
 
             //general variables
             Score = 0;
@@ -220,6 +238,9 @@ namespace ShootMeUp
 
             // Generate the world, then start it
             GenerateWorld();
+
+            DisplayControls();
+
             await StartWaves();
         }
 
@@ -232,17 +253,19 @@ namespace ShootMeUp
             _gamestate = Gamestate.running;
 
             // Calculate the bottom-center, related to the player
-            float fltLeftBound = 32;
-            float fltRightBound = (BORDER_SIZE + 4) * 32;
+            float intLeftBound = 32;
+            float intRightBound = (BORDER_SIZE + 4) * 32;
 
-            float fltAreaCenterX = (fltLeftBound + fltRightBound) / 2.0f;
+            int intAreaCenterX = (int)((intLeftBound + intRightBound) / 2);
 
             // Center the character horizontally
-            float characterX = fltAreaCenterX - (DEFAULT_CHARACTER_SIZE / 2);
+            int intCharacterX = intAreaCenterX - (DEFAULT_CHARACTER_SIZE / 2);
 
             // Create a new player
-            _player = new Character((int)characterX, BORDER_SIZE * 32 + (32 - DEFAULT_CHARACTER_SIZE), DEFAULT_CHARACTER_SIZE, Character.Type.Player, GAMESPEED);
+            _player = new Character(intCharacterX, BORDER_SIZE * 32 + (32 - DEFAULT_CHARACTER_SIZE), DEFAULT_CHARACTER_SIZE, Character.Type.Player, GAMESPEED);
             Characters.Add( _player );
+
+            _player.DisplayedImage.BringToFront();
 
             // Create a new border, piece by piece
             for (int x = 0; x <= BORDER_SIZE; x++)
@@ -256,27 +279,26 @@ namespace ShootMeUp
             //// Creating the world environment ////
 
             // Top left corner
-            const Obstacle.Type BORDER = Obstacle.Type.Border;
+            const Obstacle.Type BEDROCK = Obstacle.Type.Bedrock;
 
-            Obstacles.Add(new Obstacle(32 * 3, 32 * 3, OBSTACLE_SIZE, BORDER));
-            Obstacles.Add(new Obstacle(32 * 4, 32 * 3, OBSTACLE_SIZE, BORDER));
-            Obstacles.Add(new Obstacle(32 * 3, 32 * 4, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(32 * 3, 32 * 3, OBSTACLE_SIZE, BEDROCK));
+            Obstacles.Add(new Obstacle(32 * 4, 32 * 3, OBSTACLE_SIZE, BEDROCK));
+            Obstacles.Add(new Obstacle(32 * 3, 32 * 4, OBSTACLE_SIZE, BEDROCK));
 
             // Top right corner
-            Obstacles.Add(new Obstacle(intBorderLength, 32 * 3, OBSTACLE_SIZE, BORDER));
-            Obstacles.Add(new Obstacle(intBorderLength - 32, 32 * 3, OBSTACLE_SIZE, BORDER));
-            Obstacles.Add(new Obstacle(intBorderLength, 32 * 4, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(intBorderLength, 32 * 3, OBSTACLE_SIZE, BEDROCK));
+            Obstacles.Add(new Obstacle(intBorderLength - 32, 32 * 3, OBSTACLE_SIZE, BEDROCK));
+            Obstacles.Add(new Obstacle(intBorderLength, 32 * 4, OBSTACLE_SIZE, BEDROCK));
 
             // Bottom left corner
-            Obstacles.Add(new Obstacle(32 * 3, intBorderLength, OBSTACLE_SIZE, BORDER));
-            Obstacles.Add(new Obstacle(32 * 4, intBorderLength, OBSTACLE_SIZE, BORDER));
-            Obstacles.Add(new Obstacle(32 * 3, intBorderLength - 32, OBSTACLE_SIZE, BORDER));
+            Obstacles.Add(new Obstacle(32 * 3, intBorderLength, OBSTACLE_SIZE, BEDROCK));
+            Obstacles.Add(new Obstacle(32 * 4, intBorderLength, OBSTACLE_SIZE, BEDROCK));
+            Obstacles.Add(new Obstacle(32 * 3, intBorderLength - 32, OBSTACLE_SIZE, BEDROCK));
 
             // Bottom right corner
-            Obstacles.Add(new Obstacle(intBorderLength, intBorderLength, OBSTACLE_SIZE, BORDER));
-            Obstacles.Add(new Obstacle(intBorderLength - 32, intBorderLength, OBSTACLE_SIZE, BORDER));
-            Obstacles.Add(new Obstacle(intBorderLength, intBorderLength - 32, OBSTACLE_SIZE, BORDER));
-
+            Obstacles.Add(new Obstacle(intBorderLength, intBorderLength, OBSTACLE_SIZE, BEDROCK));
+            Obstacles.Add(new Obstacle(intBorderLength - 32, intBorderLength, OBSTACLE_SIZE, BEDROCK));
+            Obstacles.Add(new Obstacle(intBorderLength, intBorderLength - 32, OBSTACLE_SIZE, BEDROCK));
 
             // The pillars' health value
             const Obstacle.Type COBBLE = Obstacle.Type.Stone;
@@ -376,9 +398,100 @@ namespace ShootMeUp
             Obstacles.Add(new Obstacle(intBorderLength - 352, intBorderLength - 352, OBSTACLE_SIZE, DIRT));
         }
 
-        private List<Enemy> GenerateWaves(int waveNumber)
+        private List<Enemy> GenerateWaves(int intWaveNumber)
         {
-            return new List<Enemy>();
+            if (_player == null || _player.Lives <= 0)
+                return new List<Enemy>();
+
+            /* ALL THE ENEMIES
+            new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player)
+            new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Skeleton, GAMESPEED, _player)
+            new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * 0.75), Character.Type.Baby_Zombie, GAMESPEED, _player)
+            new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Blaze, GAMESPEED, _player)
+            new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie_Pigman, GAMESPEED, _player)
+            */
+
+            List<Enemy> WaveEnemies = new List<Enemy>();
+
+            switch (intWaveNumber)
+            {
+                case 0:
+                case 1:
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+
+                    break;
+                case 2:
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+
+                    break;
+                case 3:
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Skeleton, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+
+                    break;
+                case 4:
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Skeleton, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Skeleton, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+
+                    break;
+                case 5:
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Skeleton, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * 0.75), Character.Type.Baby_Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+
+                    break;
+                case 6:
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * 0.75), Character.Type.Baby_Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * 0.75), Character.Type.Baby_Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Skeleton, GAMESPEED, _player));
+
+                    break;
+                case 7:
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Skeleton, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * 0.75), Character.Type.Baby_Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Skeleton, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * 0.75), Character.Type.Baby_Zombie, GAMESPEED, _player));
+
+                    break;
+                case 8:
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Skeleton, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Blaze, GAMESPEED, _player));
+
+                    break;
+                case 9:
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Skeleton, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * 0.75), Character.Type.Baby_Zombie, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Blaze, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * 0.75), Character.Type.Baby_Zombie, GAMESPEED, _player));
+
+                    break;
+                case 10:
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie_Pigman, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie_Pigman, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie_Pigman, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Blaze, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Blaze, GAMESPEED, _player));
+
+                    break;
+
+                default:
+                    break;
+            }
+
+            return WaveEnemies;
         }
 
         /// <summary>
@@ -407,8 +520,12 @@ namespace ShootMeUp
                     // Add the enemy to the character handler
                     Characters.Add(enemy);
 
+                    // Add it to the controls too
+                    Controls.Add(enemy.DisplayedImage);
+                    Controls.Add(enemy.HealthLabel);
+
                     // Add a wait before adding the next enemy
-                    await Task.Delay(16000 / GAMESPEED);
+                    await Task.Delay(4000 / GAMESPEED);
                 }
 
                 while (Characters.Count != 1)
@@ -430,18 +547,36 @@ namespace ShootMeUp
         /// <returns>A bool that is true if the entities are overlapping</returns>
         public static bool IsOverlapping(CFrame entity1, CFrame entity2)
         {
-            return entity1.DisplayedImage.DisplayRectangle.IntersectsWith(entity2.DisplayedImage.DisplayRectangle);
+            bool overlapX = entity1.DisplayedImage.Location.X < entity2.DisplayedImage.Location.X + entity2.DisplayedImage.Width && entity1.DisplayedImage.Location.X + entity1.DisplayedImage.Width > entity2.DisplayedImage.Location.X;
+            bool overlapY = entity1.DisplayedImage.Location.Y < entity2.DisplayedImage.Location.Y + entity2.DisplayedImage.Height && entity1.DisplayedImage.Location.Y + entity1.DisplayedImage.Height > entity2.DisplayedImage.Location.Y;
+            return overlapX && overlapY;
+
+            //return entity1.DisplayedImage.DisplayRectangle.IntersectsWith(entity2.DisplayedImage.DisplayRectangle);
         }
 
-        // Calcul du nouvel état après que 'interval' millisecondes se sont écoulées
-        private void NewFrame(object sender, EventArgs e)
+        private async void NewFrame(object sender, EventArgs e)
         {
             // Update the playspace if the player is in game
             if (_gamestate == Gamestate.running && _player != null)
             {
+                Console.WriteLine(_player.Lives);
+
                 // Remove any inactive projectiles/obstacles
-                Projectiles.RemoveAll(projectile => !projectile.Active);
-                Obstacles.RemoveAll(obstacle => obstacle.Health <= 0);
+                foreach (Projectile projectile in Projectiles.Where(p => !p.Active).ToList())
+                {
+                    Controls.Remove(projectile.DisplayedImage);
+                    projectile.DisplayedImage.Dispose();
+                    Projectiles.Remove(projectile);
+                }
+
+                foreach (Obstacle obstacle in Obstacles.Where(o => o.Health <= 0).ToList())
+                {
+                    Controls.Remove(obstacle.DisplayedImage);
+                    obstacle.DisplayedImage.Dispose();
+                    Obstacles.Remove(obstacle);
+                    if (obstacle.HealthLabel != null)
+                        obstacle.HealthLabel.Dispose();
+                }
 
                 // Change the score if there's a dead enemy
                 // Also restart the game if the player died
@@ -455,13 +590,42 @@ namespace ShootMeUp
                     {
                         _gamestate = Gamestate.paused;
 
-                        ShowTitle();
+                        await ShowTitle();
 
                         break;
                     }
                 }
 
-                Characters.RemoveAll(character => character.Lives <= 0);
+                foreach (Character character in Characters.Where(c => c.Lives <= 0).ToList())
+                {
+                    Controls.Remove(character.DisplayedImage);
+                    character.DisplayedImage.Dispose();
+                    Characters.Remove(character);
+
+                    if (character.HealthLabel != null)
+                        character.HealthLabel.Dispose();
+                }
+
+                // Show the healthbar
+                foreach (var obj in Characters.Concat<CFrame>(Obstacles))
+                {
+                    if (obj is Character ch && ch.CharType == Character.Type.Player)
+                    {
+                        // Show the player's health at the top left
+
+                    } else
+                    {
+                        if (obj.HealthLabel != null)
+                        {
+
+                            obj.HealthLabel.Text = obj.ToString();
+                            obj.HealthLabel.Location = new Point(
+                                obj.DisplayedImage.Left + (obj.DisplayedImage.Width / 2) - (obj.HealthLabel.Width / 2),
+                                obj.DisplayedImage.Top - obj.HealthLabel.Height - 2
+                            );
+                        }
+                    }
+                }
 
                 // Create movement-related boolean variables
                 bool blnLeftHeld = _keysHeldDown.Contains(Keys.A) || _keysHeldDown.Contains(Keys.Left);
@@ -511,8 +675,10 @@ namespace ShootMeUp
                 foreach (Character character in Characters)
                 {
                     if (character.CharType != Character.Type.Player && character is Enemy enemy)
-                        enemy.Move(_player);
+                        enemy.Move();
                 }
+
+
             }
         }
 
@@ -548,12 +714,13 @@ namespace ShootMeUp
                 else if (e.Button == MouseButtons.Right)
                     type = Projectile.Type.Fireball;
 
-                // Shoot an arrow using the player's shoot method and add it to the projetile list
+                // Shoot an arrow using the player's shoot method and add it to the projectile list
                 Projectile? possibleProjectile = _player.Shoot(this.PointToClient(Cursor.Position), type);
 
                 if (possibleProjectile != null)
                 {
                     Projectiles.Add(possibleProjectile);
+                    Controls.Add(possibleProjectile.DisplayedImage);
                 }
             }
         }
@@ -563,17 +730,19 @@ namespace ShootMeUp
             //displays the projectiles
             foreach (Projectile projectile in Projectiles)
             {
-                this.Controls.Add(projectile.DisplayedImage);
+                Controls.Add(projectile.DisplayedImage);
             }
             //displays the characters
             foreach (Character character in Characters)
             {
-                this.Controls.Add(character.DisplayedImage);
+                Controls.Add(character.DisplayedImage);
             }
             //displays the obstacles
             foreach (Obstacle obstacle in Obstacles)
             {
-                this.Controls.Add(obstacle.DisplayedImage);
+                Controls.Add(obstacle.DisplayedImage);
+                Controls.Add(obstacle.HealthLabel);
+
             }
         }
     }

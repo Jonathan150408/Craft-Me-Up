@@ -37,7 +37,12 @@ namespace ShootMeUp.Model
         /// <summary>
         ///  The projectile's speed in the X and Y axis
         /// </summary>
-        private (int X, int Y) _intSpeed;
+        private (float X, float Y) _fltSpeed;
+
+        /// <summary>
+        /// The projectile's true position
+        /// </summary>
+        private (float X, float Y) _fltPosition;
 
         /// <summary>
         /// The X and Y position of the target
@@ -71,8 +76,8 @@ namespace ShootMeUp.Model
             switch (type)
             {
                 case Type.Arrow:
-                    DisplayedImage.Width = ShotBy.DisplayedImage.Width/2;
-                    DisplayedImage.Height = ShotBy.DisplayedImage.Height/2;
+                    DisplayedImage.Width = ShotBy.DisplayedImage.Width;
+                    DisplayedImage.Height = ShotBy.DisplayedImage.Height;
                     DisplayedImage.Image = Resources.ProjectileArrow;
 
                     _intDamage = 1;
@@ -80,8 +85,8 @@ namespace ShootMeUp.Model
 
                     break;
                 case Type.Fireball:
-                    DisplayedImage.Width = ShotBy.DisplayedImage.Width;
-                    DisplayedImage.Height = ShotBy.DisplayedImage.Height;
+                    DisplayedImage.Width = ShotBy.DisplayedImage.Width/2;
+                    DisplayedImage.Height = ShotBy.DisplayedImage.Height/2;
                     DisplayedImage.Image = Resources.ProjectileFireball;
 
                     _intDamage = 3;
@@ -118,9 +123,33 @@ namespace ShootMeUp.Model
                 deltaY /= length;
             }
 
+            Image original = DisplayedImage.Image;
+
+            Bitmap rotated = new Bitmap(original.Width, original.Height);
+            rotated.SetResolution(original.HorizontalResolution, original.VerticalResolution);
+
+            using (Graphics g = Graphics.FromImage(rotated))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                g.TranslateTransform(original.Width / 2f, original.Height / 2f);
+                g.RotateTransform(_fltRotationAngle);
+                g.TranslateTransform(-original.Width / 2f, -original.Height / 2f);
+
+                g.DrawImage(original, 0, 0);
+            }
+
+            DisplayedImage.Image = rotated;
+
             // Store movement speed in X/Y components
-            _intSpeed.X = (int)(deltaX * _intMovementSpeed);
-            _intSpeed.Y = (int)(deltaY * _intMovementSpeed);
+            _fltSpeed.X = (deltaX * _intMovementSpeed);
+            _fltSpeed.Y = (deltaY * _intMovementSpeed);
+
+            // Store the current position in float equivalents
+            _fltPosition.X = DisplayedImage.Location.X;
+            _fltPosition.Y = DisplayedImage.Location.Y;
         }
 
         /// <summary>
@@ -137,7 +166,10 @@ namespace ShootMeUp.Model
             // Move the arrow if it wouldn't hit anything
             if (Hit == null)
             {
-                DisplayedImage.Location = new Point(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y + _intSpeed.Y);
+                _fltPosition.X += _fltSpeed.X;
+                _fltPosition.Y += _fltSpeed.Y;
+
+                DisplayedImage.Location = new Point((int)_fltPosition.X, (int)_fltPosition.Y);
             }
             else
             {
@@ -164,8 +196,8 @@ namespace ShootMeUp.Model
         public CFrame? GetColliding()
         {
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y, DisplayedImage.Width, DisplayedImage.Height);
-            CFrame cfrY = new CFrame(DisplayedImage.Location.X, DisplayedImage.Location.Y + _intSpeed.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrX = new CFrame((int)_fltPosition.X, DisplayedImage.Location.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrY = new CFrame(DisplayedImage.Location.X, (int)_fltPosition.Y, DisplayedImage.Width, DisplayedImage.Height);
 
             // Create a list that contains both obstacles and characters
             List<CFrame> listCFrames = new List<CFrame>();
@@ -174,16 +206,9 @@ namespace ShootMeUp.Model
 
             foreach (CFrame singularCFrame in listCFrames)
             {
-                // Check to see if the current CFrame is a character
-                if (singularCFrame is Character)
-                {
-                    Character character = (Character)singularCFrame;
-
-                    // Skip the ignored character
-                    if (character == _shotBy)
-                        continue;
-                }
-
+                // Skip the ignored character
+                if (singularCFrame == (CFrame)_shotBy)
+                    continue;
 
                 // Check to see if the current CFrame is an obstacle
                 if (singularCFrame is Obstacle)

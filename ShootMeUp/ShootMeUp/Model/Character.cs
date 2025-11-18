@@ -70,7 +70,16 @@ namespace ShootMeUp.Model
             _GAMESPEED = GAMESPEED;
             Lives = 10;
             _Type = type;
-            _intBaseSpeed = 1;
+            _intBaseSpeed = 4;
+
+            if (CharType != Character.Type.Player)
+            {
+                HealthLabel = new Label();
+                HealthLabel.AutoSize = true;
+                HealthLabel.BackColor = Color.Transparent;
+                HealthLabel.ForeColor = Color.White;
+                HealthLabel.Font = new Font("Arial", 10, FontStyle.Bold);
+            }
 
             ArrowCooldown = TimeSpan.FromSeconds(ArrowCooldown.TotalSeconds / GAMESPEED);
             FireballCooldown = TimeSpan.FromSeconds(FireballCooldown.TotalSeconds / GAMESPEED);
@@ -123,9 +132,6 @@ namespace ShootMeUp.Model
                 _intSpeed.X = x * _intBaseSpeed;
                 _intSpeed.Y = y * _intBaseSpeed;
 
-                // Variable used for multiplying the speed of the movement
-                float fltMultiplicator = 1;
-
                 // Variables used for speed calculation
                 int X = DisplayedImage.Location.X;
                 int Y = DisplayedImage.Location.Y;
@@ -136,19 +142,12 @@ namespace ShootMeUp.Model
                 // Check to see if the character is gonna clip in anything
                 (bool X, bool Y) blnColliding = CheckObstacleCollision();
 
-
-                // Change the multiplicator for double-axis movement
-                if (_intSpeed.X != 0 && _intSpeed.Y != 0)
-                {
-                    fltMultiplicator = 0.7f;
-                }
-
-                // Use the speed variables to change the character's position if the requirements are met.
+                // Let the player move in the given direction if there wouldn't be any collisions
                 if (!blnColliding.X)
-                    X += (int)(_intSpeed.X * fltMultiplicator);
+                    X += _intSpeed.X;
 
                 if (!blnColliding.Y)
-                    Y += (int)(_intSpeed.Y * fltMultiplicator);
+                    Y += _intSpeed.Y;
 
                 DisplayedImage.Location = new Point(X, Y);
             }
