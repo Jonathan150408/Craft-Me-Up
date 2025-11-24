@@ -32,7 +32,7 @@ namespace ShootMeUp.Model
         /// <summary>
         /// The projectile's movement speed
         /// </summary>
-        private int _intMovementSpeed;
+        private float _fltMovementSpeed;
 
         /// <summary>
         ///  The projectile's speed in the X and Y axis
@@ -40,14 +40,9 @@ namespace ShootMeUp.Model
         private (float X, float Y) _fltSpeed;
 
         /// <summary>
-        /// The projectile's true position
-        /// </summary>
-        private (float X, float Y) _fltPosition;
-
-        /// <summary>
         /// The X and Y position of the target
         /// </summary>
-        private (int X, int Y) _intTarget;
+        private (float X, float Y) _fltTarget;
 
         /// <summary>
         /// The projectile's type (arrow, ...)
@@ -55,7 +50,8 @@ namespace ShootMeUp.Model
         public enum Type
         {
             Arrow,
-            Fireball,
+            Fireball_Small,
+            Fireball_Big
         }
 
         /// <summary>
@@ -63,12 +59,12 @@ namespace ShootMeUp.Model
         /// </summary>
         public bool Active { get; set; }
 
-        public Projectile(Type type, Character ShotBy, int intTargetX, int intTargetY, int GAMESPEED) : base(ShotBy.DisplayedImage.Location.X, ShotBy.DisplayedImage.Location.Y)
+        public Projectile(Type type, Character ShotBy, float fltTargetX, float fltTargetY, int GAMESPEED) : base(ShotBy.Position.X, ShotBy.Position.Y)
         {
             _Type = type;
             _shotBy = ShotBy;
-            _intTarget.X = intTargetX;
-            _intTarget.Y = intTargetY;
+            _fltTarget.X = fltTargetX;
+            _fltTarget.Y = fltTargetY;
 
             Active = true;
 
@@ -76,40 +72,49 @@ namespace ShootMeUp.Model
             switch (type)
             {
                 case Type.Arrow:
-                    DisplayedImage.Width = ShotBy.DisplayedImage.Width;
-                    DisplayedImage.Height = ShotBy.DisplayedImage.Height;
-                    DisplayedImage.Image = Resources.ProjectileArrow;
+                    this.Size.Width = ShotBy.Size.Width;
+                    this.Size.Height = ShotBy.Size.Height;
+                    Image = Resources.ProjectileArrow;
 
                     _intDamage = 1;
-                    _intMovementSpeed = 3;
+                    _fltMovementSpeed = 3;
 
                     break;
-                case Type.Fireball:
-                    DisplayedImage.Width = ShotBy.DisplayedImage.Width/2;
-                    DisplayedImage.Height = ShotBy.DisplayedImage.Height/2;
-                    DisplayedImage.Image = Resources.ProjectileFireball;
+                case Type.Fireball_Big:
+                    this.Size.Width = ShotBy.Size.Width;
+                    this.Size.Height = ShotBy.Size.Height;
+                    Image = Resources.ProjectileFireball;
 
                     _intDamage = 3;
-                    _intMovementSpeed = 1;
+                    _fltMovementSpeed = 1;
+
+                    break;
+                case Type.Fireball_Small:
+                    this.Size.Width = ShotBy.Size.Width/2;
+                    this.Size.Height = ShotBy.Size.Height/2;
+                    Image = Resources.ProjectileFireball;
+
+                    _intDamage = 3;
+                    _fltMovementSpeed = 1;
 
                     break;
                 default:
-                    DisplayedImage.Width = ShotBy.DisplayedImage.Width;
-                    DisplayedImage.Height = ShotBy.DisplayedImage.Height;
-                    DisplayedImage.Image = Resources.CharacterPlayer;
+                    this.Size.Width = ShotBy.Size.Width;
+                    this.Size.Height = ShotBy.Size.Height;
+                    Image = Resources.CharacterPlayer;
 
                     _intDamage = 0;
-                    _intMovementSpeed = 0;
+                    _fltMovementSpeed = 0;
                     break;
             }
 
 
             // Multiply the movement speed by the game speed
-            _intMovementSpeed *= GAMESPEED;
+            _fltMovementSpeed *= GAMESPEED;
 
             // Calculate direction to target
-            float deltaX = _intTarget.X - DisplayedImage.Location.X;
-            float deltaY = _intTarget.Y - DisplayedImage.Location.Y;
+            float deltaX = _fltTarget.X - Position.X;
+            float deltaY = _fltTarget.Y - Position.Y;
 
             // Calculate rotation angle in degrees
             // We add 90 here because the image faces upwards
@@ -123,7 +128,7 @@ namespace ShootMeUp.Model
                 deltaY /= length;
             }
 
-            Image original = DisplayedImage.Image;
+            Image original = Image;
 
             Bitmap rotated = new Bitmap(original.Width, original.Height);
             rotated.SetResolution(original.HorizontalResolution, original.VerticalResolution);
@@ -141,15 +146,11 @@ namespace ShootMeUp.Model
                 g.DrawImage(original, 0, 0);
             }
 
-            DisplayedImage.Image = rotated;
+            Image = rotated;
 
             // Store movement speed in X/Y components
-            _fltSpeed.X = (deltaX * _intMovementSpeed);
-            _fltSpeed.Y = (deltaY * _intMovementSpeed);
-
-            // Store the current position in float equivalents
-            _fltPosition.X = DisplayedImage.Location.X;
-            _fltPosition.Y = DisplayedImage.Location.Y;
+            _fltSpeed.X = (deltaX * _fltMovementSpeed);
+            _fltSpeed.Y = (deltaY * _fltMovementSpeed);
         }
 
         /// <summary>
@@ -166,10 +167,8 @@ namespace ShootMeUp.Model
             // Move the arrow if it wouldn't hit anything
             if (Hit == null)
             {
-                _fltPosition.X += _fltSpeed.X;
-                _fltPosition.Y += _fltSpeed.Y;
-
-                DisplayedImage.Location = new Point((int)_fltPosition.X, (int)_fltPosition.Y);
+                Position.X += _fltSpeed.X;
+                Position.Y += _fltSpeed.Y;
             }
             else
             {
@@ -196,8 +195,8 @@ namespace ShootMeUp.Model
         public CFrame? GetColliding()
         {
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame((int)_fltPosition.X, DisplayedImage.Location.Y, DisplayedImage.Width, DisplayedImage.Height);
-            CFrame cfrY = new CFrame(DisplayedImage.Location.X, (int)_fltPosition.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
+            CFrame cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
 
             // Create a list that contains both obstacles and characters
             List<CFrame> listCFrames = new List<CFrame>();

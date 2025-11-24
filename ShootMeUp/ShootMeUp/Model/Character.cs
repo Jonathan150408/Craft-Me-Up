@@ -165,7 +165,7 @@ namespace ShootMeUp.Model
 
                     return new Projectile(type, this, target.X, target.Y, _GAMESPEED);
                 }
-                else if (type == Projectile.Type.Fireball && now - _lastFireballShotTime >= FireballCooldown)
+                else if (type == Projectile.Type.Fireball_Big && now - _lastFireballShotTime >= FireballCooldown)
                 {
                     _lastFireballShotTime = now;
 

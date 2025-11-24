@@ -61,14 +61,14 @@ namespace ShootMeUp.Model
                 case Character.Type.Zombie:
                     ScoreValue = 1;
                     Lives = 10;
-                    _fltBaseSpeed = 3;
+                    _fltBaseSpeed = 2f / 5f;
 
                     Image = Resources.EnemyZombie;
                     break;
                 case Character.Type.Skeleton:
                     ScoreValue = 3;
                     Lives = 5;
-                    _fltBaseSpeed = -2;
+                    _fltBaseSpeed = -0.5f;
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Arrow;
 
@@ -77,7 +77,7 @@ namespace ShootMeUp.Model
                 case Character.Type.Baby_Zombie:
                     ScoreValue = 2;
                     Lives = 3;
-                    _fltBaseSpeed = 4;
+                    _fltBaseSpeed = 1.5f;
 
                     DamageCooldown = TimeSpan.FromSeconds(3);
 
@@ -86,16 +86,16 @@ namespace ShootMeUp.Model
                 case Character.Type.Blaze:
                     ScoreValue = 5;
                     Lives = 10;
-                    _fltBaseSpeed = -1;
+                    _fltBaseSpeed = -0.25f;
                     _blnShoots = true;
-                    _ProjectileType = Projectile.Type.Fireball;
+                    _ProjectileType = Projectile.Type.Fireball_Small;
 
                     Image = Resources.EnemyBlaze;
                     break;
                 case Character.Type.Zombie_Pigman:
                     ScoreValue = 5;
                     Lives = 20;
-                    _fltBaseSpeed = 1;
+                    _fltBaseSpeed = 1f / 5f;
 
                     DamageCooldown = TimeSpan.FromSeconds(8);
 
@@ -142,8 +142,8 @@ namespace ShootMeUp.Model
 
             foreach (Obstacle obstacle in ShootMeUp.Obstacles)
             {
-                // Skip the current obstacle if it has no collisions
-                if (!obstacle.CanCollide)
+                // Skip the current obstacle if it has no collisions or is invincible
+                if (!obstacle.CanCollide || obstacle.Invincible)
                     continue;
 
 
@@ -233,7 +233,7 @@ namespace ShootMeUp.Model
             else
             {
                 // Skip the update if the enemy is on damage cooldown
-                if ((_ProjectileType == Projectile.Type.Arrow && DateTime.Now - _lastArrowShotTime < ArrowCooldown) || (_ProjectileType == Projectile.Type.Fireball && DateTime.Now - _lastFireballShotTime < FireballCooldown))
+                if ((_ProjectileType == Projectile.Type.Arrow && DateTime.Now - _lastArrowShotTime < ArrowCooldown) || (_ProjectileType == Projectile.Type.Fireball_Small && DateTime.Now - _lastFireballShotTime < FireballCooldown))
                     return;
 
                 // Stop trying to shoot if the player doesn't exist
@@ -250,7 +250,7 @@ namespace ShootMeUp.Model
                     // Record the shot time
                     if (_ProjectileType == Projectile.Type.Arrow)
                         _lastArrowShotTime = DateTime.Now;
-                    else if (_ProjectileType == Projectile.Type.Fireball)
+                    else if (_ProjectileType == Projectile.Type.Fireball_Small  )
                         _lastFireballShotTime = DateTime.Now;
                 }
             }
