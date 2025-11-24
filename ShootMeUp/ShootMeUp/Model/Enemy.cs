@@ -19,8 +19,6 @@ namespace ShootMeUp.Model
         /// </summary>
         private Projectile.Type _ProjectileType;
 
-        private (float X, float Y) _fltPosition;
-
         /// <summary>
         /// The enemy's target
         /// </summary>
@@ -40,6 +38,8 @@ namespace ShootMeUp.Model
         /// The score that the enemy gives when it dies
         /// </summary>
         public int ScoreValue { get; private set; }
+
+        public (float X, float Y) _fltPosition;
 
         /// <summary>
         /// The shooting enemy's constructor

@@ -516,6 +516,8 @@ namespace ShootMeUp
 
                     // Put the enemy in the right spot
                     enemy.DisplayedImage.Location = new Point(512 + OBSTACLE_SIZE/2 + enemy.DisplayedImage.Size.Width / 4, 512 + OBSTACLE_SIZE / 2 + enemy.DisplayedImage.Size.Height / 4);
+                    enemy._fltPosition.X = 512 + OBSTACLE_SIZE / 2 + enemy.DisplayedImage.Size.Width / 4;
+                    enemy._fltPosition.Y = 512 + OBSTACLE_SIZE / 2 + enemy.DisplayedImage.Size.Height / 4;
 
                     // Add the enemy to the character handler
                     Characters.Add(enemy);
