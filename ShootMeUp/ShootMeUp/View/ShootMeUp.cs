@@ -123,9 +123,10 @@ namespace ShootMeUp
         public ShootMeUp()
         {
             InitializeComponent();
+            this.DoubleBuffered = true;
             ClientSize = new Size(WIDTH, HEIGHT);
             _intWaveNumber = 1;
-
+            this._gamestate = Gamestate.paused;
             // Create a new list of keys held down
             _keysHeldDown = new List<Keys>();
 
@@ -136,7 +137,7 @@ namespace ShootMeUp
         /// <summary>
         /// the Main method contains all the necessary stuff to run the game
         /// </summary>
-        private async void Main()
+        private void Main()
         {
             // Change the background (TEMP TEST)
             Bitmap resizedImage = new Bitmap(OBSTACLE_SIZE, OBSTACLE_SIZE);
@@ -148,15 +149,15 @@ namespace ShootMeUp
             BackgroundImage = resizedImage;
             BackgroundImageLayout = ImageLayout.Tile;
 
-            await ShowTitle();
-            await StartGame();
+            ShowTitle();
+            //StartGame();
         }
 
 
         /// <summary>
         /// Shows the game's title screen
         /// </summary>
-        private async Task ShowTitle()
+        private void ShowTitle()
         {
             // Remove any previous controls
             Controls.Clear();
@@ -193,14 +194,12 @@ namespace ShootMeUp
             _playButton.Top = _titleLabel.Bottom + 256;
 
             // Set up the button wait
-            TaskCompletionSource<bool> buttonClickedTcs = new TaskCompletionSource<bool>();
+            _playButton.Click += _playButton_Click;
+        }
 
-            _playButton.Click += (s, e) =>
-            {
-                buttonClickedTcs.TrySetResult(true);
-            };
-
-            await buttonClickedTcs.Task;
+        private void _playButton_Click(object? sender, EventArgs e)
+        {
+            StartGame();
         }
 
         /// <summary>
@@ -563,14 +562,14 @@ namespace ShootMeUp
             {
                 Console.WriteLine(_player.Lives);
 
-                // Remove any inactive projectiles/obstacles
+                // Remove any inactive projectiles
                 foreach (Projectile projectile in Projectiles.Where(p => !p.Active).ToList())
                 {
                     Controls.Remove(projectile.DisplayedImage);
                     projectile.DisplayedImage.Dispose();
                     Projectiles.Remove(projectile);
                 }
-
+                // Remove any "death" obstacle
                 foreach (Obstacle obstacle in Obstacles.Where(o => o.Health <= 0).ToList())
                 {
                     Controls.Remove(obstacle.DisplayedImage);
@@ -579,6 +578,7 @@ namespace ShootMeUp
                     if (obstacle.HealthLabel != null)
                         obstacle.HealthLabel.Dispose();
                 }
+                
 
                 // Change the score if there's a dead enemy
                 // Also restart the game if the player died
@@ -592,7 +592,7 @@ namespace ShootMeUp
                     {
                         _gamestate = Gamestate.paused;
 
-                        await ShowTitle();
+                        ShowTitle();
 
                         break;
                     }
@@ -632,7 +632,7 @@ namespace ShootMeUp
                 // Create movement-related boolean variables
                 bool blnLeftHeld = _keysHeldDown.Contains(Keys.A) || _keysHeldDown.Contains(Keys.Left);
                 bool blnRightHeld = _keysHeldDown.Contains(Keys.D) || _keysHeldDown.Contains(Keys.Right);
-                bool blnUpHeld = _keysHeldDown.Contains(Keys.W) ||      _keysHeldDown.Contains(Keys.Up);
+                bool blnUpHeld = _keysHeldDown.Contains(Keys.W) || _keysHeldDown.Contains(Keys.Up);
                 bool blnDownHeld = _keysHeldDown.Contains(Keys.S) || _keysHeldDown.Contains(Keys.Down);
 
                 // Create movement-related int variables
@@ -641,45 +641,32 @@ namespace ShootMeUp
 
                 // Increment/decrement the movement-related int variables based off of the boolean variables
                 if (blnLeftHeld)
-                {
                     intMoveX -= 1;
-                }
-
                 if (blnRightHeld)
-                {
                     intMoveX += 1;
-                }
-
                 if (blnUpHeld)
-                {
                     intMoveY -= 1;
-                }
-
                 if (blnDownHeld)
-                {
                     intMoveY += 1;
-                }
 
                 // Multiple the movement-related int variables by the game speed
                 intMoveX *= GAMESPEED;
                 intMoveY *= GAMESPEED;
+
+                //redraws the form ? I hope
+                //this.Invalidate();
 
                 // Move the player
                 _player.Move(intMoveX, intMoveY);
 
                 // Update the projectiles
                 foreach (Projectile projectile in Projectiles)
-                {
                     projectile.Update();
-                }
 
                 // Update the enemies
                 foreach (Character character in Characters)
-                {
-                    if (character.CharType != Character.Type.Player && character is Enemy enemy)
+                    if (character is Enemy enemy)
                         enemy.Move();
-                }
-
 
             }
         }
