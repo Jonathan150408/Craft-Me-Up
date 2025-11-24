@@ -11,9 +11,30 @@ namespace ShootMeUp.Model
     /// </summary>
     public class CFrame
     {
-        public PictureBox DisplayedImage;
+        /// <summary>
+        /// The current object's position
+        /// </summary>
+        public (float X, float Y) Position;
 
-        public Label? HealthLabel { get; set; }
+        /// <summary>
+        /// The current object's size
+        /// </summary>
+        public (int Width, int Height) Size;
+
+        /// <summary>
+        /// Create a new CFrame
+        /// </summary>
+        /// <param name="X">The x pos</param>
+        /// <param name="Y">The y pos</param>
+        public CFrame(float X, float Y) : this(X, Y, 0, 0) { }
+
+        /// <summary>
+        /// Create a new CFrame
+        /// </summary>
+        /// <param name="X">The x pos</param>
+        /// <param name="Y">The y pos</param>
+        /// <param name="intSize">The x/y size</param>
+        public CFrame(float X, float Y, int intSize) : this(X, Y, intSize, intSize) { }
 
         /// <summary>
         /// Create a new CFrame
@@ -22,54 +43,17 @@ namespace ShootMeUp.Model
         /// <param name="Y">The y pos</param>
         /// <param name="intWidth">The width</param>
         /// <param name="intHeight">The height</param>
-        public CFrame(int X, int Y, int intWidth, int intHeight)
+        public CFrame(float X, float Y, int intWidth, int intHeight)
         {
-            DisplayedImage = new PictureBox();
-
-            DisplayedImage.Location = new Point(X, Y);
-            DisplayedImage.Width = intWidth;
-            DisplayedImage.Height = intHeight;
-
-            DisplayedImage.SizeMode = PictureBoxSizeMode.StretchImage;
-            DisplayedImage.BackColor = Color.Transparent;
-        }
-
-        /// <summary>
-        /// Create a new CFrame
-        /// </summary>
-        /// <param name="X">The x pos</param>
-        /// <param name="Y">The y pos</param>
-        /// <param name="intSize">The x/y size</param>
-        public CFrame(int X, int Y, int intSize)
-        {
-            DisplayedImage = new PictureBox();
-
-            DisplayedImage.Location = new Point(X, Y);
-            DisplayedImage.Width = intSize;
-            DisplayedImage.Height = intSize;
-
-            DisplayedImage.SizeMode = PictureBoxSizeMode.StretchImage;
-            DisplayedImage.BackColor = Color.Transparent;
-        }
-
-        /// <summary>
-        /// Create a new CFrame
-        /// </summary>
-        /// <param name="X">The x pos</param>
-        /// <param name="Y">The y pos</param>
-        public CFrame(int X, int Y)
-        {
-            DisplayedImage = new PictureBox();
-
-            DisplayedImage.Location = new Point(X, Y);
-
-            DisplayedImage.SizeMode = PictureBoxSizeMode.StretchImage;
-            DisplayedImage.BackColor = Color.Transparent;
+            Position.X = X;
+            Position.Y = Y;
+            this.Size.Width = intWidth;
+            this.Size.Height = intHeight;
         }
 
         public override string ToString()
         {
-            return $"{{{DisplayedImage.Location.X},{DisplayedImage.Location.Y}}},{{{DisplayedImage.Height},{DisplayedImage.Width}}}";
+            return $"{{{Position.X},{Position.Y}}},{{{this.Size.Height},{this.Size.Width}}}";
         }
     }
 }
