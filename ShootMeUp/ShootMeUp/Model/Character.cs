@@ -15,12 +15,12 @@ namespace ShootMeUp.Model
         /// <summary>
         /// The character's speed in the X and Y direction
         /// </summary>
-        protected (int X, int Y) _intSpeed;
+        protected (float X, float Y) _fltSpeed;
 
         /// <summary>
         /// The character's base speed
         /// </summary>
-        protected int _intBaseSpeed;
+        protected float _fltBaseSpeed;
 
         // Variables used for projectile cooldown
         protected DateTime _lastArrowShotTime = DateTime.MinValue;
@@ -65,27 +65,17 @@ namespace ShootMeUp.Model
         /// <param name="length">The length of the character</param>
         /// <param name="type">The character's type (player, enemy)</param>
         /// <param name="GAMESPEED">The game's speed</param>
-        public Character(int x, int y, int length, Character.Type type, int GAMESPEED) : base(x, y, length)
+        public Character(float x, float y, int length, Character.Type type, int GAMESPEED) : base(x, y, length)
         {
             _GAMESPEED = GAMESPEED;
             Lives = 10;
             _Type = type;
-            _intBaseSpeed = 4;
-
-            if (CharType != Character.Type.Player)
-            {
-                HealthLabel = new Label();
-                HealthLabel.AutoSize = true;
-                HealthLabel.BackColor = Color.Transparent;
-                HealthLabel.ForeColor = Color.White;
-                HealthLabel.Font = new Font("Arial", 10, FontStyle.Bold);
-            }
+            _fltBaseSpeed = 1;
 
             ArrowCooldown = TimeSpan.FromSeconds(ArrowCooldown.TotalSeconds / GAMESPEED);
             FireballCooldown = TimeSpan.FromSeconds(FireballCooldown.TotalSeconds / GAMESPEED);
 
-            if (_Type == Type.Player)
-                DisplayedImage.Image = Resources.CharacterPlayer;            
+            Image = Resources.CharacterPlayer;            
         }
 
         protected (bool X, bool Y) CheckObstacleCollision()
@@ -93,8 +83,8 @@ namespace ShootMeUp.Model
             (bool X, bool Y) blnColliding = (false, false);
 
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame(DisplayedImage.Location.X + _intSpeed.X, DisplayedImage.Location.Y, DisplayedImage.Width, DisplayedImage.Height);
-            CFrame cfrY = new CFrame(DisplayedImage.Location.X, DisplayedImage.Location.Y + _intSpeed.Y, DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrX = new CFrame(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
+            CFrame cfrY = new CFrame(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
 
             foreach (Obstacle obstacle in ShootMeUp.Obstacles)
             {
@@ -125,16 +115,16 @@ namespace ShootMeUp.Model
         /// </summary>
         /// <param name="x">The movement on the x axis</param>
         /// <param name="y">The movement on the y axis</param>
-        public void Move(int x, int y)
+        public void Move(float x, float y)
         {
             if (Lives > 0)
             {
-                _intSpeed.X = x * _intBaseSpeed;
-                _intSpeed.Y = y * _intBaseSpeed;
+                _fltSpeed.X = x * _fltBaseSpeed;
+                _fltSpeed.Y = y * _fltBaseSpeed;
 
                 // Variables used for speed calculation
-                int X = DisplayedImage.Location.X;
-                int Y = DisplayedImage.Location.Y;
+                float X = Position.X;
+                float Y = Position.Y;
 
                 // Get the current CFrame
                 CFrame currentCFrame = (CFrame)this;
@@ -144,12 +134,13 @@ namespace ShootMeUp.Model
 
                 // Let the player move in the given direction if there wouldn't be any collisions
                 if (!blnColliding.X)
-                    X += _intSpeed.X;
+                    X += _fltSpeed.X;
 
                 if (!blnColliding.Y)
-                    Y += _intSpeed.Y;
+                    Y += _fltSpeed.Y;
 
-                DisplayedImage.Location = new Point(X, Y);
+                Position.X = X;
+                Position.Y = Y;
             }
         }
 
@@ -167,30 +158,18 @@ namespace ShootMeUp.Model
             // Shoot an arrow from the player's position to the cursor's position if they are alive
             if (Lives > 0)
             {
-                // Create variables used for the projectile's generation
-                int intProjectileX = DisplayedImage.Location.X;
-                int intProjectileY = DisplayedImage.Location.Y;
-
-                int intTargetX = target.X;
-                int intTargetY = target.Y;
-
-                // Get the character's center
-                int intCharacterCenterX = DisplayedImage.Location.X + (DisplayedImage.Width / 2);
-                int intCharacterCenterY = DisplayedImage.Location.Y + (DisplayedImage.Height / 2);
-
-
                 // Send the corresponding projectile if the character is allowed to
                 if (type == Projectile.Type.Arrow && now - _lastArrowShotTime >= ArrowCooldown)
                 {
                     _lastArrowShotTime = now;
 
-                    return new Projectile(type, this, intTargetX, intTargetY, _GAMESPEED);
+                    return new Projectile(type, this, target.X, target.Y, _GAMESPEED);
                 }
                 else if (type == Projectile.Type.Fireball && now - _lastFireballShotTime >= FireballCooldown)
                 {
                     _lastFireballShotTime = now;
 
-                    return new Projectile(type, this, intTargetX, intTargetY, _GAMESPEED);
+                    return new Projectile(type, this, target.X, target.Y, _GAMESPEED);
                 }
             }
 
@@ -207,7 +186,7 @@ namespace ShootMeUp.Model
         public override string ToString()
         {
             if (Lives > 0)
-                return $"{((int)((double)Lives)).ToString()} HP";
+                return $"{Lives} HP";
             else
                 return "";
         }
