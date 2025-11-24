@@ -39,8 +39,6 @@ namespace ShootMeUp.Model
         /// </summary>
         public int ScoreValue { get; private set; }
 
-        public (float X, float Y) _fltPosition;
-
         /// <summary>
         /// The shooting enemy's constructor
         /// </summary>
@@ -50,12 +48,12 @@ namespace ShootMeUp.Model
         /// <param name="type">The enemy's type (zombie, skeleton, ...)</param>
         /// <param name="GAMESPEED">The game's speed</param>
         /// <param name="Target">The enemy's target</param>
-        public Enemy(int x, int y, int length, Character.Type type, int GAMESPEED, Character Target) : base(x, y, length, type, GAMESPEED)
+        public Enemy(float x, float y, int length, Character.Type type, int GAMESPEED, Character Target) : base(x, y, length, type, GAMESPEED)
         {
             _Target = Target;
 
-            _fltPosition.X = x;
-            _fltPosition.Y = y;
+            Position.X = x;
+            Position.Y = y;
 
             // Set up the enemy depending on the current type
             switch (type)
@@ -63,45 +61,45 @@ namespace ShootMeUp.Model
                 case Character.Type.Zombie:
                     ScoreValue = 1;
                     Lives = 10;
-                    _intBaseSpeed = 3;
+                    _fltBaseSpeed = 3;
 
-                    DisplayedImage.Image = Resources.EnemyZombie;
+                    Image = Resources.EnemyZombie;
                     break;
                 case Character.Type.Skeleton:
                     ScoreValue = 3;
                     Lives = 5;
-                    _intBaseSpeed = -2;
+                    _fltBaseSpeed = -2;
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Arrow;
 
-                    DisplayedImage.Image = Resources.EnemySkeleton;
+                    Image = Resources.EnemySkeleton;
                     break;
                 case Character.Type.Baby_Zombie:
                     ScoreValue = 2;
                     Lives = 3;
-                    _intBaseSpeed = 4;
+                    _fltBaseSpeed = 4;
 
                     DamageCooldown = TimeSpan.FromSeconds(3);
 
-                    DisplayedImage.Image = Resources.EnemyZombie;
+                    Image = Resources.EnemyZombie;
                     break;
                 case Character.Type.Blaze:
                     ScoreValue = 5;
                     Lives = 10;
-                    _intBaseSpeed = -1;
+                    _fltBaseSpeed = -1;
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Fireball;
 
-                    DisplayedImage.Image = Resources.EnemyBlaze;
+                    Image = Resources.EnemyBlaze;
                     break;
                 case Character.Type.Zombie_Pigman:
                     ScoreValue = 5;
                     Lives = 20;
-                    _intBaseSpeed = 1;
+                    _fltBaseSpeed = 1;
 
                     DamageCooldown = TimeSpan.FromSeconds(8);
 
-                    DisplayedImage.Image = Resources.EnemyZombiePigman;
+                    Image = Resources.EnemyZombiePigman;
                     break;
                 default:
                     break;
@@ -119,8 +117,8 @@ namespace ShootMeUp.Model
             bool blnColliding = false;
 
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame((int)(_fltPosition.X + _intSpeed.X), (int)_fltPosition.Y, DisplayedImage.Width, DisplayedImage.Height);
-            CFrame cfrY = new CFrame((int)_fltPosition.X, (int)(_fltPosition.Y + _intSpeed.Y), DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
+            CFrame cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
 
             // Check for collision
             if (ShootMeUp.IsOverlapping(cfrX, _Target))
@@ -139,8 +137,8 @@ namespace ShootMeUp.Model
         public Obstacle? GetCollidingObstacle()
         {
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame((int)(_fltPosition.X + _intSpeed.X), (int)_fltPosition.Y, DisplayedImage.Width, DisplayedImage.Height);
-            CFrame cfrY = new CFrame((int)_fltPosition.X, (int)(_fltPosition.Y + _intSpeed.Y), DisplayedImage.Width, DisplayedImage.Height);
+            CFrame cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
+            CFrame cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
 
             foreach (Obstacle obstacle in ShootMeUp.Obstacles)
             {
@@ -171,8 +169,8 @@ namespace ShootMeUp.Model
             if (Lives <= 0) return;
 
             // Calculate direction to target as floats
-            float deltaX = _Target.DisplayedImage.Location.X - _fltPosition.X;
-            float deltaY = _Target.DisplayedImage.Location.Y - _fltPosition.Y;
+            float deltaX = _Target.Position.X - Position.X;
+            float deltaY = _Target.Position.Y - Position.Y;
 
             float length = MathF.Sqrt(deltaX * deltaX + deltaY * deltaY);
 
@@ -183,25 +181,18 @@ namespace ShootMeUp.Model
             }
 
             // Apply game speed and base speed
-            float speedX = deltaX * _GAMESPEED * _intBaseSpeed;
-            float speedY = deltaY * _GAMESPEED * _intBaseSpeed;
-
-            // Check collisions using integer CFrames
-            CFrame cfrX = new CFrame((int)(_fltPosition.X + speedX), (int)_fltPosition.Y, DisplayedImage.Width, DisplayedImage.Height);
-            CFrame cfrY = new CFrame((int)_fltPosition.X, (int)(_fltPosition.Y + speedY), DisplayedImage.Width, DisplayedImage.Height);
+            float speedX = deltaX * _GAMESPEED * _fltBaseSpeed;
+            float speedY = deltaY * _GAMESPEED * _fltBaseSpeed;
 
             (bool collX, bool collY) blnColliding = CheckObstacleCollision();
 
             // Move only if no collision
-            if (!blnColliding.collX) _fltPosition.X += speedX;
-            if (!blnColliding.collY) _fltPosition.Y += speedY;
-
-            // Update displayed image
-            DisplayedImage.Location = new Point((int)_fltPosition.X, (int)_fltPosition.Y);
+            if (!blnColliding.collX) Position.X += speedX;
+            if (!blnColliding.collY) Position.Y += speedY;
 
             // Update speed for reference
-            _intSpeed.X = (int)speedX;
-            _intSpeed.Y = (int)speedY;
+            _fltSpeed.X = (int)speedX;
+            _fltSpeed.Y = (int)speedY;
 
             // Only deal contact damage if the enemy isn't a shooter
             if (!_blnShoots)
@@ -277,14 +268,14 @@ namespace ShootMeUp.Model
             // Shoot an arrow from the player's position to the cursor's position if they are alive
             if (Lives > 0)
             {
-                int intTargetX = _Target.DisplayedImage.Location.X;
-                int intTargetY = _Target.DisplayedImage.Location.Y;
+                float fltTargetX = _Target.Position.X;
+                float fltTargetY = _Target.Position.Y;
 
                 // Slow the projectile down by dividing its GAMESPEED reference by 2
                 int intFakeGameSpeed = _GAMESPEED/2;
 
                 // Fire a new projectile if possible
-                return new Projectile(_ProjectileType, this, intTargetX, intTargetY, intFakeGameSpeed);
+                return new(_ProjectileType, this, fltTargetX, fltTargetY, intFakeGameSpeed);
             }
 
             return null;
@@ -296,16 +287,12 @@ namespace ShootMeUp.Model
         /// <param name="singularCFrame">The given CFrame</param>
         public void Damage(CFrame singularCFrame)
         {
-            if (singularCFrame is Character)
+            if (singularCFrame is Character player)
             {
-                Character player = (Character)singularCFrame;
-
                 player.Lives -= 1;
             }
-            else if (singularCFrame is Obstacle)
+            else if (singularCFrame is Obstacle obstacle)
             {
-                Obstacle obstacle = (Obstacle)singularCFrame;
-
                 obstacle.Health -= 1;
 
             }
