@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ShootMeUp.Properties;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,6 +21,11 @@ namespace ShootMeUp.Model
         /// The current object's size
         /// </summary>
         public (int Width, int Height) Size;
+
+        /// <summary>
+        /// The current object's drawn image
+        /// </summary>
+        public Bitmap Image { get; protected set; }
 
         /// <summary>
         /// Create a new CFrame
@@ -49,6 +55,9 @@ namespace ShootMeUp.Model
             Position.Y = Y;
             this.Size.Width = intWidth;
             this.Size.Height = intHeight;
+
+            // Default image (if nothing changes it)
+            Image = Resources.EnemyZombiePigman;
         }
 
         public override string ToString()

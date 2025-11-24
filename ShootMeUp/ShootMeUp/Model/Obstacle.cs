@@ -54,8 +54,6 @@ namespace ShootMeUp.Model
             get { return _invincible; }
         }
 
-        public Bitmap Image { get; private set; }
-
         /// <summary>
         /// The obstacle constructor
         /// </summary>
@@ -109,8 +107,6 @@ namespace ShootMeUp.Model
                     Health = 25;
                     break;
                 default:
-                    Image = Resources.CharacterPlayer;
-
                     _invincible = true;
                     _canCollide = false;
                     break;
