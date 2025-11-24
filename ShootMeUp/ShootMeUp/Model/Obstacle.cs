@@ -34,12 +34,7 @@ namespace ShootMeUp.Model
         /// <summary>
         /// The obstacle's health (set to int.MaxValue if invincible)
         /// </summary>
-        private int _health;
-        public int Health
-        {
-            get { return _health; }
-            set { _health = value; }
-        }
+        public int Health { get; set; }
 
         /// <summary>
         /// Whether the obstacle has collisions or not
@@ -59,68 +54,63 @@ namespace ShootMeUp.Model
             get { return _invincible; }
         }
 
+        public Bitmap Image { get; private set; }
+
         /// <summary>
         /// The obstacle constructor
         /// </summary>
         /// <param name="x">The obstacle's X pos</param>
         /// <param name="y">The obstacle's Y pos</param>
         /// <param name="intLength">The obstacle's Length</param>
-        /// <param name="intHealth">The obstacle's max health</param>
-        public Obstacle(int x, int y, int intLength, Obstacle.Type type) : base(x, y, intLength)
+        /// <param name="type">The obstacle's type (Bush, Border, ...)</param>
+        public Obstacle(float x, float y, int intLength, Obstacle.Type type) : base(x, y, intLength)
         {
-            //default values
-            _canCollide = true;
-            _invincible = false;
-
-            HealthLabel = new Label();
-            HealthLabel.AutoSize = true;
-            HealthLabel.BackColor = Color.Transparent;
-            HealthLabel.ForeColor = Color.White;
-            HealthLabel.Font = new Font("Arial", 10, FontStyle.Bold);
 
             switch (type)
             {
                 case Type.Bush:
-                    DisplayedImage.Image = Resources.ObstacleBush;
+                    Image = Resources.ObstacleBush;
 
                     _canCollide = false;
-                    _health = int.MaxValue;
+                    Health = int.MaxValue;
                     break;
                 case Type.Bedrock:
-                    DisplayedImage.Image = Resources.ObstacleUnbreakable;
+                    Image = Resources.ObstacleUnbreakable;
 
                     _invincible = true;
-                    _health = int.MaxValue;
+                    Health = int.MaxValue;
                     break;
                 case Type.Border:
-                    DisplayedImage.Image = Resources.ObstacleBorder;
+                    Image = Resources.ObstacleBorder;
 
                     _invincible = true;
-                    _health = int.MaxValue;
+                    Health = int.MaxValue;
                     break;
                 case Type.Spawner:
-                    DisplayedImage.Image = Resources.ObstacleSpawner;
+                    Image = Resources.ObstacleSpawner;
 
                     _invincible = true;
-                    _health = int.MaxValue;
+                    Health = int.MaxValue;
                     _canCollide = false;
                     break;
                 case Type.Dirt:
-                    DisplayedImage.Image = Resources.ObstacleWeak;
+                    Image = Resources.ObstacleWeak;
 
-                    _health = 5;
+                    Health = 5;
                     break;
                 case Type.Wood:
-                    DisplayedImage.Image = Resources.ObstacleNormal;
+                    Image = Resources.ObstacleNormal;
 
-                    _health = 10;
+                    Health = 10;
                     break;
                 case Type.Stone:
-                    DisplayedImage.Image = Resources.ObstacleStrong;
+                    Image = Resources.ObstacleStrong;
 
-                    _health = 25;
+                    Health = 25;
                     break;
                 default:
+                    Image = Resources.CharacterPlayer;
+
                     _invincible = true;
                     _canCollide = false;
                     break;
@@ -138,8 +128,8 @@ namespace ShootMeUp.Model
                 return "";
             }
 
-            if (_health > 0)
-                return $"{((int)((double)_health)).ToString()} HP";
+            if (Health > 0)
+                return $"{Health} HP";
             else
                 return "";
         }
