@@ -191,14 +191,14 @@ namespace ShootMeUp.Model
             if (!blnColliding.collY) Position.Y += speedY;
 
             // Update speed for reference
-            _fltSpeed.X = (int)speedX;
-            _fltSpeed.Y = (int)speedY;
+            _fltSpeed.X = speedX;
+            _fltSpeed.Y = speedY;
 
             // Only deal contact damage if the enemy isn't a shooter
             if (!_blnShoots)
             {
                 // Skip the attack check if the enemy is on damage cooldown
-                if (DateTime.Now < _nextUpdateTime && !_blnShoots)
+                if (DateTime.Now < _nextUpdateTime)
                     return;
 
                 // Get the current CFrame

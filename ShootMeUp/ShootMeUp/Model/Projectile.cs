@@ -146,6 +146,8 @@ namespace ShootMeUp.Model
                 g.DrawImage(original, 0, 0);
             }
 
+            this.Image.Dispose();
+
             Image = rotated;
 
             // Store movement speed in X/Y components

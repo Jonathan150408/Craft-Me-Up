@@ -150,7 +150,7 @@ namespace ShootMeUp.Model
         /// <param name="target">The projectile's target</param>
         /// <param name="type">The projectile type</param>
         /// <returns>A projectile if it shot, otherwise none</returns>
-        public Projectile? Shoot(Point target, Projectile.Type type)
+        public Projectile? Shoot(CFrame target, Projectile.Type type)
         {
             // Store the current time
             DateTime now = DateTime.Now;
@@ -163,25 +163,18 @@ namespace ShootMeUp.Model
                 {
                     _lastArrowShotTime = now;
 
-                    return new Projectile(type, this, target.X, target.Y, _GAMESPEED);
+                    return new Projectile(type, this, target.Position.X, target.Position.Y, _GAMESPEED);
                 }
                 else if (type == Projectile.Type.Fireball_Big && now - _lastFireballShotTime >= FireballCooldown)
                 {
                     _lastFireballShotTime = now;
 
-                    return new Projectile(type, this, target.X, target.Y, _GAMESPEED);
+                    return new Projectile(type, this, target.Position.X, target.Position.Y, _GAMESPEED);
                 }
             }
 
             return null;
         }
-
-        //// Draw the lives of the character
-        //for (int i = 0; i<Lives; i++)
-        //{
-        //    // Draw the PlayerToken as many times as there are lives
-        //    drawingSpace.Graphics.DrawImage(Resources.CharacterPlayer, (16 * i) + (8 * i) + 8, 32, 16, 16);
-        //}
 
         public override string ToString()
         {

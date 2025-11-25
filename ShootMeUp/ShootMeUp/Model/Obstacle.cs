@@ -63,6 +63,7 @@ namespace ShootMeUp.Model
         /// <param name="type">The obstacle's type (Bush, Border, ...)</param>
         public Obstacle(float x, float y, int intLength, Obstacle.Type type) : base(x, y, intLength)
         {
+            _canCollide = true;
 
             switch (type)
             {
