@@ -27,7 +27,7 @@ namespace ShootMeUp
         /// <summary>
         /// The game's speed multiplier for movement, projectiles, etc.)
         /// </summary>
-        public static readonly int GAMESPEED = 5;
+        public static readonly int GAMESPEED = 10;
 
         /// <summary>
         /// Any obstacle's height and length
@@ -158,6 +158,17 @@ namespace ShootMeUp
             bufferG.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
             bufferG.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
 
+            ShowTitle();
+        }
+
+        /// <summary>
+        /// Shows the game's title screen
+        /// </summary>
+        private void ShowTitle()
+        {
+            if (BackgroundImage != null)
+                BackgroundImage.Dispose();
+
             // Change the background (TEMP TEST)
             Bitmap resizedImage = new Bitmap(OBSTACLE_SIZE, OBSTACLE_SIZE);
             using (Graphics graphics = Graphics.FromImage(resizedImage))
@@ -168,16 +179,9 @@ namespace ShootMeUp
             BackgroundImage = resizedImage;
             BackgroundImageLayout = ImageLayout.Tile;
 
-            ShowTitle();
-        }
-
-        /// <summary>
-        /// Shows the game's title screen
-        /// </summary>
-        private void ShowTitle()
-        {
             // Remove any previous controls
-            Controls.Clear();
+            if (_titleLabel != null) Controls.Remove(_titleLabel);
+            if (_playButton != null) Controls.Remove(_playButton);
 
             // Create the text and add some style to it
             _titleLabel = new Label
@@ -245,9 +249,14 @@ namespace ShootMeUp
         /// </summary>
         private void StartGame()
         {
+            BackgroundImage = null;
+            BackgroundImageLayout = ImageLayout.None;
+
             // Remove title screen controls
             Controls.Remove(_titleLabel);
             Controls.Remove(_playButton);
+            _titleLabel?.Dispose();
+            _playButton?.Dispose();
 
             // Reset values
             Score = 0;
@@ -595,8 +604,15 @@ namespace ShootMeUp
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (backBuffer != null)
+            if (_gamestate == Gamestate.running && backBuffer != null)
+            {
                 e.Graphics.DrawImageUnscaled(backBuffer, 0, 0);
+            }
+            else
+            {
+                // Let WinForms draw the normal background (including BackgroundImage)
+                base.OnPaint(e);
+            }
         }
 
         /// <summary>
@@ -644,8 +660,9 @@ namespace ShootMeUp
                 else if (c.CharType == Character.Type.Player && c.Lives <= 0)
                 {
                     _gamestate = Gamestate.paused;
-                    ShowTitle();
                     c.Image?.Dispose();
+                    _player = null;
+                    ShowTitle();
                     return true;
                 }
                 return false;
@@ -708,7 +725,6 @@ namespace ShootMeUp
                 foreach (Character character in Characters)
                     if (character is Enemy enemy)
                         enemy.Move();
-                GC.Collect();
             }
         }
 
