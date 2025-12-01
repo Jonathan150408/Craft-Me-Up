@@ -51,7 +51,8 @@ namespace ShootMeUp.Model
         {
             Arrow,
             Fireball_Small,
-            Fireball_Big
+            Fireball_Big,
+            Undefined
         }
 
         /// <summary>
@@ -94,7 +95,7 @@ namespace ShootMeUp.Model
                     this.Size.Height = ShotBy.Size.Height/2;
                     Image = Resources.ProjectileFireball;
 
-                    _intDamage = 3;
+                    _intDamage = 2;
                     _fltMovementSpeed = 1;
 
                     break;
@@ -104,7 +105,7 @@ namespace ShootMeUp.Model
                     Image = Resources.CharacterPlayer;
 
                     _intDamage = 0;
-                    _fltMovementSpeed = 0;
+                    _fltMovementSpeed = -1;
                     break;
             }
 
@@ -160,9 +161,6 @@ namespace ShootMeUp.Model
         /// </summary>
         public void Update()
         {
-            // Get the current CFrame
-            CFrame currentCFrame = (CFrame)this;
-
             // Check to see if the projectile is gonna hit anything
             CFrame? Hit = GetColliding();
 
