@@ -119,6 +119,9 @@ namespace ShootMeUp.Model
         {
             if (Lives > 0)
             {
+                // Variable used for multiplying the speed of the movement
+                double dblMultiplicator = 1;
+
                 _fltSpeed.X = x * _fltBaseSpeed;
                 _fltSpeed.Y = y * _fltBaseSpeed;
 
@@ -133,11 +136,18 @@ namespace ShootMeUp.Model
                 (bool X, bool Y) blnColliding = CheckObstacleCollision();
 
                 // Let the player move in the given direction if there wouldn't be any collisions
+                // Change the multiplicator for double-axis movement
+                if (_fltSpeed.X != 0 && _fltSpeed.Y != 0)
+                {
+                    dblMultiplicator = 0.7;
+                }
+
+                // Use the speed variables to change the character's position if the requirements are met.
                 if (!blnColliding.X)
-                    X += _fltSpeed.X;
+                    X += (float)(_fltSpeed.X * dblMultiplicator);
 
                 if (!blnColliding.Y)
-                    Y += _fltSpeed.Y;
+                    Y += (float)(_fltSpeed.Y * dblMultiplicator);
 
                 Position.X = X;
                 Position.Y = Y;
