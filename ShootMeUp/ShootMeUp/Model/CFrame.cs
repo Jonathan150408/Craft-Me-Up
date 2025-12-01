@@ -23,11 +23,6 @@ namespace ShootMeUp.Model
         public (int Width, int Height) Size;
 
         /// <summary>
-        /// The current object's drawn image
-        /// </summary>
-        public Bitmap? Image { get; protected set; }
-
-        /// <summary>
         /// Create a new CFrame
         /// </summary>
         /// <param name="X">The x pos</param>
@@ -55,23 +50,11 @@ namespace ShootMeUp.Model
             Position.Y = Y;
             this.Size.Width = intWidth;
             this.Size.Height = intHeight;
-
-            // Default image (if nothing changes it)
-            Image = Resources.EnemyZombiePigman;
         }
 
         public override string ToString()
         {
             return $"{{{Position.X},{Position.Y}}},{{{this.Size.Height},{this.Size.Width}}}";
-        }
-
-        public void DisposeImage()
-        {
-            if (Image != null)
-            {
-                Image.Dispose();
-                Image = null;
-            }
         }
     }
 }

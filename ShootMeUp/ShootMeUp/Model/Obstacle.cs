@@ -54,6 +54,11 @@ namespace ShootMeUp.Model
             get { return _invincible; }
         }
 
+        // <summary>
+        /// The obstacle's current type
+        /// </summary>
+        public Type ObstType { get; private set; }
+
         /// <summary>
         /// The obstacle constructor
         /// </summary>
@@ -68,43 +73,29 @@ namespace ShootMeUp.Model
             switch (type)
             {
                 case Type.Bush:
-                    Image = Resources.ObstacleBush;
-
                     _canCollide = false;
                     Health = int.MaxValue;
                     break;
                 case Type.Bedrock:
-                    Image = Resources.ObstacleUnbreakable;
-
                     _invincible = true;
                     Health = int.MaxValue;
                     break;
                 case Type.Border:
-                    Image = Resources.ObstacleBorder;
-
                     _invincible = true;
                     Health = int.MaxValue;
                     break;
                 case Type.Spawner:
-                    Image = Resources.ObstacleSpawner;
-
                     _invincible = true;
                     Health = int.MaxValue;
                     _canCollide = false;
                     break;
                 case Type.Dirt:
-                    Image = Resources.ObstacleWeak;
-
                     Health = 5;
                     break;
                 case Type.Wood:
-                    Image = Resources.ObstacleNormal;
-
                     Health = 10;
                     break;
                 case Type.Stone:
-                    Image = Resources.ObstacleStrong;
-
                     Health = 25;
                     break;
                 default:
@@ -112,6 +103,8 @@ namespace ShootMeUp.Model
                     _canCollide = false;
                     break;
             }
+
+            ObstType = type;
         }
 
         /// <summary>

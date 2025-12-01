@@ -60,6 +60,12 @@ namespace ShootMeUp.Model
         /// </summary>
         public bool Active { get; set; }
 
+        // <summary>
+        /// The Projectile's current type
+        /// </summary>
+        public Type ProjType { get; private set; }
+
+
         public Projectile(Type type, Character ShotBy, float fltTargetX, float fltTargetY, int GAMESPEED) : base(ShotBy.Position.X, ShotBy.Position.Y)
         {
             _Type = type;
@@ -75,8 +81,6 @@ namespace ShootMeUp.Model
                 case Type.Arrow:
                     this.Size.Width = ShotBy.Size.Width;
                     this.Size.Height = ShotBy.Size.Height;
-                    Image = Resources.ProjectileArrow;
-
                     _intDamage = 1;
                     _fltMovementSpeed = 3;
 
@@ -84,8 +88,6 @@ namespace ShootMeUp.Model
                 case Type.Fireball_Big:
                     this.Size.Width = ShotBy.Size.Width;
                     this.Size.Height = ShotBy.Size.Height;
-                    Image = Resources.ProjectileFireball;
-
                     _intDamage = 3;
                     _fltMovementSpeed = 1;
 
@@ -93,8 +95,6 @@ namespace ShootMeUp.Model
                 case Type.Fireball_Small:
                     this.Size.Width = ShotBy.Size.Width/2;
                     this.Size.Height = ShotBy.Size.Height/2;
-                    Image = Resources.ProjectileFireball;
-
                     _intDamage = 2;
                     _fltMovementSpeed = 1;
 
@@ -102,13 +102,12 @@ namespace ShootMeUp.Model
                 default:
                     this.Size.Width = ShotBy.Size.Width;
                     this.Size.Height = ShotBy.Size.Height;
-                    Image = Resources.CharacterPlayer;
-
                     _intDamage = 0;
                     _fltMovementSpeed = -1;
                     break;
             }
 
+            ProjType = type;
 
             // Multiply the movement speed by the game speed
             _fltMovementSpeed *= GAMESPEED;
@@ -128,28 +127,6 @@ namespace ShootMeUp.Model
                 deltaX /= length;
                 deltaY /= length;
             }
-
-            Image original = Image;
-
-            Bitmap rotated = new Bitmap(original.Width, original.Height);
-            rotated.SetResolution(original.HorizontalResolution, original.VerticalResolution);
-
-            using (Graphics g = Graphics.FromImage(rotated))
-            {
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-                g.TranslateTransform(original.Width / 2f, original.Height / 2f);
-                g.RotateTransform(_fltRotationAngle);
-                g.TranslateTransform(-original.Width / 2f, -original.Height / 2f);
-
-                g.DrawImage(original, 0, 0);
-            }
-
-            this.Image.Dispose();
-
-            Image = rotated;
 
             // Store movement speed in X/Y components
             _fltSpeed.X = (deltaX * _fltMovementSpeed);

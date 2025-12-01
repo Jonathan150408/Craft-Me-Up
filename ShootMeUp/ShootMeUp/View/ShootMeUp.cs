@@ -5,6 +5,7 @@ using ShootMeUp.Properties;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace ShootMeUp
@@ -199,13 +200,8 @@ namespace ShootMeUp
             Score = 0;
             _intWaveNumber = 1;
 
-            foreach (Character c in Characters) c.DisposeImage();
             Characters.Clear();
-
-            foreach (Obstacle o in Obstacles) o.DisposeImage();
             Obstacles.Clear();
-
-            foreach (Projectile p in Projectiles) p.DisposeImage();
             Projectiles.Clear();
         }
 
@@ -217,9 +213,8 @@ namespace ShootMeUp
             // Change the background (TEMP TEST)
             Bitmap resizedImage = new Bitmap(OBSTACLE_SIZE, OBSTACLE_SIZE);
             using (Graphics graphics = Graphics.FromImage(resizedImage))
-            {
-                graphics.DrawImage(Resources.FloorStone, 0, 0, OBSTACLE_SIZE, OBSTACLE_SIZE);
-            }
+                using (Bitmap Image = Resources.FloorStone)
+                    graphics.DrawImage(Image, 0, 0, OBSTACLE_SIZE, OBSTACLE_SIZE);
 
             BackgroundImage = resizedImage;
             BackgroundImageLayout = ImageLayout.Tile;
@@ -289,6 +284,121 @@ namespace ShootMeUp
 
             //stops the ticker to pause the game
             this.ticker.Stop();
+        }
+
+        private Bitmap GetSprite(Character.Type GivenType)
+        {
+            Bitmap ReturnedImage;
+
+            switch (GivenType)
+            {
+                case Character.Type.Player:
+                    ReturnedImage = Resources.CharacterPlayer;
+                    break;
+                case Character.Type.Zombie:
+                    ReturnedImage = Resources.EnemyZombie;
+                    break;
+                case Character.Type.Skeleton:
+                    ReturnedImage = Resources.EnemySkeleton;
+                    break;
+                case Character.Type.Baby_Zombie:
+                    ReturnedImage = Resources.EnemyZombie;
+                    break;
+                case Character.Type.Blaze:
+                    ReturnedImage = Resources.EnemyBlaze;
+                    break;
+                case Character.Type.Zombie_Pigman:
+                    ReturnedImage = Resources.EnemyZombiePigman;
+                    break;
+                default:
+                    ReturnedImage = Resources.CharacterPlayer;
+                    break;
+            }
+
+            return ReturnedImage;
+        }
+
+        private Bitmap GetSprite(Obstacle.Type GivenType)
+        {
+            Bitmap ReturnedImage;
+
+            switch (GivenType)
+            {
+                case Obstacle.Type.Dirt:
+                    ReturnedImage = Resources.ObstacleWeak;
+                    break;
+                case Obstacle.Type.Wood:
+                    ReturnedImage = Resources.ObstacleNormal;
+                    break;
+                case Obstacle.Type.Stone:
+                    ReturnedImage = Resources.ObstacleStrong;
+                    break;
+                case Obstacle.Type.Spawner:
+                    ReturnedImage = Resources.ObstacleSpawner;
+                    break;
+                case Obstacle.Type.Border:
+                    ReturnedImage = Resources.ObstacleBorder;
+                    break;
+                case Obstacle.Type.Bedrock:
+                    ReturnedImage = Resources.ObstacleUnbreakable;
+                    break;
+                case Obstacle.Type.Bush:
+                    ReturnedImage = Resources.ObstacleBush;
+                    break;
+                default:
+                    ReturnedImage = Resources.CharacterPlayer;
+                    break;
+            }
+
+            return ReturnedImage;
+        }
+
+        private Bitmap GetSprite(Projectile.Type GivenType)
+        {
+            Bitmap ReturnedImage;
+
+            switch (GivenType)
+            {
+                case Projectile.Type.Arrow:
+                    ReturnedImage = Resources.ProjectileArrow;
+                    break;
+                case Projectile.Type.Fireball_Small:
+                    ReturnedImage = Resources.ProjectileFireball;
+                    break;
+                case Projectile.Type.Fireball_Big:
+                    ReturnedImage = Resources.ProjectileFireball;
+                    break;
+                default:
+                    ReturnedImage = Resources.CharacterPlayer;
+
+                    break;
+            }
+
+            /*
+                         Image original = Image;
+
+            Bitmap rotated = new Bitmap(original.Width, original.Height);
+            rotated.SetResolution(original.HorizontalResolution, original.VerticalResolution);
+
+            using (Graphics g = Graphics.FromImage(rotated))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                g.TranslateTransform(original.Width / 2f, original.Height / 2f);
+                g.RotateTransform(_fltRotationAngle);
+                g.TranslateTransform(-original.Width / 2f, -original.Height / 2f);
+
+                g.DrawImage(original, 0, 0);
+            }
+
+            this.Image.Dispose();
+
+            Image = rotated;
+             */
+
+            return ReturnedImage;
         }
 
         /// <summary>
@@ -573,13 +683,8 @@ namespace ShootMeUp
                     float drawX = character.Position.X - cameraX;
                     float drawY = character.Position.Y - cameraY;
 
-                    if (character.Image == null) continue;
-
-                    bufferG.DrawImage(character.Image,
-                                drawX,
-                                drawY,
-                                character.Size.Width,
-                                character.Size.Height);
+                    using (Bitmap Image = GetSprite(character.CharType))
+                        bufferG.DrawImage(Image, drawX, drawY, character.Size.Width, character.Size.Height);
                 }
 
                 // Draw obstacles
@@ -588,13 +693,8 @@ namespace ShootMeUp
                     float drawX = obstacle.Position.X - cameraX;
                     float drawY = obstacle.Position.Y - cameraY;
 
-                    if (obstacle.Image == null) continue;
-
-                    bufferG.DrawImage(obstacle.Image,
-                                drawX,
-                                drawY,
-                                obstacle.Size.Width,
-                                obstacle.Size.Height);
+                    using (Bitmap Image = GetSprite(obstacle.ObstType))
+                        bufferG.DrawImage(Image, drawX, drawY, obstacle.Size.Width, obstacle.Size.Height);
                 }
 
                 // Draw projectiles
@@ -603,13 +703,8 @@ namespace ShootMeUp
                     float drawX = projectile.Position.X - cameraX;
                     float drawY = projectile.Position.Y - cameraY;
 
-                    if (projectile.Image == null) continue;
-
-                    bufferG.DrawImage(projectile.Image,
-                                drawX,
-                                drawY,
-                                projectile.Size.Width,
-                                projectile.Size.Height);
+                    using(Bitmap Image = GetSprite(projectile.ProjType))
+                        bufferG.DrawImage(Image, drawX, drawY, projectile.Size.Width, projectile.Size.Height);
                 }
 
                 // Draw the player along with their lives and the game's statistics
@@ -618,17 +713,16 @@ namespace ShootMeUp
                     float px = _player.Position.X - cameraX;
                     float py = _player.Position.Y - cameraY;
 
-                    if (_player.Image != null)
+                    using (Bitmap Image = GetSprite(_player.CharType))
+                        bufferG.DrawImage(Image, px, py, _player.Size.Width, _player.Size.Height);
+
+                    bufferG.DrawString($"Wave {_intWaveNumber} | Score: {Score} | Lives remaining: {_player.Lives}", TextHelpers.drawFont, TextHelpers.writingBrush, 8, 8);
+
+                    for (int i = 0; i < _player.Lives; i++)
                     {
-                        bufferG.DrawImage(_player.Image, px, py, _player.Size.Width, _player.Size.Height);
-
-                        bufferG.DrawString($"Wave {_intWaveNumber} | Score: {Score} | Lives remaining: {_player.Lives}", TextHelpers.drawFont, TextHelpers.writingBrush, 8, 8);
-
-                        for (int i = 0; i < _player.Lives; i++)
-                        {
-                            int x = 8 + (i * 24);
-                            bufferG.DrawImage(_player.Image, x, 32, 16, 16);
-                        }
+                        int x = 8 + (i * 24);
+                        using (Bitmap Image = GetSprite(_player.CharType))
+                            bufferG.DrawImage(Image, x, 32, 16, 16);
                     }
                 }
             }
@@ -660,25 +754,9 @@ namespace ShootMeUp
             _intCleanupCounter = 0;
 
             // Remove anything inactive
-            Projectiles.RemoveAll(p =>
-            {
-                if (!p.Active)
-                {
-                    p.DisposeImage();
-                    return true;
-                }
-                return false;
-            });
+            Projectiles.RemoveAll(p => !p.Active);
 
-            Obstacles.RemoveAll(o =>
-            {
-                if (o.Health <= 0)
-                {
-                    o.DisposeImage();
-                    return true;
-                }
-                return false;
-            });
+            Obstacles.RemoveAll(o => o.Health <= 0);
 
             // Change the score if there's a dead enemy
             Characters.RemoveAll(c =>
@@ -686,13 +764,11 @@ namespace ShootMeUp
                 if (c.Lives <= 0 && c is Enemy enemy)
                 {
                     Score += enemy.ScoreValue;
-                    enemy.DisposeImage();
                     return true;
                 }
                 else if (c.CharType == Character.Type.Player && c.Lives <= 0)
                 {
                     _gamestate = Gamestate.paused;
-                    c.DisposeImage();
                     _player = null;
                     ShowTitle();
                     return true;

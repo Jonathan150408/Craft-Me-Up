@@ -74,8 +74,6 @@ namespace ShootMeUp.Model
 
             ArrowCooldown = TimeSpan.FromSeconds(ArrowCooldown.TotalSeconds / GAMESPEED);
             FireballCooldown = TimeSpan.FromSeconds(FireballCooldown.TotalSeconds / GAMESPEED);
-
-            Image = Resources.CharacterPlayer;            
         }
 
         protected (bool X, bool Y) CheckObstacleCollision()

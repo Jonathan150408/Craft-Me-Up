@@ -62,8 +62,6 @@ namespace ShootMeUp.Model
                     ScoreValue = 1;
                     Lives = 10;
                     _fltBaseSpeed = 2f / 5f;
-
-                    Image = Resources.EnemyZombie;
                     break;
                 case Character.Type.Skeleton:
                     ScoreValue = 3;
@@ -71,17 +69,12 @@ namespace ShootMeUp.Model
                     _fltBaseSpeed = -0.5f;
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Arrow;
-
-                    Image = Resources.EnemySkeleton;
                     break;
                 case Character.Type.Baby_Zombie:
                     ScoreValue = 2;
                     Lives = 3;
                     _fltBaseSpeed = 1.5f;
-
                     DamageCooldown = TimeSpan.FromSeconds(3);
-
-                    Image = Resources.EnemyZombie;
                     break;
                 case Character.Type.Blaze:
                     ScoreValue = 5;
@@ -89,8 +82,6 @@ namespace ShootMeUp.Model
                     _fltBaseSpeed = -0.25f;
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Fireball_Small;
-
-                    Image = Resources.EnemyBlaze;
                     break;
                 case Character.Type.Zombie_Pigman:
                     ScoreValue = 5;
@@ -98,8 +89,6 @@ namespace ShootMeUp.Model
                     _fltBaseSpeed = 1f / 5f;
 
                     DamageCooldown = TimeSpan.FromSeconds(8);
-
-                    Image = Resources.EnemyZombiePigman;
                     break;
                 default:
                     break;
