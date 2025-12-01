@@ -83,8 +83,8 @@ namespace ShootMeUp.Model
             (bool X, bool Y) blnColliding = (false, false);
 
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
-            CFrame cfrY = new CFrame(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
+            CFrame? cfrX = new CFrame(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
+            CFrame? cfrY = new CFrame(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
 
             foreach (Obstacle obstacle in ShootMeUp.Obstacles)
             {
@@ -106,6 +106,9 @@ namespace ShootMeUp.Model
                 if (blnColliding.X && blnColliding.Y)
                     break;
             }
+
+            cfrX = null;
+            cfrY = null;
 
             return blnColliding;
         }
@@ -130,7 +133,7 @@ namespace ShootMeUp.Model
                 float Y = Position.Y;
 
                 // Get the current CFrame
-                CFrame currentCFrame = (CFrame)this;
+                CFrame currentCFrame = this;
 
                 // Check to see if the character is gonna clip in anything
                 (bool X, bool Y) blnColliding = CheckObstacleCollision();

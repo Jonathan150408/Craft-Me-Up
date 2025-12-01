@@ -195,8 +195,8 @@ namespace ShootMeUp.Model
         public CFrame? GetColliding()
         {
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
-            CFrame cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
+            CFrame? cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
+            CFrame? cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
 
             // Create a list that contains both obstacles and characters
             List<CFrame> listCFrames = new List<CFrame>();
@@ -206,7 +206,7 @@ namespace ShootMeUp.Model
             foreach (CFrame singularCFrame in listCFrames)
             {
                 // Skip the ignored character
-                if (singularCFrame == (CFrame)_shotBy)
+                if (singularCFrame == _shotBy)
                     continue;
 
                 // Check to see if the current CFrame is an obstacle
@@ -230,6 +230,9 @@ namespace ShootMeUp.Model
                     return singularCFrame;
                 }
             }
+
+            cfrX = null;
+            cfrY = null;
 
             return null;
         }

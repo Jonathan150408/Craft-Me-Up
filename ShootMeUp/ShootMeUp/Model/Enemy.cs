@@ -117,8 +117,8 @@ namespace ShootMeUp.Model
             bool blnColliding = false;
 
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
-            CFrame cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
+            CFrame? cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
+            CFrame? cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
 
             // Check for collision
             if (ShootMeUp.IsOverlapping(cfrX, _Target))
@@ -131,14 +131,17 @@ namespace ShootMeUp.Model
                 blnColliding = true;
             }
 
+            cfrX = null;
+            cfrY = null;
+
             return blnColliding;
         }
 
         public Obstacle? GetCollidingObstacle()
         {
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
-            CFrame cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
+            CFrame? cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
+            CFrame? cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
 
             foreach (Obstacle obstacle in ShootMeUp.Obstacles)
             {
@@ -157,6 +160,9 @@ namespace ShootMeUp.Model
                     return obstacle;
                 }
             }
+
+            cfrX = null;
+            cfrY = null;
 
             return null;
         }
@@ -252,6 +258,8 @@ namespace ShootMeUp.Model
                         _lastArrowShotTime = DateTime.Now;
                     else if (_ProjectileType == Projectile.Type.Fireball_Small  )
                         _lastFireballShotTime = DateTime.Now;
+
+                    possibleProjectile = null;
                 }
             }
         }

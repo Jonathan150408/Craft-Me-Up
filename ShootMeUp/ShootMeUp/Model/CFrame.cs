@@ -25,7 +25,7 @@ namespace ShootMeUp.Model
         /// <summary>
         /// The current object's drawn image
         /// </summary>
-        public Bitmap Image { get; protected set; }
+        public Bitmap? Image { get; protected set; }
 
         /// <summary>
         /// Create a new CFrame
@@ -63,6 +63,15 @@ namespace ShootMeUp.Model
         public override string ToString()
         {
             return $"{{{Position.X},{Position.Y}}},{{{this.Size.Height},{this.Size.Width}}}";
+        }
+
+        public void DisposeImage()
+        {
+            if (Image != null)
+            {
+                Image.Dispose();
+                Image = null;
+            }
         }
     }
 }
