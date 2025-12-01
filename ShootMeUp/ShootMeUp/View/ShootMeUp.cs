@@ -27,7 +27,7 @@ namespace ShootMeUp
         /// <summary>
         /// The game's speed multiplier for movement, projectiles, etc.)
         /// </summary>
-        public static readonly int GAMESPEED = 1;
+        public static readonly int GAMESPEED = 5;
 
         /// <summary>
         /// Any obstacle's height and length
@@ -79,11 +79,6 @@ namespace ShootMeUp
         /// The game's play button
         /// </summary>
         private Button? _playButton;
-
-        /// <summary>
-        /// A random number generator
-        /// </summary>
-        private readonly Random rng;
 
         /// <summary>
         /// A list that contains all the projectiles
@@ -154,8 +149,6 @@ namespace ShootMeUp
               ControlStyles.OptimizedDoubleBuffer |
               ControlStyles.UserPaint, true);
             this.DoubleBuffered = true;
-
-            rng = new();
 
             cameraX = 0;
             cameraY = 0;
@@ -276,9 +269,19 @@ namespace ShootMeUp
             // Set the game state to true
             _gamestate = Gamestate.running;
 
+            // Calculate the bottom-center, related to the player
+            float fltLeftBound = 32;
+            float fltRightBound = (BORDER_SIZE + 4) * 32;
+
+            float fltAreaCenterX = (fltLeftBound + fltRightBound) / 2.0f;
+
+            // Center the character horizontally
+            float characterX = fltAreaCenterX - (DEFAULT_CHARACTER_SIZE / 2);
+
             // Create a new player
-            _player = new Character(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Player, GAMESPEED);
+            _player = new Character(characterX, BORDER_SIZE * 32 + (32 - DEFAULT_CHARACTER_SIZE), DEFAULT_CHARACTER_SIZE, Character.Type.Player, GAMESPEED);
             Characters.Add(_player);
+
 
 
             // Create a new border, piece by piece
@@ -421,43 +424,49 @@ namespace ShootMeUp
             List<Enemy> WaveEnemies = new List<Enemy>();
 
             // Get a random number of total enemies (need to change this to use math algorythm that balance the total enemies count later)
-            int totalEnemies = Math.Min(intWaveNumber * 2, 50);
+            int totalEnemies = intWaveNumber * 2;
 
             // Get the enemies
-            for (int i = 0; i < totalEnemies; i++)
+            do
             {
                 // Create new variables for enemy generation
                 int intCharSize = DEFAULT_CHARACTER_SIZE;
                 Character.Type enemyType;
 
                 // Get a number from 1 to 5 (inclusive)
-                int intRandom = rng.Next(1, 6);
+                int chosenEnemy = new Random().Next(Math.Min(6, totalEnemies));
 
-                switch (intRandom)
+                switch (chosenEnemy)
                 {
                     case 1:
                         enemyType = Character.Type.Zombie;
+                        totalEnemies --;
                         break;
                     case 2:
                         enemyType = Character.Type.Skeleton;
+                        totalEnemies -= 2;
                         break;
                     case 3:
                         enemyType = Character.Type.Blaze;
+                        totalEnemies -= 3;
                         break;
                     case 4:
                         enemyType = Character.Type.Baby_Zombie;
                         intCharSize = (int)(intCharSize* 0.75);
+                        totalEnemies -= 4;
                         break;
                     case 5:
                         enemyType = Character.Type.Zombie_Pigman;
+                        totalEnemies -= 5;
                         break;
                     default:
                         enemyType = Character.Type.Zombie;
+                        totalEnemies--;
                         break;
                 }
 
                 WaveEnemies.Add(new(0, 0, intCharSize, enemyType, GAMESPEED, _player));
-            }
+            }while (totalEnemies > 0);
 
             return WaveEnemies;
         }
@@ -485,7 +494,7 @@ namespace ShootMeUp
                     Characters.Add(enemy);
 
                     // Add a wait before adding the next enemy
-                    await Task.Delay(4000 / GAMESPEED);
+                    await Task.Delay(2000);
                 }
 
                 // Clear the wave enemies table
@@ -699,7 +708,7 @@ namespace ShootMeUp
                 foreach (Character character in Characters)
                     if (character is Enemy enemy)
                         enemy.Move();
-                
+                GC.Collect();
             }
         }
 
