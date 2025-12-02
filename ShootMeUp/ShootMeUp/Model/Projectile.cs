@@ -23,11 +23,6 @@ namespace ShootMeUp.Model
         private int _intDamage;
 
         /// <summary>
-        /// The rotation angle (in degrees)
-        /// </summary>
-        private float _fltRotationAngle;
-
-        /// <summary>
         /// The projectile's movement speed
         /// </summary>
         private float _fltMovementSpeed;
@@ -63,6 +58,10 @@ namespace ShootMeUp.Model
         /// </summary>
         public Type ProjType { get; private set; }
 
+        /// <summary>
+        /// The rotation angle (in degrees)
+        /// </summary>
+        public float RotationAngle { get; private set; }
 
         public Projectile(Type type, Character ShotBy, float fltTargetX, float fltTargetY, int GAMESPEED) : base(ShotBy.Position.X, ShotBy.Position.Y)
         {
@@ -114,7 +113,7 @@ namespace ShootMeUp.Model
 
             // Calculate rotation angle in degrees
             // We add 90 here because the image faces upwards
-            _fltRotationAngle = (float)(Math.Atan2(deltaY, deltaX) * (180.0 / Math.PI)) + 90;
+            RotationAngle = (float)(Math.Atan2(deltaY, deltaX) * (180.0 / Math.PI)) + 90;
 
             // Normalize direction
             float length = (float)Math.Sqrt(deltaX * deltaX + deltaY * deltaY);

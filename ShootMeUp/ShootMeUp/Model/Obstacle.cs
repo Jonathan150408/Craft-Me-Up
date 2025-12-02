@@ -17,17 +17,23 @@ namespace ShootMeUp.Model
     public class Obstacle : CFrame
     {
         /// <summary>
-        /// The obstacle's type (border, ...)
+        /// The obstacle's type (Barrier, ...)
         /// </summary>
         public enum Type
         {
             Dirt,
             Wood,
-            Stone,
-            Spawner,
-            Border,
+            CobbleStone,
+
+            Barrier,
             Bedrock,
+
+            Spawner,
             Bush,
+            Grass,
+            Stone,
+            Sand,
+
             Undefined
         }
 
@@ -65,44 +71,57 @@ namespace ShootMeUp.Model
         /// <param name="x">The obstacle's X pos</param>
         /// <param name="y">The obstacle's Y pos</param>
         /// <param name="intLength">The obstacle's Length</param>
-        /// <param name="type">The obstacle's type (Bush, Border, ...)</param>
+        /// <param name="type">The obstacle's type (Bush, Barrier, ...)</param>
         public Obstacle(float x, float y, int intLength, Obstacle.Type type) : base(x, y, intLength)
         {
             _canCollide = true;
 
             switch (type)
             {
-                case Type.Bush:
-                    _canCollide = false;
-                    Health = int.MaxValue;
-                    break;
-                case Type.Bedrock:
-                    _invincible = true;
-                    Health = int.MaxValue;
-                    break;
-                case Type.Border:
-                    _invincible = true;
-                    Health = int.MaxValue;
-                    break;
-                case Type.Spawner:
-                    _invincible = true;
-                    Health = int.MaxValue;
-                    _canCollide = false;
-                    break;
                 case Type.Dirt:
                     Health = 5;
                     break;
                 case Type.Wood:
                     Health = 10;
                     break;
-                case Type.Stone:
+                case Type.CobbleStone:
                     Health = 25;
                     break;
-                default:
+
+                case Type.Barrier:
+                    _invincible = true;
+                    Health = int.MaxValue;
+                    break;
+                case Type.Bedrock:
+                    _invincible = true;
+                    break;
+
+                case Type.Spawner:
                     _invincible = true;
                     _canCollide = false;
                     break;
-            }
+                case Type.Bush:
+                    _canCollide = false;
+                    Health = int.MaxValue;
+                    break;
+
+                case Type.Grass:
+                    _canCollide = false;
+                    _invincible = true;
+                    break;
+                case Type.Stone:
+                    _canCollide = false;
+                    _invincible = true;
+                    break;
+                case Type.Sand:
+                    _canCollide = false;
+                    _invincible = true;
+                    break;
+                default:
+                    _canCollide = false;
+                    _invincible = true;
+                    break;
+            }            
 
             ObstType = type;
         }
