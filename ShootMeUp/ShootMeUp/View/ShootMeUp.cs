@@ -90,7 +90,7 @@ namespace ShootMeUp
             get { return _projectiles; }
             set { _projectiles = value; }
         }
-        
+
         /// <summary>
         /// A list that contains all the obstacles
         /// </summary>
@@ -146,7 +146,9 @@ namespace ShootMeUp
             // Create a new list of keys held down
             _keysHeldDown = new List<Keys>();
 
-            this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint, true);
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+              ControlStyles.OptimizedDoubleBuffer |
+              ControlStyles.UserPaint, true);
             this.DoubleBuffered = true;
 
             cameraX = 0;
@@ -160,56 +162,14 @@ namespace ShootMeUp
             ShowTitle();
         }
 
-        private void Reset()
-        {
-            // Dispose existing resources
-            bufferG?.Dispose();
-            backBuffer?.Dispose();
-
-            // Recreate clean buffer
-            backBuffer = new Bitmap(WIDTH, HEIGHT);
-            bufferG = Graphics.FromImage(backBuffer);
-
-            bufferG.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            bufferG.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
-            if (BackgroundImage != null)
-            {
-                BackgroundImage.Dispose();
-                BackgroundImage = null;
-            }
-
-            // Remove title screen controls
-            Controls.Remove(_titleLabel);
-            Controls.Remove(_playButton);
-
-            if (_titleLabel != null)
-            {
-                Controls.Remove(_titleLabel);
-                _titleLabel.Dispose();
-                _titleLabel = null;
-            }
-
-            if (_playButton != null)
-            {
-                Controls.Remove(_playButton);
-                _playButton.Dispose();
-                _playButton = null;
-            }
-
-            // Reset values
-            Score = 0;
-            _intWaveNumber = 1;
-
-            Characters.Clear();
-            Obstacles.Clear();
-            Projectiles.Clear();
-        }
-
         /// <summary>
         /// Shows the game's title screen
         /// </summary>
         private void ShowTitle()
         {
+            if (BackgroundImage != null)
+                BackgroundImage.Dispose();
+
             // Change the background (TEMP TEST)
             Bitmap resizedImage = new Bitmap(OBSTACLE_SIZE, OBSTACLE_SIZE);
             using (Graphics graphics = Graphics.FromImage(resizedImage))
@@ -260,9 +220,7 @@ namespace ShootMeUp
 
         private async void _playButton_Click(object? sender, EventArgs e)
         {
-            Reset();
-
-            GenerateWorld();
+            StartGame();
             await StartWaves();
         }
 
@@ -399,6 +357,32 @@ namespace ShootMeUp
              */
 
             return ReturnedImage;
+        }
+
+        /// <summary>
+        /// Start the game up
+        /// </summary>
+        private void StartGame()
+        {
+            BackgroundImage = null;
+            BackgroundImageLayout = ImageLayout.None;
+
+            // Remove title screen controls
+            Controls.Remove(_titleLabel);
+            Controls.Remove(_playButton);
+            _titleLabel?.Dispose();
+            _playButton?.Dispose();
+
+            // Reset values
+            Score = 0;
+            _intWaveNumber = 1;
+
+            Characters.Clear();
+            Obstacles.Clear();
+            Projectiles.Clear();
+
+            // Generate the world, then start it
+            GenerateWorld();
         }
 
         /// <summary>
@@ -673,8 +657,6 @@ namespace ShootMeUp
                 // Clear the frame
                 bufferG.Clear(Color.FromArgb(217, 217, 217));
 
-                bufferG.FillRectangle(BackgroundBrush, 0, 0, WIDTH, HEIGHT);
-
                 // Draw all characters (not including player)
                 foreach (var character in Characters)
                 {
@@ -823,7 +805,7 @@ namespace ShootMeUp
 
                 // Move the player if he should
                 if (intMoveX  != 0 || intMoveY != 0)
-                    _player?.Move(intMoveX, intMoveY);
+                    _player.Move(intMoveX, intMoveY);
 
                 // Update the projectiles
                 foreach (Projectile projectile in Projectiles)
@@ -877,8 +859,6 @@ namespace ShootMeUp
                 if (possibleProjectile != null)
                 {
                     Projectiles.Add(possibleProjectile);
-
-                    possibleProjectile = null;
                 }
             }
         }
