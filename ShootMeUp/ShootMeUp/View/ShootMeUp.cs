@@ -973,7 +973,7 @@ namespace ShootMeUp
 
                 // Move the player if he should
                 if (intMoveX  != 0 || intMoveY != 0)
-                    _player.Move(intMoveX, intMoveY);
+                    _player?.Move(intMoveX, intMoveY);
 
                 // Update the projectiles
                 foreach (Projectile projectile in Projectiles)
