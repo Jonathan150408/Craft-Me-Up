@@ -115,41 +115,69 @@ namespace ShootMeUp.Model
         /// <param name="y">The movement on the y axis</param>
         public void Move(float x, float y)
         {
-            if (Lives > 0)
+            if (Lives <= 0) return;
+
+            _fltSpeed.X = x * _fltBaseSpeed;
+            _fltSpeed.Y = y * _fltBaseSpeed;
+
+            float targetX = Position.X + _fltSpeed.X;
+            float targetY = Position.Y + _fltSpeed.Y;
+
+            // Move along X axis
+            if (_fltSpeed.X != 0)
+                Position.X = MoveAxis(Position.X, Position.Y, _fltSpeed.X, true);
+
+            // Move along Y axis
+            if (_fltSpeed.Y != 0)
+                Position.Y = MoveAxis(Position.X, Position.Y, _fltSpeed.Y, false);
+        }
+
+        /// <summary>
+        /// Incrementally moves along one axis until just before collision
+        /// </summary>
+        /// <param name="currentX">Current X position</param>
+        /// <param name="currentY">Current Y position</param>
+        /// <param name="delta">Movement along this axis</param>
+        /// <param name="isX">True if moving along X, false if along Y</param>
+        /// <returns>The new position along the axis</returns>
+        protected float MoveAxis(float currentX, float currentY, float delta, bool isX)
+        {
+            float sign = Math.Sign(delta);
+            float remaining = Math.Abs(delta);
+
+            while (remaining > 0)
             {
-                // Variable used for multiplying the speed of the movement
-                double dblMultiplicator = 1;
+                // Move by 1 pixel at a time (or smaller step for faster objects)
+                float step = Math.Min(1f, remaining);
 
-                _fltSpeed.X = x * _fltBaseSpeed;
-                _fltSpeed.Y = y * _fltBaseSpeed;
+                float testX = currentX + (isX ? step * sign : 0);
+                float testY = currentY + (isX ? 0 : step * sign);
 
-                // Variables used for speed calculation
-                float X = Position.X;
-                float Y = Position.Y;
+                // Create a test CFrame at this new position
+                CFrame testFrame = new CFrame(testX, testY, Size.Width, Size.Height);
 
-                // Get the current CFrame
-                CFrame currentCFrame = (CFrame)this;
-
-                // Check to see if the character is gonna clip in anything
-                (bool X, bool Y) blnColliding = CheckObstacleCollision();
-
-                // Let the player move in the given direction if there wouldn't be any collisions
-                // Change the multiplicator for double-axis movement
-                if (_fltSpeed.X != 0 && _fltSpeed.Y != 0)
+                bool colliding = false;
+                foreach (Obstacle obstacle in ShootMeUp.Obstacles)
                 {
-                    dblMultiplicator = 0.7;
+                    if (!obstacle.CanCollide) continue;
+
+                    if (ShootMeUp.IsOverlapping(testFrame, obstacle))
+                    {
+                        colliding = true;
+                        break;
+                    }
                 }
 
-                // Use the speed variables to change the character's position if the requirements are met.
-                if (!blnColliding.X)
-                    X += (float)(_fltSpeed.X * dblMultiplicator);
+                if (colliding)
+                    break; // Stop moving along this axis
 
-                if (!blnColliding.Y)
-                    Y += (float)(_fltSpeed.Y * dblMultiplicator);
-
-                Position.X = X;
-                Position.Y = Y;
+                // Otherwise, move
+                currentX = testX;
+                currentY = testY;
+                remaining -= step;
             }
+
+            return isX ? currentX : currentY;
         }
 
         /// <summary>

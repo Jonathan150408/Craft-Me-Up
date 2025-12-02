@@ -157,15 +157,14 @@ namespace ShootMeUp.Model
         {
             if (Lives <= 0) return;
 
-            // Calculate direction to target as floats
+            // Calculate direction to target
             float deltaX = _Target.Position.X - Position.X;
             float deltaY = _Target.Position.Y - Position.Y;
 
             float length = MathF.Sqrt(deltaX * deltaX + deltaY * deltaY);
-
             if (length != 0)
             {
-                deltaX /= length; // normalize
+                deltaX /= length;
                 deltaY /= length;
             }
 
@@ -173,73 +172,53 @@ namespace ShootMeUp.Model
             float speedX = deltaX * _GAMESPEED * _fltBaseSpeed;
             float speedY = deltaY * _GAMESPEED * _fltBaseSpeed;
 
-            (bool collX, bool collY) blnColliding = CheckObstacleCollision();
+            // Move smoothly along X and Y axes
+            Position.X = MoveAxis(Position.X, Position.Y, speedX, true);
+            Position.Y = MoveAxis(Position.X, Position.Y, speedY, false);
 
-            // Move only if no collision
-            if (!blnColliding.collX) Position.X += speedX;
-            if (!blnColliding.collY) Position.Y += speedY;
-
-            // Update speed for reference
+            // Store the current speed for reference
             _fltSpeed.X = speedX;
             _fltSpeed.Y = speedY;
 
-            // Only deal contact damage if the enemy isn't a shooter
+            // Handle attacking the player or obstacle
+            HandleAttackOrShoot();
+        }
+
+        /// <summary>
+        /// Handles damage and shooting logic after movement
+        /// </summary>
+        private void HandleAttackOrShoot()
+        {
             if (!_blnShoots)
             {
-                // Skip the attack check if the enemy is on damage cooldown
-                if (DateTime.Now < _nextUpdateTime)
-                    return;
+                if (DateTime.Now < _nextUpdateTime) return;
 
-                // Get the current CFrame
-                CFrame currentCFrame = (CFrame)this;
-
-                // Get the character or obstacle in front of the enemy
                 bool blnPlayerCollision = CheckPlayerCollision();
                 Obstacle? obstacleHit = GetCollidingObstacle();
 
-                // Set the cooldown to the next update if there's anything in front of the enemy
                 if (blnPlayerCollision || (obstacleHit != null && !obstacleHit.Invincible))
-                {
-                    // Set the cooldown to the next update
                     _nextUpdateTime = DateTime.Now + DamageCooldown;
-                }
 
-                // Deal damage to the player or the obstacle in front of the enemy
                 if (blnPlayerCollision)
-                {
-                    // Damage the player
                     Damage((CFrame)_Target);
-
-                }
                 else if (obstacleHit != null && !obstacleHit.Invincible)
-                {
                     Damage((CFrame)obstacleHit);
-
-                    // Set the cooldown to the next update
-                    _nextUpdateTime = DateTime.Now + DamageCooldown;
-                }
             }
             else
             {
-                // Skip the update if the enemy is on damage cooldown
-                if ((_ProjectileType == Projectile.Type.Arrow && DateTime.Now - _lastArrowShotTime < ArrowCooldown) || (_ProjectileType == Projectile.Type.Fireball_Small && DateTime.Now - _lastFireballShotTime < FireballCooldown))
+                if ((_ProjectileType == Projectile.Type.Arrow && DateTime.Now - _lastArrowShotTime < ArrowCooldown) ||
+                    (_ProjectileType == Projectile.Type.Fireball_Small && DateTime.Now - _lastFireballShotTime < FireballCooldown))
                     return;
 
-                // Stop trying to shoot if the player doesn't exist
-                if (_Target.Lives <= 0)
-                    return;
+                if (_Target.Lives <= 0) return;
 
-                // Shoot an arrow using the enemy's shoot method and add it to the projetile list
-                Projectile? possibleProjectile = Shoot();
-                //
-                if (possibleProjectile != null)
+                Projectile? proj = Shoot();
+                if (proj != null)
                 {
-                    ShootMeUp.Projectiles.Add(possibleProjectile);
-
-                    // Record the shot time
+                    ShootMeUp.Projectiles.Add(proj);
                     if (_ProjectileType == Projectile.Type.Arrow)
                         _lastArrowShotTime = DateTime.Now;
-                    else if (_ProjectileType == Projectile.Type.Fireball_Small  )
+                    else
                         _lastFireballShotTime = DateTime.Now;
                 }
             }
