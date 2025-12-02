@@ -493,10 +493,6 @@ namespace ShootMeUp
             _player = new(characterX, BORDER_SIZE * 32 + (32 - DEFAULT_CHARACTER_SIZE), DEFAULT_CHARACTER_SIZE, Character.Type.Player, GAMESPEED);
             Characters.Add(_player);
 
-            // Create the background image
-            //Obstacles.Add(new(64, 64, BORDER_SIZE * 32 + 32, Obstacle.Type.Stone));
-
-
             // Create a new border, piece by piece
             for (int x = 0; x <= BORDER_SIZE; x++)
                 for (int y = 0; y <= BORDER_SIZE; y++)
@@ -757,6 +753,30 @@ namespace ShootMeUp
             return overlapX && overlapY;
         }
 
+        private void DrawBackground(Graphics g, float cameraX, float cameraY)
+        {
+            Bitmap tile = Sprites.Stone;
+            int tileSize = ShootMeUp.OBSTACLE_SIZE;
+
+            // How many tiles are needed to cover the screen
+            int tilesX = (int)Math.Ceiling(bufferG.VisibleClipBounds.Width / (float)tileSize) + 2;
+            int tilesY = (int)Math.Ceiling(bufferG.VisibleClipBounds.Height / (float)tileSize) + 2;
+
+            // Determine starting tile index based on camera offset
+            int startX = (int)Math.Floor(cameraX / tileSize) - 1;
+            int startY = (int)Math.Floor(cameraY / tileSize) - 1;
+
+            for (int x = startX; x < startX + tilesX; x++)
+            {
+                for (int y = startY; y < startY + tilesY; y++)
+                {
+                    int drawX = x * tileSize - (int)cameraX;
+                    int drawY = y * tileSize - (int)cameraY;
+                    g.DrawImage(tile, drawX, drawY, tileSize, tileSize);
+                }
+            }
+        }
+
         /// <summary>
         /// Render a new frame
         /// </summary>
@@ -765,7 +785,7 @@ namespace ShootMeUp
             if (_gamestate == Gamestate.running && _player != null)
             {
                 // Clear the frame
-                bufferG.Clear(ColorTranslator.FromHtml("#7f7f7f"));
+                DrawBackground(bufferG, cameraX, cameraY);
 
                 // Draw all the background assets first
                 foreach (Obstacle Floor in Obstacles)
