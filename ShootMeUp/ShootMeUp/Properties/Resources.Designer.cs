@@ -63,9 +63,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap CharacterPlayer {
+        internal static System.Drawing.Bitmap Character_Blaze {
             get {
-                object obj = ResourceManager.GetObject("CharacterPlayer", resourceCulture);
+                object obj = ResourceManager.GetObject("Character_Blaze", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -73,9 +73,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap EnemyBlaze {
+        internal static System.Drawing.Bitmap Character_Player {
             get {
-                object obj = ResourceManager.GetObject("EnemyBlaze", resourceCulture);
+                object obj = ResourceManager.GetObject("Character_Player", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -83,9 +83,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap EnemySkeleton {
+        internal static System.Drawing.Bitmap Character_Skeleton {
             get {
-                object obj = ResourceManager.GetObject("EnemySkeleton", resourceCulture);
+                object obj = ResourceManager.GetObject("Character_Skeleton", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -93,9 +93,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap EnemyZombie {
+        internal static System.Drawing.Bitmap Character_Zombie {
             get {
-                object obj = ResourceManager.GetObject("EnemyZombie", resourceCulture);
+                object obj = ResourceManager.GetObject("Character_Zombie", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -103,9 +103,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap EnemyZombiePigman {
+        internal static System.Drawing.Bitmap Character_Zombie_Pigman {
             get {
-                object obj = ResourceManager.GetObject("EnemyZombiePigman", resourceCulture);
+                object obj = ResourceManager.GetObject("Character_Zombie_Pigman", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -113,9 +113,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap FloorGrass {
+        internal static System.Drawing.Bitmap Floor_Grass {
             get {
-                object obj = ResourceManager.GetObject("FloorGrass", resourceCulture);
+                object obj = ResourceManager.GetObject("Floor_Grass", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -123,9 +123,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap FloorSand {
+        internal static System.Drawing.Bitmap Floor_Sand {
             get {
-                object obj = ResourceManager.GetObject("FloorSand", resourceCulture);
+                object obj = ResourceManager.GetObject("Floor_Sand", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -133,9 +133,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap FloorStone {
+        internal static System.Drawing.Bitmap Floor_Stone {
             get {
-                object obj = ResourceManager.GetObject("FloorStone", resourceCulture);
+                object obj = ResourceManager.GetObject("Floor_Stone", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -143,9 +143,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ObstacleBorder {
+        internal static System.Drawing.Bitmap Obstacle_Barrier {
             get {
-                object obj = ResourceManager.GetObject("ObstacleBorder", resourceCulture);
+                object obj = ResourceManager.GetObject("Obstacle_Barrier", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -153,9 +153,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ObstacleBush {
+        internal static System.Drawing.Bitmap Obstacle_Bedrock {
             get {
-                object obj = ResourceManager.GetObject("ObstacleBush", resourceCulture);
+                object obj = ResourceManager.GetObject("Obstacle_Bedrock", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -163,9 +163,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ObstacleNormal {
+        internal static System.Drawing.Bitmap Obstacle_Bush {
             get {
-                object obj = ResourceManager.GetObject("ObstacleNormal", resourceCulture);
+                object obj = ResourceManager.GetObject("Obstacle_Bush", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -173,9 +173,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ObstacleSpawner {
+        internal static System.Drawing.Bitmap Obstacle_Cobblestone {
             get {
-                object obj = ResourceManager.GetObject("ObstacleSpawner", resourceCulture);
+                object obj = ResourceManager.GetObject("Obstacle_Cobblestone", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -183,9 +183,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ObstacleStrong {
+        internal static System.Drawing.Bitmap Obstacle_Dirt {
             get {
-                object obj = ResourceManager.GetObject("ObstacleStrong", resourceCulture);
+                object obj = ResourceManager.GetObject("Obstacle_Dirt", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -193,9 +193,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ObstacleUnbreakable {
+        internal static System.Drawing.Bitmap Obstacle_Spawner {
             get {
-                object obj = ResourceManager.GetObject("ObstacleUnbreakable", resourceCulture);
+                object obj = ResourceManager.GetObject("Obstacle_Spawner", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -203,9 +203,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ObstacleWeak {
+        internal static System.Drawing.Bitmap Obstacle_Wood_Planks {
             get {
-                object obj = ResourceManager.GetObject("ObstacleWeak", resourceCulture);
+                object obj = ResourceManager.GetObject("Obstacle_Wood_Planks", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -213,9 +213,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ProjectileArrow {
+        internal static System.Drawing.Bitmap Projectile_Arrow {
             get {
-                object obj = ResourceManager.GetObject("ProjectileArrow", resourceCulture);
+                object obj = ResourceManager.GetObject("Projectile_Arrow", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -223,9 +223,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ProjectileFireball {
+        internal static System.Drawing.Bitmap Projectile_Fireball {
             get {
-                object obj = ResourceManager.GetObject("ProjectileFireball", resourceCulture);
+                object obj = ResourceManager.GetObject("Projectile_Fireball", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

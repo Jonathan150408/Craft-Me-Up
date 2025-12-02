@@ -10,29 +10,29 @@ namespace ShootMeUp.Model
     static class Sprites
     {
         // Characters
-        public static readonly Bitmap Player        = Resources.CharacterPlayer;
-        public static readonly Bitmap Zombie        = Resources.EnemyZombie;
-        public static readonly Bitmap Skeleton      = Resources.EnemySkeleton;
-        public static readonly Bitmap Pigman        = Resources.EnemyZombiePigman;
-        public static readonly Bitmap BabyZombie    = Resources.EnemyZombie;
-        public static readonly Bitmap Blaze         = Resources.EnemyBlaze;
+        public static readonly Bitmap Player        = Resources.Character_Player;
+        public static readonly Bitmap Zombie        = Resources.Character_Zombie;
+        public static readonly Bitmap Skeleton      = Resources.Character_Skeleton;
+        public static readonly Bitmap Pigman        = Resources.Character_Zombie_Pigman;
+        public static readonly Bitmap BabyZombie    = Resources.Character_Zombie;
+        public static readonly Bitmap Blaze         = Resources.Character_Blaze;
 
         // Projectiles
-        public static readonly Bitmap Arrow     = Resources.ProjectileArrow;
-        public static readonly Bitmap Fireball  = Resources.ProjectileFireball;
+        public static readonly Bitmap Arrow     = Resources.Projectile_Arrow;
+        public static readonly Bitmap Fireball  = Resources.Projectile_Fireball;
 
         // Obstacles
-        public static readonly Bitmap Dirt = Resources.ObstacleWeak;
-        public static readonly Bitmap Wooden_Planks = Resources.ObstacleNormal;
-        public static readonly Bitmap Cobblestone   = Resources.ObstacleStrong;
-        public static readonly Bitmap Spawner       = Resources.ObstacleSpawner;
-        public static readonly Bitmap Bedrock       = Resources.ObstacleUnbreakable;
-        public static readonly Bitmap Barrier       = Resources.ObstacleBorder;
-        public static readonly Bitmap Bush          = Resources.ObstacleBush;
+        public static readonly Bitmap Dirt = Resources.Obstacle_Dirt;
+        public static readonly Bitmap Wooden_Planks = Resources.Obstacle_Wood_Planks;
+        public static readonly Bitmap Cobblestone   = Resources.Obstacle_Cobblestone;
+        public static readonly Bitmap Spawner       = Resources.Obstacle_Spawner;
+        public static readonly Bitmap Bedrock       = Resources.Obstacle_Bedrock;
+        public static readonly Bitmap Barrier       = Resources.Obstacle_Barrier;
+        public static readonly Bitmap Bush          = Resources.Obstacle_Bush;
 
         // Floor
-        public static readonly Bitmap Grass = Resources.FloorGrass;
-        public static readonly Bitmap Stone = Resources.FloorStone;
-        public static readonly Bitmap Sand  = Resources.FloorSand;
+        public static readonly Bitmap Grass = Resources.Floor_Grass;
+        public static readonly Bitmap Stone = Resources.Floor_Stone;
+        public static readonly Bitmap Sand  = Resources.Floor_Sand;
     }
 }

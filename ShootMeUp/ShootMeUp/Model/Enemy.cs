@@ -71,13 +71,13 @@ namespace ShootMeUp.Model
                     _ProjectileType = Projectile.Type.Arrow;
                     break;
                 case Character.Type.Baby_Zombie:
-                    ScoreValue = 2;
+                    ScoreValue = 4;
                     Lives = 3;
                     _fltBaseSpeed = 1.5f;
                     DamageCooldown = TimeSpan.FromSeconds(3);
                     break;
                 case Character.Type.Blaze:
-                    ScoreValue = 5;
+                    ScoreValue = 6;
                     Lives = 10;
                     _fltBaseSpeed = -0.25f;
                     _blnShoots = true;
@@ -95,8 +95,8 @@ namespace ShootMeUp.Model
             }
             
             DamageCooldown = TimeSpan.FromSeconds(DamageCooldown.TotalSeconds / GAMESPEED);
-            ArrowCooldown = TimeSpan.FromSeconds(20 / GAMESPEED);
-            FireballCooldown = TimeSpan.FromSeconds(20 / GAMESPEED);
+            ArrowCooldown = TimeSpan.FromSeconds(6 / GAMESPEED);
+            FireballCooldown = TimeSpan.FromSeconds(12 / GAMESPEED);
             _lastArrowShotTime = DateTime.Now;
             _lastFireballShotTime = DateTime.Now;
         }

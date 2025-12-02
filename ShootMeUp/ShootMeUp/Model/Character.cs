@@ -26,8 +26,8 @@ namespace ShootMeUp.Model
         protected DateTime _lastArrowShotTime = DateTime.MinValue;
         protected DateTime _lastFireballShotTime = DateTime.MinValue;
 
-        protected TimeSpan ArrowCooldown = TimeSpan.FromSeconds(3);
-        protected TimeSpan FireballCooldown = TimeSpan.FromSeconds(9);
+        protected TimeSpan ArrowCooldown = TimeSpan.FromSeconds(1.5);
+        protected TimeSpan FireballCooldown = TimeSpan.FromSeconds(4.5);
 
         protected Type _Type;
 

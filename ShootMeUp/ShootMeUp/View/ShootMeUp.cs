@@ -30,7 +30,7 @@ namespace ShootMeUp
         /// <summary>
         /// The game's speed multiplier for movement, projectiles, etc.)
         /// </summary>
-        public static readonly int GAMESPEED = 10;
+        public static readonly int GAMESPEED = 4;
 
         /// <summary>
         /// Any obstacle's height and length
@@ -153,13 +153,15 @@ namespace ShootMeUp
               ControlStyles.UserPaint, true);
             this.DoubleBuffered = true;
 
+            BackColor = ColorTranslator.FromHtml("#7f7f7f");
+
             cameraX = 0;
             cameraY = 0;
 
             backBuffer = new Bitmap(WIDTH, HEIGHT);
             bufferG = Graphics.FromImage(backBuffer);
-            bufferG.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            bufferG.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+            bufferG.InterpolationMode = InterpolationMode.NearestNeighbor;
+            bufferG.PixelOffsetMode = PixelOffsetMode.Half;
 
             ShowTitle();
         }
@@ -172,13 +174,8 @@ namespace ShootMeUp
             if (BackgroundImage != null)
                 BackgroundImage.Dispose();
 
-            // Change the background (TEMP TEST)
-            Bitmap resizedImage = new Bitmap(OBSTACLE_SIZE, OBSTACLE_SIZE);
-            using (Graphics graphics = Graphics.FromImage(resizedImage))
-                using (Bitmap Image = Resources.FloorStone)
-                    graphics.DrawImage(Image, 0, 0, OBSTACLE_SIZE, OBSTACLE_SIZE);
-
-            BackgroundImage = resizedImage;
+            Bitmap tile = new Bitmap(Sprites.Stone, ShootMeUp.OBSTACLE_SIZE, ShootMeUp.OBSTACLE_SIZE);
+            BackgroundImage = tile;
             BackgroundImageLayout = ImageLayout.Tile;
 
             // Remove any previous controls
@@ -201,6 +198,7 @@ namespace ShootMeUp
             {
                 Text = "Play the game",
                 Font = new Font("Consolas", 24, FontStyle.Bold),
+                BackColor = Color.White,
                 AutoSize = true,
                 Size = PreferredSize,
             };
@@ -251,7 +249,7 @@ namespace ShootMeUp
         /// </summary>
         /// <param name="GivenType">The Character.Type of the given character</param>
         /// <returns>A sprite</returns>
-        private Bitmap GetSprite(Character.Type GivenType)
+        private static Bitmap GetSprite(Character.Type GivenType)
         {
             Bitmap ReturnedImage;
 
@@ -284,11 +282,39 @@ namespace ShootMeUp
         }
 
         /// <summary>
+        /// Recolor a gray texture
+        /// </summary>
+        /// <param name="gray">Default gray image</param>
+        /// <param name="tint">The tint</param>
+        /// <returns>The same image, but recolored</returns>
+        private static Bitmap ApplyTint(Bitmap gray, Color tint)
+        {
+            Bitmap result = new Bitmap(gray.Width, gray.Height);
+
+            for (int x = 0; x < gray.Width; x++)
+            {
+                for (int y = 0; y < gray.Height; y++)
+                {
+                    Color px = gray.GetPixel(x, y);
+
+                    // Multiply the grayscale pixel by the tint (Minecraft-style)
+                    int r = (px.R * tint.R) / 255;
+                    int g = (px.G * tint.G) / 255;
+                    int b = (px.B * tint.B) / 255;
+
+                    result.SetPixel(x, y, Color.FromArgb(px.A, r, g, b));
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Get a obstacle's sprite
         /// </summary>
         /// <param name="GivenType">The Obstacle.Type of the given obstacle</param>
         /// <returns>A sprite</returns>
-        private Bitmap GetSprite(Obstacle.Type GivenType, (int Width, int Height) Size)
+        private static Bitmap GetSprite(Obstacle.Type GivenType, (int Width, int Height) Size)
         {
             Bitmap ReturnedImage;
 
@@ -318,7 +344,13 @@ namespace ShootMeUp
                     ReturnedImage = Sprites.Bush;
                     break;
                 case Obstacle.Type.Grass:
-                    ReturnedImage = Sprites.Grass;
+                    // Minecraft plains biome grass color
+                    Color grassTint = Color.FromArgb(0x91, 0xBD, 0x59);
+
+                    // Apply tint to grayscale texture
+                    Bitmap tinted = ApplyTint(Sprites.Grass, grassTint);
+
+                    ReturnedImage = tinted;
                     break;
                 case Obstacle.Type.Stone:
                     ReturnedImage = Sprites.Stone;
@@ -341,21 +373,26 @@ namespace ShootMeUp
             }
 
             // Create a new bitmap matching obstacle size
-            using (Bitmap TiledSprite = new Bitmap(Size.Width, Size.Height))
-            {
-                using (Graphics g = Graphics.FromImage(TiledSprite))
-                {
-                    for (int x = 0; x < Size.Width; x += ReturnedImage.Width)
-                    {
-                        for (int y = 0; y < Size.Height; y += ReturnedImage.Height)
-                        {
-                            g.DrawImage(ReturnedImage, x, y, ReturnedImage.Width, ReturnedImage.Height);
-                        }
-                    }
+            Bitmap TiledSprite = new Bitmap(Size.Width, Size.Height);
 
-                    return TiledSprite;
+            // Create the tiles
+            using (Graphics g = Graphics.FromImage(TiledSprite))
+            {
+                for (int x = 0; x < Size.Width; x += ShootMeUp.OBSTACLE_SIZE)
+                {
+                    for (int y = 0; y < Size.Height; y += ShootMeUp.OBSTACLE_SIZE)
+                    {
+                        g.DrawImage(
+                            ReturnedImage,
+                            new Rectangle(x, y, ShootMeUp.OBSTACLE_SIZE, ShootMeUp.OBSTACLE_SIZE),
+                            new Rectangle(0, 0, ReturnedImage.Width, ReturnedImage.Height),
+                            GraphicsUnit.Pixel
+                        );
+                    }
                 }
             }
+
+            return TiledSprite;
         }
 
         /// <summary>
@@ -364,13 +401,15 @@ namespace ShootMeUp
         /// <param name="GivenType">The Projectile.Type of the given projectile</param>
         /// <param name="fltRotationAngle">The projetile's rotation angle</param>
         /// <returns>A sprite</returns>
-        private Bitmap GetSprite(Projectile.Type GivenType, float fltRotationAngle)
+        private static Bitmap GetSprite(Projectile.Type GivenType, float fltRotationAngle)
         {
             Bitmap ReturnedImage;
 
             switch (GivenType)
             {
                 case Projectile.Type.Arrow:
+                    fltRotationAngle -= 45f;
+
                     ReturnedImage = Sprites.Arrow;
                     break;
                 case Projectile.Type.Fireball_Small:
@@ -454,8 +493,8 @@ namespace ShootMeUp
             _player = new(characterX, BORDER_SIZE * 32 + (32 - DEFAULT_CHARACTER_SIZE), DEFAULT_CHARACTER_SIZE, Character.Type.Player, GAMESPEED);
             Characters.Add(_player);
 
-            // Create the background images
-            Obstacles.Add(new(32, 32, BORDER_SIZE * 32, Obstacle.Type.CobbleStone));
+            // Create the background image
+            //Obstacles.Add(new(64, 64, BORDER_SIZE * 32 + 32, Obstacle.Type.Stone));
 
 
             // Create a new border, piece by piece
@@ -589,58 +628,75 @@ namespace ShootMeUp
             Obstacles.Add(new(intBorderLength - 352, intBorderLength - 352, OBSTACLE_SIZE, DIRT));
         }
 
+        /// <summary>
+        /// Generate random waves of enemies
+        /// </summary>
+        /// <param name="intWaveNumber">The current wave's number</param>
+        /// <returns></returns>
         private List<Enemy> GenerateWaves(int intWaveNumber)
         {
             if (_player == null || _player.Lives <= 0)
                 return new List<Enemy>();
 
-
             List<Enemy> WaveEnemies = new List<Enemy>();
+            Random rnd = new Random();
 
-            // Get a random number of total enemies (need to change this to use math algorythm that balance the total enemies count later)
-            int totalEnemies = intWaveNumber * 2;
+            // Base number of enemies plus some random variation
+            int baseEnemies = 3; // minimum
+            int totalEnemies = baseEnemies + rnd.Next(intWaveNumber, intWaveNumber * 3);
 
-            // Get the enemies
-            do
+            // Define enemy types with score values
+            var enemyTypes = new List<(Character.Type Type, int ScoreValue, float SizeMultiplier)>
             {
-                // Create new variables for enemy generation
-                int intCharSize = DEFAULT_CHARACTER_SIZE;
-                Character.Type enemyType;
+                (Character.Type.Zombie, 1, 1f),
+                (Character.Type.Skeleton, 3, 1f),
+                (Character.Type.Baby_Zombie, 4, 0.75f),
+                (Character.Type.Blaze, 6, 1f),
+                (Character.Type.Zombie_Pigman, 5, 1f)
+            };
 
-                // Get a number from 1 to 5 (inclusive)
-                int chosenEnemy = new Random().Next(Math.Min(6, totalEnemies));
-
-                switch (chosenEnemy)
+            while (totalEnemies > 0)
+            {
+                // Weighted probability for each enemy type
+                var weights = enemyTypes.Select(e =>
                 {
-                    case 1:
-                        enemyType = Character.Type.Zombie;
-                        totalEnemies --;
+                    // Base chance inversely proportional to ScoreValue (rarer = lower chance)
+                    float baseChance = 1f / e.ScoreValue;
+
+                    // Wave effect: increases chance for higher ScoreValue as wave progresses
+                    float waveEffect = 1f + (intWaveNumber * 0.05f * e.ScoreValue);
+
+                    return baseChance * waveEffect;
+                }).ToArray();
+
+                // Normalize and select enemy
+                float weightSum = weights.Sum();
+                float roll = (float)(rnd.NextDouble() * weightSum);
+
+                Character.Type selectedType = enemyTypes[0].Type;
+                float sizeMultiplier = 1f;
+                float cumulative = 0f;
+
+                for (int i = 0; i < enemyTypes.Count; i++)
+                {
+                    cumulative += weights[i];
+                    if (roll <= cumulative)
+                    {
+                        selectedType = enemyTypes[i].Type;
+                        sizeMultiplier = enemyTypes[i].SizeMultiplier;
                         break;
-                    case 2:
-                        enemyType = Character.Type.Skeleton;
-                        totalEnemies -= 2;
-                        break;
-                    case 3:
-                        enemyType = Character.Type.Blaze;
-                        totalEnemies -= 3;
-                        break;
-                    case 4:
-                        enemyType = Character.Type.Baby_Zombie;
-                        intCharSize = (int)(intCharSize* 0.75);
-                        totalEnemies -= 4;
-                        break;
-                    case 5:
-                        enemyType = Character.Type.Zombie_Pigman;
-                        totalEnemies -= 5;
-                        break;
-                    default:
-                        enemyType = Character.Type.Zombie;
-                        totalEnemies--;
-                        break;
+                    }
                 }
 
-                WaveEnemies.Add(new(0, 0, intCharSize, enemyType, GAMESPEED, _player));
-            }while (totalEnemies > 0);
+                // Determine enemy size
+                int intCharSize = (int)(DEFAULT_CHARACTER_SIZE * sizeMultiplier);
+
+                // Add enemy to wave
+                WaveEnemies.Add(new Enemy(0, 0, intCharSize, selectedType, GAMESPEED, _player));
+
+                // Reduce totalEnemies based on ScoreValue (rarer/stronger enemies "cost" more)
+                totalEnemies -= Math.Max(1, enemyTypes.First(e => e.Type == selectedType).ScoreValue);
+            }
 
             return WaveEnemies;
         }
@@ -680,6 +736,10 @@ namespace ShootMeUp
 
                 // Increment the wave number
                 _intWaveNumber++;
+
+
+                // Add a wait before the next wave
+                await Task.Delay(2000);
             }
         }
 
@@ -705,7 +765,7 @@ namespace ShootMeUp
             if (_gamestate == Gamestate.running && _player != null)
             {
                 // Clear the frame
-                bufferG.Clear(Color.FromArgb(217, 217, 217));
+                bufferG.Clear(ColorTranslator.FromHtml("#7f7f7f"));
 
                 // Draw all the background assets first
                 foreach (Obstacle Floor in Obstacles)
@@ -732,6 +792,15 @@ namespace ShootMeUp
 
                     using (Bitmap Image = GetSprite(character.CharType))
                         bufferG.DrawImage(Image, drawX, drawY, character.Size.Width, character.Size.Height);
+
+                    // Draw their health bar
+                    SizeF textSize = bufferG.MeasureString($"{character}", TextHelpers.drawFont);
+
+                    // Calculate the X coordinate to center the text
+                    float centeredX = character.Position.X + (character.Size.Width / 2f) - (textSize.Width / 2f);
+
+                    bufferG.DrawString($"{character}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX - cameraX, (character.Position.Y - 16) - cameraY);
+
                 }
 
                 // Draw obstacles
@@ -745,6 +814,16 @@ namespace ShootMeUp
 
                         using (Bitmap Image = GetSprite(obstacle.ObstType, obstacle.Size))
                             bufferG.DrawImage(Image, drawX, drawY, obstacle.Size.Width, obstacle.Size.Height);
+
+
+                        // Draw its life
+                        SizeF textSize = bufferG.MeasureString($"{obstacle}", TextHelpers.drawFont);
+
+                        // Calculate the X coordinate to center the text
+                        float centeredX = obstacle.Position.X + (obstacle.Size.Width / 2f) - (textSize.Width / 2f);
+
+                        bufferG.DrawString($"{obstacle}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX - cameraX, (obstacle.Position.Y - 16) - cameraY);
+
                     }
                 }
 
