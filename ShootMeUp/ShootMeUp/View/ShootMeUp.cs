@@ -2,6 +2,7 @@
 using ShootMeUp.Helpers;
 using ShootMeUp.Model;
 using ShootMeUp.Properties;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
@@ -9,6 +10,7 @@ using System.Security.Policy;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
+using Font = System.Drawing.Font;
 
 namespace ShootMeUp
 {
@@ -116,12 +118,8 @@ namespace ShootMeUp
         /// <summary>
         /// The player's score
         /// </summary>
-        private int _intScore;
-        public int Score
-        {
-            get { return _intScore; }
-            set { _intScore = value; }
-        }
+        [DefaultValue(0)]
+        public int Score { get; set; }
 
 
 
