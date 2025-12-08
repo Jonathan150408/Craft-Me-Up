@@ -728,7 +728,7 @@ namespace ShootMeUp
                 foreach (Enemy enemy in waveEnemies)
                 {
                     // End the wave system if the game stopped
-                    if (_gamestate != Gamestate.finished)
+                    if (_gamestate == Gamestate.finished)
                         return;
 
                     // Put the enemy in the right spot
