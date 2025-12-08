@@ -34,6 +34,13 @@ namespace ShootMeUp.Model
         /// </summary>
         private TimeSpan DamageCooldown = TimeSpan.FromSeconds(5);
 
+        protected DateTime _lastWitherSkullShotTime = DateTime.MinValue;
+
+        /// <summary>
+        /// How long the cooldown lasts after shooting a fireball
+        /// </summary>
+        private TimeSpan WitherSkullCooldown;
+
         /// <summary>
         /// The score that the enemy gives when it dies
         /// </summary>
@@ -90,12 +97,20 @@ namespace ShootMeUp.Model
 
                     DamageCooldown = TimeSpan.FromSeconds(8);
                     break;
+                case Character.Type.Wither:
+                    ScoreValue = 100;
+                    Lives = 50;
+                    _fltBaseSpeed = 1f / 6f;
+                    _blnShoots = true;
+                    _ProjectileType = Projectile.Type.WitherSkull;
+                    break;
                 default:
                     break;
             }
             
             DamageCooldown = TimeSpan.FromSeconds(DamageCooldown.TotalSeconds / GAMESPEED);
             ArrowCooldown = TimeSpan.FromSeconds(6 / GAMESPEED);
+            WitherSkullCooldown = TimeSpan.FromSeconds(1 / GAMESPEED);
             FireballCooldown = TimeSpan.FromSeconds(12 / GAMESPEED);
             _lastArrowShotTime = DateTime.Now;
             _lastFireballShotTime = DateTime.Now;
@@ -207,7 +222,8 @@ namespace ShootMeUp.Model
             else
             {
                 if ((_ProjectileType == Projectile.Type.Arrow_Small && DateTime.Now - _lastArrowShotTime < ArrowCooldown) ||
-                    (_ProjectileType == Projectile.Type.Fireball_Small && DateTime.Now - _lastFireballShotTime < FireballCooldown))
+                    (_ProjectileType == Projectile.Type.Fireball_Small && DateTime.Now - _lastFireballShotTime < FireballCooldown) ||
+                    (_ProjectileType == Projectile.Type.WitherSkull && DateTime.Now - _lastWitherSkullShotTime < WitherSkullCooldown))
                     return;
 
                 if (_Target.Lives <= 0) return;
@@ -218,8 +234,10 @@ namespace ShootMeUp.Model
                     ShootMeUp.Projectiles.Add(proj);
                     if (_ProjectileType == Projectile.Type.Arrow_Small)
                         _lastArrowShotTime = DateTime.Now;
-                    else
+                    else if (_ProjectileType == Projectile.Type.Fireball_Small)
                         _lastFireballShotTime = DateTime.Now;
+                    else 
+                        _lastWitherSkullShotTime = DateTime.Now;
                 }
             }
         }

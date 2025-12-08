@@ -46,6 +46,7 @@ namespace ShootMeUp.Model
             Arrow_Big,
             Fireball_Small,
             Fireball_Big,
+            WitherSkull,
             Undefined
         }
 
@@ -102,6 +103,13 @@ namespace ShootMeUp.Model
                     this.Size.Height = ShotBy.Size.Height;
                     _intDamage = 2;
                     _fltMovementSpeed = 0.75f;
+
+                    break;
+                case Type.WitherSkull:
+                    this.Size.Width = ShotBy.Size.Width;
+                    this.Size.Height = ShotBy.Size.Height;
+                    _intDamage = 3;
+                    _fltMovementSpeed = 1f;
 
                     break;
                 default:

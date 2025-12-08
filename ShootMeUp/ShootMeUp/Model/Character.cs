@@ -46,7 +46,8 @@ namespace ShootMeUp.Model
             Skeleton,
             Baby_Zombie,
             Blaze,
-            Zombie_Pigman
+            Zombie_Pigman,
+            Wither
         }
 
         // <summary>

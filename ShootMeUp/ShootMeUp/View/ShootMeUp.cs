@@ -280,6 +280,9 @@ namespace ShootMeUp
                 case Character.Type.Zombie_Pigman:
                     ReturnedImage = Sprites.Pigman;
                     break;
+                case Character.Type.Wither:
+                    ReturnedImage = Sprites.Wither;
+                    break;
                 default:
                     ReturnedImage = Sprites.Player;
                     break;
@@ -423,6 +426,9 @@ namespace ShootMeUp
                 case Projectile.Type.Fireball_Small:
                 case Projectile.Type.Fireball_Big:
                     ReturnedImage = Sprites.Fireball;
+                    break;
+                case Projectile.Type.WitherSkull:
+                    ReturnedImage = Sprites.WitherSkull;
                     break;
                 default:
                     ReturnedImage = Sprites.Player;
@@ -706,7 +712,7 @@ namespace ShootMeUp
             if (waveNumber % 5 == 0)
             {
                 for (int i = -2; i < waveNumber / 5; i++)
-                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie_Pigman, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Wither, GAMESPEED, _player));
             }
 
             return WaveEnemies;
