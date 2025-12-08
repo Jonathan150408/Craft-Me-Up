@@ -128,7 +128,8 @@ namespace ShootMeUp
 
         public static float cameraX { get; private set; }
         public static float cameraY { get; private set; }
-
+        //create a modale and display it
+        PictureBox pauseModale;
 
 
         public ShootMeUp()
@@ -137,7 +138,7 @@ namespace ShootMeUp
 
             ClientSize = new Size(WIDTH, HEIGHT);
             _intWaveNumber = 1;
-            _gamestate = Gamestate.paused;
+            _gamestate = Gamestate.finished;
 
             // Create a new list of keys held down
             _keysHeldDown = new List<Keys>();
@@ -151,6 +152,15 @@ namespace ShootMeUp
 
             cameraX = 0;
             cameraY = 0;
+
+            pauseModale = new()
+            {
+                Top = 0,
+                Left = 0,
+                Width = this.ClientRectangle.Width,
+                Height = this.ClientRectangle.Height,
+                BackColor = Color.FromArgb(75, 100, 100, 100)
+            };
 
             backBuffer = new Bitmap(WIDTH, HEIGHT);
             bufferG = Graphics.FromImage(backBuffer);
@@ -223,19 +233,22 @@ namespace ShootMeUp
         /// </summary>
         private void DisplayPauseMenu()
         {
-            //create a modale and display it
-            PictureBox pauseModale = new()
+            if (this._gamestate == Gamestate.running)
+            { 
+                Controls.Add(pauseModale);
+                //stops the ticker to pause the game
+                this.ticker.Stop();
+                this._gamestate = Gamestate.paused;
+                
+            }
+            else
             {
-                Top = 0,
-                Left = 0,
-                Width = this.ClientRectangle.Width,
-                Height = this.ClientRectangle.Height,
-                BackColor = Color.FromArgb(100, 100, 100, 100)
-            };
-            Controls.Add(pauseModale);
-
-            //stops the ticker to pause the game
-            this.ticker.Stop();
+                Controls.Remove(pauseModale);
+                //restart the ticker
+                this.ticker.Start();
+                this._gamestate = Gamestate.running;
+            }
+            
         }
 
         /// <summary>
@@ -715,7 +728,7 @@ namespace ShootMeUp
                 foreach (Enemy enemy in waveEnemies)
                 {
                     // End the wave system if the game stopped
-                    if (_gamestate != Gamestate.running)
+                    if (_gamestate != Gamestate.finished)
                         return;
 
                     // Put the enemy in the right spot
@@ -782,7 +795,7 @@ namespace ShootMeUp
         /// </summary>
         private void RenderFrame()
         {
-            if (_gamestate == Gamestate.running && _player != null)
+            if (_player != null)
             {
                 // Clear the frame
                 DrawBackground(bufferG, cameraX, cameraY);
@@ -885,7 +898,7 @@ namespace ShootMeUp
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (_gamestate == Gamestate.running && backBuffer != null)
+            if (_gamestate != Gamestate.finished && backBuffer != null)
             {
                 e.Graphics.DrawImageUnscaled(backBuffer, 0, 0);
             }
@@ -916,7 +929,7 @@ namespace ShootMeUp
                 }
                 else if (c.CharType == Character.Type.Player && c.Lives <= 0)
                 {
-                    _gamestate = Gamestate.paused;
+                    _gamestate = Gamestate.finished;
                     _player = null;
                     ShowTitle();
                     return true;
@@ -928,7 +941,7 @@ namespace ShootMeUp
         private void NewFrame(object sender, EventArgs e)
         {
             // Update the playspace if the player is in game
-            if (_gamestate == Gamestate.running && _player != null)
+            if (_player != null)
             {
                 // Update camera position to the player's
                 cameraX = _player.Position.X - (Size.Width / 2);
@@ -939,6 +952,9 @@ namespace ShootMeUp
 
                 // Tell the program to render the game again
                 Invalidate();
+
+                if (_gamestate != Gamestate.running)
+                    return;
 
                 // Clean up the dead entities
                 CleanupEntities();
@@ -987,8 +1003,12 @@ namespace ShootMeUp
         {
             // Add the key to the list if it's not already in there
             if (!_keysHeldDown.Contains(e.KeyCode))
-            {
                 _keysHeldDown.Add(e.KeyCode);
+
+            if (_keysHeldDown.Contains(Keys.Escape))
+            {
+                DisplayPauseMenu();
+                _keysHeldDown.Remove(Keys.Escape);
             }
         }
 
@@ -996,9 +1016,7 @@ namespace ShootMeUp
         {
             // Remove the key from the list if it's in there
             if (_keysHeldDown.Contains(e.KeyCode))
-            {
                 _keysHeldDown.Remove(e.KeyCode);
-            }
         }
 
         private void ShootMeUp_MouseClick(object sender, MouseEventArgs e)
@@ -1022,9 +1040,7 @@ namespace ShootMeUp
                 Projectile? possibleProjectile = _player.Shoot(target, type);
 
                 if (possibleProjectile != null)
-                {
                     Projectiles.Add(possibleProjectile);
-                }
             }
         }
     }
