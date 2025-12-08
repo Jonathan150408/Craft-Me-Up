@@ -622,9 +622,9 @@ namespace ShootMeUp
         /// <summary>
         /// Generate random waves of enemies
         /// </summary>
-        /// <param name="intWaveNumber">The current wave's number</param>
+        /// <param name="waveNumber">The current wave's number</param>
         /// <returns></returns>
-        private List<Enemy> GenerateWaves(int intWaveNumber)
+        private List<Enemy> GenerateWaves(int waveNumber)
         {
             if (_player == null || _player.Lives <= 0)
                 return new List<Enemy>();
@@ -634,7 +634,7 @@ namespace ShootMeUp
 
             // Base number of enemies plus some random variation
             int baseEnemies = 3; // minimum
-            int totalEnemies = baseEnemies + rnd.Next(intWaveNumber, intWaveNumber * 3);
+            int totalEnemies = baseEnemies + rnd.Next(waveNumber, waveNumber * 3);
 
             // Define enemy types with score values
             var enemyTypes = new List<(Character.Type Type, int ScoreValue, float SizeMultiplier)>
@@ -655,7 +655,7 @@ namespace ShootMeUp
                     float baseChance = 1f / e.ScoreValue;
 
                     // Wave effect: increases chance for higher ScoreValue as wave progresses
-                    float waveEffect = 1f + (intWaveNumber * 0.05f * e.ScoreValue);
+                    float waveEffect = 1f + (waveNumber * 0.05f * e.ScoreValue);
 
                     return baseChance * waveEffect;
                 }).ToArray();
@@ -687,6 +687,13 @@ namespace ShootMeUp
 
                 // Reduce totalEnemies based on ScoreValue (rarer/stronger enemies "cost" more)
                 totalEnemies -= Math.Max(1, enemyTypes.First(e => e.Type == selectedType).ScoreValue);
+            }
+
+            // Adds bosses at specific waves
+            if (waveNumber % 5 == 0)
+            {
+                for (int i = -2; i < waveNumber / 5; i++)
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Zombie_Pigman, GAMESPEED, _player));
             }
 
             return WaveEnemies;
