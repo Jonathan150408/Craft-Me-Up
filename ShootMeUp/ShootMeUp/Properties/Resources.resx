@@ -118,14 +118,17 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="Character_Blaze" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Character_Blaze.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="Character_Player" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Character_Player.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Character_Skeleton" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Character_Skeleton.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Character_Blaze" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Character_Blaze.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Character_Wither" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Character_Wither.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Character_Zombie" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Character_Zombie.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -151,6 +154,9 @@
   <data name="Obstacle_Bush" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Obstacle_Bush.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Obstacle_Cobblestone" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Obstacle_Cobblestone.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="Obstacle_Dirt" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Obstacle_Dirt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -160,13 +166,13 @@
   <data name="Obstacle_Wood_Planks" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Obstacle_Wood_Planks.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Obstacle_Cobblestone" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Obstacle_Cobblestone.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="Projectile_Arrow" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Projectile_Arrow.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Projectile_Fireball" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Projectile_Fireball.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Projectile_WitherSkull" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Projectile_WitherSkull.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

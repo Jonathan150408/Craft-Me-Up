@@ -16,10 +16,12 @@ namespace ShootMeUp.Model
         public static readonly Bitmap Pigman        = Resources.Character_Zombie_Pigman;
         public static readonly Bitmap BabyZombie    = Resources.Character_Zombie;
         public static readonly Bitmap Blaze         = Resources.Character_Blaze;
+        public static readonly Bitmap Wither        = Resources.Character_Wither;
 
         // Projectiles
-        public static readonly Bitmap Arrow     = Resources.Projectile_Arrow;
-        public static readonly Bitmap Fireball  = Resources.Projectile_Fireball;
+        public static readonly Bitmap Arrow         = Resources.Projectile_Arrow;
+        public static readonly Bitmap Fireball      = Resources.Projectile_Fireball;
+        public static readonly Bitmap WitherSkull   = Resources.Projectile_WitherSkull;
 
         // Obstacles
         public static readonly Bitmap Dirt = Resources.Obstacle_Dirt;
