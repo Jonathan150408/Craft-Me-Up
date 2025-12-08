@@ -68,7 +68,7 @@ namespace ShootMeUp.Model
                     Lives = 5;
                     _fltBaseSpeed = -0.5f;
                     _blnShoots = true;
-                    _ProjectileType = Projectile.Type.Arrow;
+                    _ProjectileType = Projectile.Type.Arrow_Small;
                     break;
                 case Character.Type.Baby_Zombie:
                     ScoreValue = 4;
@@ -206,7 +206,7 @@ namespace ShootMeUp.Model
             }
             else
             {
-                if ((_ProjectileType == Projectile.Type.Arrow && DateTime.Now - _lastArrowShotTime < ArrowCooldown) ||
+                if ((_ProjectileType == Projectile.Type.Arrow_Small && DateTime.Now - _lastArrowShotTime < ArrowCooldown) ||
                     (_ProjectileType == Projectile.Type.Fireball_Small && DateTime.Now - _lastFireballShotTime < FireballCooldown))
                     return;
 
@@ -216,7 +216,7 @@ namespace ShootMeUp.Model
                 if (proj != null)
                 {
                     ShootMeUp.Projectiles.Add(proj);
-                    if (_ProjectileType == Projectile.Type.Arrow)
+                    if (_ProjectileType == Projectile.Type.Arrow_Small)
                         _lastArrowShotTime = DateTime.Now;
                     else
                         _lastFireballShotTime = DateTime.Now;
@@ -265,9 +265,5 @@ namespace ShootMeUp.Model
 
             }
         }
-
-        //// Center the text above the obstacle
-        //drawingSpace.Graphics.DrawString($"{this}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX, Y - 16);
-
     }
 }

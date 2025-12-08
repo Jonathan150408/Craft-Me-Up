@@ -42,7 +42,8 @@ namespace ShootMeUp.Model
         /// </summary>
         public enum Type
         {
-            Arrow,
+            Arrow_Small,
+            Arrow_Big,
             Fireball_Small,
             Fireball_Big,
             Undefined
@@ -75,25 +76,32 @@ namespace ShootMeUp.Model
             // Define the different properties depending on the projectile type
             switch (type)
             {
-                case Type.Arrow:
+                case Type.Arrow_Big:
+                    this.Size.Width = ShotBy.Size.Width;
+                    this.Size.Height = ShotBy.Size.Height;
+                    _intDamage = 3;
+                    _fltMovementSpeed = 3;
+
+                    break;
+                case Type.Arrow_Small:
                     this.Size.Width = ShotBy.Size.Width;
                     this.Size.Height = ShotBy.Size.Height;
                     _intDamage = 1;
-                    _fltMovementSpeed = 3;
+                    _fltMovementSpeed = 2;
 
                     break;
                 case Type.Fireball_Big:
                     this.Size.Width = ShotBy.Size.Width;
                     this.Size.Height = ShotBy.Size.Height;
-                    _intDamage = 3;
+                    _intDamage = 5;
                     _fltMovementSpeed = 1;
 
                     break;
                 case Type.Fireball_Small:
-                    this.Size.Width = ShotBy.Size.Width/2;
-                    this.Size.Height = ShotBy.Size.Height/2;
+                    this.Size.Width = ShotBy.Size.Width;
+                    this.Size.Height = ShotBy.Size.Height;
                     _intDamage = 2;
-                    _fltMovementSpeed = 1;
+                    _fltMovementSpeed = 0.75f;
 
                     break;
                 default:

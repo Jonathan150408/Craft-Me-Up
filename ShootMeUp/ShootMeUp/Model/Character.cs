@@ -195,7 +195,7 @@ namespace ShootMeUp.Model
             if (Lives > 0)
             {
                 // Send the corresponding projectile if the character is allowed to
-                if (type == Projectile.Type.Arrow && now - _lastArrowShotTime >= ArrowCooldown)
+                if (type == Projectile.Type.Arrow_Big && now - _lastArrowShotTime >= ArrowCooldown)
                 {
                     _lastArrowShotTime = now;
 

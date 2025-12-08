@@ -125,10 +125,6 @@ namespace ShootMeUp
 
 
 
-        private int _intCleanupCounter;
-
-        private static readonly Brush BackgroundBrush = new SolidBrush(Color.FromArgb(217, 217, 217));
-
         private Bitmap backBuffer;
         private Graphics bufferG;
 
@@ -407,7 +403,8 @@ namespace ShootMeUp
 
             switch (GivenType)
             {
-                case Projectile.Type.Arrow:
+                case Projectile.Type.Arrow_Small:
+                case Projectile.Type.Arrow_Big:
                     fltRotationAngle -= 45f;
 
                     ReturnedImage = Sprites.Arrow;
@@ -497,7 +494,7 @@ namespace ShootMeUp
             for (int x = 0; x <= BORDER_SIZE; x++)
                 for (int y = 0; y <= BORDER_SIZE; y++)
                     if (x == 0 || x == BORDER_SIZE || y == 0 || y == BORDER_SIZE)
-                        Obstacles.Add(new(32 * (2 + x), 32 * (2 + y), 32, Obstacle.Type.Barrier));
+                        Obstacles.Add(new(32 * (2 + x), 32 * (2 + y), 32, Obstacle.Type.Bedrock));
 
             // Create a variable to store the border's size
             int intBorderLength = BORDER_SIZE * 32 + 32;
@@ -526,7 +523,7 @@ namespace ShootMeUp
             Obstacles.Add(new(intBorderLength - 32, intBorderLength, OBSTACLE_SIZE, BEDROCK));
             Obstacles.Add(new(intBorderLength, intBorderLength - 32, OBSTACLE_SIZE, BEDROCK));
 
-            // The pillars' health value
+            // The pillars' type value
             const Obstacle.Type COBBLE = Obstacle.Type.CobbleStone;
 
             // Top left pillars
@@ -566,7 +563,7 @@ namespace ShootMeUp
             }
 
 
-            // The barriers' health
+            // The barriers' type
             const Obstacle.Type WOOD = Obstacle.Type.Wood;
 
             // Top barriers
@@ -602,7 +599,7 @@ namespace ShootMeUp
             Obstacles.Add(new(512, intBorderLength - 256, OBSTACLE_SIZE * 2, WOOD));
 
 
-            // The smaller obstacles' health
+            // The smaller obstacles' type
             const Obstacle.Type DIRT = Obstacle.Type.Dirt;
 
             // Top left small obstacle
@@ -704,6 +701,9 @@ namespace ShootMeUp
         {
             while (_gamestate == Gamestate.running && (_player != null && _player.Lives > 0))
             { 
+                // Add a wait before the next wave
+                await Task.Delay(2000);
+
                 // Get the wave's enemies
                 List<Enemy> waveEnemies = GenerateWaves(_intWaveNumber);
 
@@ -732,10 +732,6 @@ namespace ShootMeUp
 
                 // Increment the wave number
                 _intWaveNumber++;
-
-
-                // Add a wait before the next wave
-                await Task.Delay(2000);
             }
         }
 
@@ -749,7 +745,6 @@ namespace ShootMeUp
         {
             bool overlapX = entity1.Position.X < entity2.Position.X + entity2.Size.Width && entity1.Position.X + entity1.Size.Width > entity2.Position.X;
             bool overlapY = entity1.Position.Y < entity2.Position.Y + entity2.Size.Height && entity1.Position.Y + entity1.Size.Height > entity2.Position.Y;
-            Console.WriteLine(overlapX && overlapY);
             return overlapX && overlapY;
         }
 
@@ -787,6 +782,20 @@ namespace ShootMeUp
                 // Clear the frame
                 DrawBackground(bufferG, cameraX, cameraY);
 
+				// Draw all characters' health (not including player)
+                foreach (Character character in Characters)
+                {
+                    if (character.CharType == Character.Type.Player) continue;
+                    // Draw their health bar
+                    SizeF textSize = bufferG.MeasureString($"{character}", TextHelpers.drawFont);
+
+                    // Calculate the X coordinate to center the text
+                    float centeredX = character.Position.X + (character.Size.Width / 2f) - (textSize.Width / 2f);
+
+                    bufferG.DrawString($"{character}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX - cameraX, (character.Position.Y - 16) - cameraY);
+
+                }
+
                 // Draw all the background assets first
                 foreach (Obstacle Floor in Obstacles)
                 {
@@ -812,15 +821,6 @@ namespace ShootMeUp
 
                     using (Bitmap Image = GetSprite(character.CharType))
                         bufferG.DrawImage(Image, drawX, drawY, character.Size.Width, character.Size.Height);
-
-                    // Draw their health bar
-                    SizeF textSize = bufferG.MeasureString($"{character}", TextHelpers.drawFont);
-
-                    // Calculate the X coordinate to center the text
-                    float centeredX = character.Position.X + (character.Size.Width / 2f) - (textSize.Width / 2f);
-
-                    bufferG.DrawString($"{character}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX - cameraX, (character.Position.Y - 16) - cameraY);
-
                 }
 
                 // Draw obstacles
@@ -896,13 +896,6 @@ namespace ShootMeUp
         /// </summary>
         private void CleanupEntities()
         {
-            _intCleanupCounter++;
-
-            // Only do this once the counter reaches 5 frames
-            if (_intCleanupCounter < 5) return;
-
-            _intCleanupCounter = 0;
-
             // Remove anything inactive
             Projectiles.RemoveAll(p => !p.Active);
 
@@ -942,8 +935,7 @@ namespace ShootMeUp
                 // Tell the program to render the game again
                 Invalidate();
 
-                // Attempt to clean up the dead entities
-                _intCleanupCounter++;
+                // Clean up the dead entities
                 CleanupEntities();
 
                 // Create movement-related boolean variables
@@ -1010,11 +1002,11 @@ namespace ShootMeUp
             if (_gamestate == Gamestate.running && _player != null)
             {
                 //default is arrow
-                Projectile.Type type = Projectile.Type.Arrow;
+                Projectile.Type type = Projectile.Type.Arrow_Big;
 
                 // If it's a left click, strType is "arrow". if its a right click, strType is "fireball".
                 if (e.Button == MouseButtons.Left)
-                    type = Projectile.Type.Arrow;
+                    type = Projectile.Type.Arrow_Big;
                 else if (e.Button == MouseButtons.Right)
                     type = Projectile.Type.Fireball_Big;
 
