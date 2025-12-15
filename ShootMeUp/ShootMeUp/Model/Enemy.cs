@@ -53,7 +53,7 @@ namespace ShootMeUp.Model
         /// <param name="type">The enemy's type (zombie, skeleton, ...)</param>
         /// <param name="GAMESPEED">The game's speed</param>
         /// <param name="Target">The enemy's target</param>
-        public Enemy(float x, float y, int length, Character.Type type, int GAMESPEED, Character Target) : base(x, y, length, type, GAMESPEED)
+        public Enemy(float x, float y, int length, Type type, int GAMESPEED, Character Target) : base(x, y, length, type, GAMESPEED)
         {
             _Target = Target;
 
@@ -63,40 +63,63 @@ namespace ShootMeUp.Model
             // Set up the enemy depending on the current type
             switch (type)
             {
-                case Character.Type.Zombie:
+                case Type.Zombie:
                     ScoreValue = 1;
                     Lives = 10;
-                    _fltBaseSpeed = 2f / 5f;
+                    _fltBaseSpeed = 0.4f;
                     break;
-                case Character.Type.Skeleton:
+                case Type.Skeleton:
                     ScoreValue = 3;
                     Lives = 5;
                     _fltBaseSpeed = -0.5f;
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Arrow_Small;
                     break;
-                case Character.Type.Baby_Zombie:
+                case Type.Baby_Zombie:
                     ScoreValue = 4;
                     Lives = 3;
                     _fltBaseSpeed = 1.5f;
                     DamageCooldown = TimeSpan.FromSeconds(3);
                     break;
-                case Character.Type.Blaze:
+                case Type.Blaze:
                     ScoreValue = 6;
                     Lives = 10;
                     _fltBaseSpeed = -0.25f;
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Fireball_Small;
                     break;
-                case Character.Type.Zombie_Pigman:
+                case Type.Zombie_Pigman:
                     ScoreValue = 5;
                     Lives = 20;
-                    _fltBaseSpeed = 1f / 5f;
+                    _fltBaseSpeed = 0.2f;
 
                     DamageCooldown = TimeSpan.FromSeconds(8);
                     break;
-                case Character.Type.Wither:
+                case Type.SpiderJockey:
+                    ScoreValue = 20;
+                    Lives = 20;
+                    _fltBaseSpeed = 0.5f;
+
+                    _blnShoots = true;
+                    _ProjectileType = Projectile.Type.Arrow_Small;
+                    break;
+                case Type.WitherSkeleton:
+                    ScoreValue = 50;
+                    Lives = 20;
+
+                    _fltBaseSpeed = 0.5f;
+                    
+                    break;
+                case Type.Dragon:
                     ScoreValue = 100;
+
+                    _fltBaseSpeed = 0.5f;
+                    _blnShoots = true;
+                    _ProjectileType = Projectile.Type.DragonBreath;
+
+                    break;
+                case Type.Wither:
+                    ScoreValue = 250;
                     Lives = 50;
                     _fltBaseSpeed = 1f / 6f;
                     _blnShoots = true;

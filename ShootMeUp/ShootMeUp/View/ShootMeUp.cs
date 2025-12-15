@@ -662,25 +662,25 @@ namespace ShootMeUp
             int totalEnemies = baseEnemies + rnd.Next(waveNumber, waveNumber * 3);
 
             // Define enemy types with score values
-            var enemyTypes = new List<(Character.Type Type, int ScoreValue, float SizeMultiplier)>
+            var enemyTypes = new List<(Character.Type Type, int Weight, float SizeMultiplier)>
             {
-                (Character.Type.Zombie, 1, 1f),
-                (Character.Type.Skeleton, 3, 1f),
-                (Character.Type.Baby_Zombie, 4, 0.75f),
-                (Character.Type.Blaze, 6, 1f),
-                (Character.Type.Zombie_Pigman, 5, 1f)
+                (Character.Type.Zombie,         1,       1f),
+                (Character.Type.Skeleton,       3,       1f),
+                (Character.Type.Baby_Zombie,    5,       0.75f),
+                (Character.Type.Zombie_Pigman,  10,      1f),
+                (Character.Type.Blaze,          20,      1f)
             };
 
             while (totalEnemies > 0)
             {
                 // Weighted probability for each enemy type
-                var weights = enemyTypes.Select(e =>
+                float[] weights = enemyTypes.Select(e =>
                 {
-                    // Base chance inversely proportional to ScoreValue (rarer = lower chance)
-                    float baseChance = 1f / e.ScoreValue;
+                    // Base chance inversely proportional to Weight (rarer = lower chance)
+                    float baseChance = 1f / e.Weight;
 
-                    // Wave effect: increases chance for higher ScoreValue as wave progresses
-                    float waveEffect = 1f + (waveNumber * 0.05f * e.ScoreValue);
+                    // Wave effect: increases chance for higher Weight as wave progresses
+                    float waveEffect = 1f + (waveNumber * 0.05f * e.Weight);
 
                     return baseChance * waveEffect;
                 }).ToArray();
@@ -710,15 +710,45 @@ namespace ShootMeUp
                 // Add enemy to wave
                 WaveEnemies.Add(new Enemy(0, 0, intCharSize, selectedType, GAMESPEED, _player));
 
-                // Reduce totalEnemies based on ScoreValue (rarer/stronger enemies "cost" more)
-                totalEnemies -= Math.Max(1, enemyTypes.First(e => e.Type == selectedType).ScoreValue);
+                // Reduce totalEnemies based on Weight (rarer/stronger enemies "cost" more)
+                totalEnemies -= Math.Max(1, enemyTypes.First(e => e.Type == selectedType).Weight);
             }
 
             // Adds bosses at specific waves
             if (waveNumber % 5 == 0)
             {
-                for (int i = -2; i < waveNumber / 5; i++)
-                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE * 2, Character.Type.Wither, GAMESPEED, _player));
+                // Create multiple checks
+                bool isMultipleOf50 = waveNumber % 50 == 0;
+                bool isMultipleOf25 = waveNumber % 25 == 0;
+                bool isMultipleOf10 = waveNumber % 10 == 0;
+
+                // Initialize spawn variables
+                int intBossAmount;
+                Character.Type BossType;
+
+                if (isMultipleOf50)
+                {
+                    intBossAmount = waveNumber / 50;
+                    BossType = Character.Type.Wither;
+                }
+                else if (isMultipleOf25)
+                {
+                    intBossAmount = waveNumber / 25;
+                    BossType = Character.Type.Dragon;
+                }
+                else if (isMultipleOf10)
+                {
+                    intBossAmount = waveNumber / 10;
+                    BossType = Character.Type.WitherSkeleton;
+                }
+                else
+                {
+                    intBossAmount = waveNumber / 5;
+                    BossType = Character.Type.SpiderJockey;
+                }
+
+                for (int i = 0; i < intBossAmount; i++)
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE * 4, BossType, GAMESPEED, _player));
             }
 
             return WaveEnemies;
