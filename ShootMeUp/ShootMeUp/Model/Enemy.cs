@@ -277,9 +277,10 @@ namespace ShootMeUp.Model
             }
             else
             {
-                if ((_ProjectileType == Projectile.Type.Arrow_Small && DateTime.Now - LastDamageTime < DamageCooldown) ||
-                    (_ProjectileType == Projectile.Type.Fireball_Small && DateTime.Now - LastDamageTime < DamageCooldown) ||
-                    (_ProjectileType == Projectile.Type.WitherSkull && DateTime.Now - LastDamageTime < DamageCooldown))
+                TimeSpan TimeSinceLastDamage = DateTime.Now - LastDamageTime;
+                bool blnCanShoot = TimeSinceLastDamage > DamageCooldown;
+
+                if (!blnCanShoot)
                     return;
 
                 if (_Target.Lives <= 0) return;

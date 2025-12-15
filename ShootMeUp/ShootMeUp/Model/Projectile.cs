@@ -44,6 +44,7 @@ namespace ShootMeUp.Model
         {
             Arrow_Small,
             Arrow_Big,
+            Arrow_Jockey,
             Fireball_Small,
             Fireball_Big,
             WitherSkull,
@@ -90,6 +91,13 @@ namespace ShootMeUp.Model
                     this.Size.Height = ShotBy.Size.Height;
                     _intDamage = 1;
                     _fltMovementSpeed = 2;
+
+                    break;
+                case Type.Arrow_Jockey:
+                    this.Size.Width = ShotBy.Size.Width / 2;
+                    this.Size.Height = ShotBy.Size.Height / 2;
+                    _intDamage = 2;
+                    _fltMovementSpeed = 1.5f;
 
                     break;
                 case Type.Fireball_Big:
