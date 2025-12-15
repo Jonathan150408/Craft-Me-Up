@@ -97,33 +97,34 @@ namespace ShootMeUp.Model
                     break;
                 case Type.SpiderJockey:
                     ScoreValue = 20;
-                    Lives = 20;
-                    _fltBaseSpeed = 0.5f;
+                    Lives = 25;
+                    _fltBaseSpeed = 0.75f;
 
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Arrow_Small;
                     break;
                 case Type.WitherSkeleton:
                     ScoreValue = 50;
-                    Lives = 20;
+                    Lives = 35;
 
                     _fltBaseSpeed = 0.5f;
-                    
-                    break;
-                case Type.Dragon:
-                    ScoreValue = 100;
-
-                    _fltBaseSpeed = 0.5f;
-                    _blnShoots = true;
-                    _ProjectileType = Projectile.Type.DragonBreath;
-
                     break;
                 case Type.Wither:
-                    ScoreValue = 250;
+                    ScoreValue = 100;
                     Lives = 50;
-                    _fltBaseSpeed = 1f / 6f;
+
+                    _fltBaseSpeed = 0.2f;
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.WitherSkull;
+                    break;
+                case Type.Dragon:
+                    ScoreValue = 250;
+                    Lives = 100;
+
+                    _fltBaseSpeed = 0.5f;
+                    _blnShoots = true;
+                    _ProjectileType = Projectile.Type.DragonFireball;
+
                     break;
                 default:
                     _ProjectileType = Projectile.Type.Undefined;
@@ -144,8 +145,24 @@ namespace ShootMeUp.Model
                 case Projectile.Type.WitherSkull:
                     DamageCooldown = TimeSpan.FromSeconds(4);
                     break;
+                case Projectile.Type.DragonFireball:
+                    DamageCooldown = TimeSpan.FromSeconds(20);
+                    break;
                 default:
-                    DamageCooldown = TimeSpan.FromSeconds(5);
+                    // No projectile, check the enemy type
+                    switch (type)
+                    {
+                        case Type.Baby_Zombie:
+                            DamageCooldown = TimeSpan.FromSeconds(3);
+                            break;
+                        case Type.Zombie_Pigman:
+                            DamageCooldown = TimeSpan.FromSeconds(8);
+                            break;
+                        default:
+                            DamageCooldown = TimeSpan.FromSeconds(5);
+
+                            break;
+                    }
                     break;
             }
 
@@ -308,13 +325,22 @@ namespace ShootMeUp.Model
         /// <param name="singularCFrame">The given CFrame</param>
         public void Damage(CFrame singularCFrame)
         {
+            // Get the enemy's damage
+            int intDamage = 1;
+            switch (CharType)
+            {
+                case Type.WitherSkeleton:
+                    intDamage = 5;
+                    break;
+            }
+
             if (singularCFrame is Character player)
             {
-                player.Lives -= 1;
+                player.Lives -= intDamage;
             }
             else if (singularCFrame is Obstacle obstacle)
             {
-                obstacle.Health -= 1;
+                obstacle.Health -= intDamage;
 
             }
         }

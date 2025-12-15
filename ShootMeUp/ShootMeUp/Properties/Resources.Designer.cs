@@ -233,6 +233,16 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap Projectile_DragonFireball {
+            get {
+                object obj = ResourceManager.GetObject("Projectile_DragonFireball", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Projectile_Fireball {
             get {
                 object obj = ResourceManager.GetObject("Projectile_Fireball", resourceCulture);

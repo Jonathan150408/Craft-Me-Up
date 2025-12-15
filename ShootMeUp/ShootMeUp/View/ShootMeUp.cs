@@ -280,8 +280,17 @@ namespace ShootMeUp
                 case Character.Type.Zombie_Pigman:
                     ReturnedImage = Sprites.Pigman;
                     break;
+                case Character.Type.SpiderJockey:
+                    ReturnedImage = Sprites.SpiderJockey;
+                    break;
+                case Character.Type.WitherSkeleton:
+                    ReturnedImage = Sprites.WitherSkull;
+                    break;
                 case Character.Type.Wither:
                     ReturnedImage = Sprites.Wither;
+                    break;
+                case Character.Type.Dragon:
+                    ReturnedImage = Sprites.Dragon;
                     break;
                 default:
                     ReturnedImage = Sprites.Player;
@@ -429,6 +438,9 @@ namespace ShootMeUp
                     break;
                 case Projectile.Type.WitherSkull:
                     ReturnedImage = Sprites.WitherSkull;
+                    break;
+                case Projectile.Type.DragonFireball:
+                    ReturnedImage = Sprites.DragonFireball;
                     break;
                 default:
                     ReturnedImage = Sprites.Player;
@@ -724,31 +736,36 @@ namespace ShootMeUp
 
                 // Initialize spawn variables
                 int intBossAmount;
+                int intSizeMultiplicator;
                 Character.Type BossType;
 
                 if (isMultipleOf50)
                 {
-                    intBossAmount = waveNumber / 50;
-                    BossType = Character.Type.Wither;
+                    intBossAmount = waveNumber / 25;
+                    intSizeMultiplicator = 8;
+                    BossType = Character.Type.Dragon;
                 }
                 else if (isMultipleOf25)
                 {
-                    intBossAmount = waveNumber / 25;
-                    BossType = Character.Type.Dragon;
+                    intBossAmount = waveNumber / 50;
+                    intSizeMultiplicator = 4;
+                    BossType = Character.Type.Wither;
                 }
                 else if (isMultipleOf10)
                 {
                     intBossAmount = waveNumber / 10;
+                    intSizeMultiplicator = 2;
                     BossType = Character.Type.WitherSkeleton;
                 }
                 else
                 {
                     intBossAmount = waveNumber / 5;
+                    intSizeMultiplicator = 2;
                     BossType = Character.Type.SpiderJockey;
                 }
 
                 for (int i = 0; i < intBossAmount; i++)
-                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE * 4, BossType, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE * intSizeMultiplicator, BossType, GAMESPEED, _player));
             }
 
             return WaveEnemies;

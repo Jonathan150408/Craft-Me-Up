@@ -47,6 +47,7 @@ namespace ShootMeUp.Model
             Fireball_Small,
             Fireball_Big,
             WitherSkull,
+            DragonFireball,
             Undefined
         }
 
@@ -106,10 +107,17 @@ namespace ShootMeUp.Model
 
                     break;
                 case Type.WitherSkull:
-                    this.Size.Width = ShotBy.Size.Width / 2;
-                    this.Size.Height = ShotBy.Size.Height / 2;
+                    this.Size.Width = ShotBy.Size.Width / 4;
+                    this.Size.Height = ShotBy.Size.Height / 4;
                     _intDamage = 3;
                     _fltMovementSpeed = 1f;
+
+                    break;
+                case Type.DragonFireball:
+                    this.Size.Width = ShotBy.Size.Width / 8;
+                    this.Size.Height = ShotBy.Size.Height / 8;
+                    _intDamage = 5;
+                    _fltMovementSpeed = 1;
 
                     break;
                 default:
