@@ -5,6 +5,7 @@ using ShootMeUp.Properties;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
 using System.Threading.Tasks;
@@ -128,8 +129,10 @@ namespace ShootMeUp
 
         public static float cameraX { get; private set; }
         public static float cameraY { get; private set; }
-        //create a modale and display it
+
+        //create a modal and a button for the pause menu
         PictureBox pauseModale;
+        Button resumeButton;
 
 
         public ShootMeUp()
@@ -141,7 +144,7 @@ namespace ShootMeUp
             _gamestate = Gamestate.finished;
 
             // Create a new list of keys held down
-            _keysHeldDown = new List<Keys>();
+            _keysHeldDown = [];
 
             this.SetStyle(ControlStyles.AllPaintingInWmPaint |
               ControlStyles.OptimizedDoubleBuffer |
@@ -161,6 +164,17 @@ namespace ShootMeUp
                 Height = this.ClientRectangle.Height,
                 BackColor = Color.FromArgb(75, 100, 100, 100)
             };
+            resumeButton = new()
+            {
+                Height = 100,
+                Width = 300,
+                Top = (this.ClientSize.Height - 100) / 2,
+                Left = (this.ClientSize.Width - 300) / 2,
+                Text = "Resume Game",
+                BackColor = Color.White,
+                Font = new Font("Consolas", 24, FontStyle.Bold),
+            };
+            this.resumeButton.Click += ResumeButton_Click;
 
             backBuffer = new Bitmap(WIDTH, HEIGHT);
             bufferG = Graphics.FromImage(backBuffer);
@@ -228,21 +242,27 @@ namespace ShootMeUp
             await StartWaves();
         }
 
+
+        private void ResumeButton_Click(object? sender, EventArgs e)
+        {
+        }
         /// <summary>
         /// pauses the game and displays the pause menu
         /// </summary>
         private void DisplayPauseMenu()
         {
             if (this._gamestate == Gamestate.running)
-            { 
+            {
+                Controls.Add(resumeButton);
                 Controls.Add(pauseModale);
                 //stops the ticker to pause the game
                 this.ticker.Stop();
                 this._gamestate = Gamestate.paused;
                 
             }
-            else
+            else if (this._gamestate == Gamestate.paused)
             {
+                Controls.Remove(resumeButton);
                 Controls.Remove(pauseModale);
                 //restart the ticker
                 this.ticker.Start();
@@ -776,8 +796,13 @@ namespace ShootMeUp
         /// </summary>
         private async Task StartWaves()
         {
-            while (_gamestate == Gamestate.running && (_player != null && _player.Lives > 0))
-            { 
+            while (_gamestate != Gamestate.finished && (_player != null && _player.Lives > 0))
+            {
+                //supposed to waits if the game is paused, but doesn't works
+                //do
+                //    await Task.Delay(25);
+                //while (_gamestate == Gamestate.paused);
+
                 // Add a wait before the next wave
                 await Task.Delay(2000);
 
@@ -799,6 +824,9 @@ namespace ShootMeUp
                     // Add the enemy to the character list
                     Characters.Add(enemy);
 
+                    //waits if the game is paused - breaks the game
+                    //while (_gamestate == Gamestate.paused) ;
+                    //    await Task.Delay(25);
                     // Add a wait before adding the next enemy
                     await Task.Delay(2000);
                 }
@@ -807,7 +835,7 @@ namespace ShootMeUp
                 waveEnemies.Clear();
 
                 // Wait until all enemies are dead
-                while (Characters.Count > 1 && _gamestate == Gamestate.running)
+                while (Characters.Count > 1 && _gamestate != Gamestate.finished)
                     await Task.Delay(25);
 
                 // Increment the wave number
