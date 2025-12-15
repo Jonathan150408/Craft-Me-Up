@@ -32,14 +32,12 @@ namespace ShootMeUp.Model
         /// <summary>
         /// How long the cooldown lasts after damaging a player
         /// </summary>
-        private TimeSpan DamageCooldown = TimeSpan.FromSeconds(5);
-
-        protected DateTime _lastWitherSkullShotTime = DateTime.MinValue;
+        private TimeSpan DamageCooldown;
 
         /// <summary>
-        /// How long the cooldown lasts after shooting a fireball
+        /// The last time where the enemy hurt or sent a projectile towards the player
         /// </summary>
-        private TimeSpan WitherSkullCooldown;
+        public DateTime LastDamageTime = DateTime.MinValue;
 
         /// <summary>
         /// The score that the enemy gives when it dies
@@ -105,15 +103,33 @@ namespace ShootMeUp.Model
                     _ProjectileType = Projectile.Type.WitherSkull;
                     break;
                 default:
+                    _ProjectileType = Projectile.Type.Undefined;
                     break;
             }
-            
+
+            // Change the damage cooldown depending on the projectile type
+            switch (_ProjectileType)
+            {
+                case Projectile.Type.Arrow_Small:
+                case Projectile.Type.Arrow_Big:
+                    DamageCooldown = TimeSpan.FromSeconds(6);
+                    break;
+                case Projectile.Type.Fireball_Small:
+                case Projectile.Type.Fireball_Big:
+                    DamageCooldown = TimeSpan.FromSeconds(12);
+                    break;
+                case Projectile.Type.WitherSkull:
+                    DamageCooldown = TimeSpan.FromSeconds(4);
+                    break;
+                default:
+                    DamageCooldown = TimeSpan.FromSeconds(5);
+                    break;
+            }
+
+            // Divide the speed by GAMESPEED
             DamageCooldown = TimeSpan.FromSeconds(DamageCooldown.TotalSeconds / GAMESPEED);
-            ArrowCooldown = TimeSpan.FromSeconds(6 / GAMESPEED);
-            WitherSkullCooldown = TimeSpan.FromSeconds(1 / GAMESPEED);
-            FireballCooldown = TimeSpan.FromSeconds(12 / GAMESPEED);
-            _lastArrowShotTime = DateTime.Now;
-            _lastFireballShotTime = DateTime.Now;
+
+            LastDamageTime = DateTime.Now;
         }
 
         public bool CheckPlayerCollision()
@@ -221,9 +237,9 @@ namespace ShootMeUp.Model
             }
             else
             {
-                if ((_ProjectileType == Projectile.Type.Arrow_Small && DateTime.Now - _lastArrowShotTime < ArrowCooldown) ||
-                    (_ProjectileType == Projectile.Type.Fireball_Small && DateTime.Now - _lastFireballShotTime < FireballCooldown) ||
-                    (_ProjectileType == Projectile.Type.WitherSkull && DateTime.Now - _lastWitherSkullShotTime < WitherSkullCooldown))
+                if ((_ProjectileType == Projectile.Type.Arrow_Small && DateTime.Now - LastDamageTime < DamageCooldown) ||
+                    (_ProjectileType == Projectile.Type.Fireball_Small && DateTime.Now - LastDamageTime < DamageCooldown) ||
+                    (_ProjectileType == Projectile.Type.WitherSkull && DateTime.Now - LastDamageTime < DamageCooldown))
                     return;
 
                 if (_Target.Lives <= 0) return;
@@ -232,12 +248,8 @@ namespace ShootMeUp.Model
                 if (proj != null)
                 {
                     ShootMeUp.Projectiles.Add(proj);
-                    if (_ProjectileType == Projectile.Type.Arrow_Small)
-                        _lastArrowShotTime = DateTime.Now;
-                    else if (_ProjectileType == Projectile.Type.Fireball_Small)
-                        _lastFireballShotTime = DateTime.Now;
-                    else 
-                        _lastWitherSkullShotTime = DateTime.Now;
+                    
+                    LastDamageTime = DateTime.Now;
                 }
             }
         }

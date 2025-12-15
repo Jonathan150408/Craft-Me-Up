@@ -23,11 +23,11 @@ namespace ShootMeUp.Model
         protected float _fltBaseSpeed;
 
         // Variables used for projectile cooldown
-        protected DateTime _lastArrowShotTime = DateTime.MinValue;
-        protected DateTime _lastFireballShotTime = DateTime.MinValue;
+        private DateTime _lastArrowShotTime = DateTime.MinValue;
+        private DateTime _lastFireballShotTime = DateTime.MinValue;
 
-        protected TimeSpan ArrowCooldown = TimeSpan.FromSeconds(1.5);
-        protected TimeSpan FireballCooldown = TimeSpan.FromSeconds(4.5);
+        private readonly TimeSpan ArrowCooldown = TimeSpan.FromSeconds(1.5);
+        private readonly TimeSpan FireballCooldown = TimeSpan.FromSeconds(4.5);
 
         protected Type _Type;
 

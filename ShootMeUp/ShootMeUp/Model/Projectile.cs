@@ -106,8 +106,8 @@ namespace ShootMeUp.Model
 
                     break;
                 case Type.WitherSkull:
-                    this.Size.Width = ShotBy.Size.Width;
-                    this.Size.Height = ShotBy.Size.Height;
+                    this.Size.Width = ShotBy.Size.Width / 2;
+                    this.Size.Height = ShotBy.Size.Height / 2;
                     _intDamage = 3;
                     _fltMovementSpeed = 1f;
 

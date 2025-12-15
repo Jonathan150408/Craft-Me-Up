@@ -436,6 +436,12 @@ namespace ShootMeUp
                     break;
             }
 
+            // Return early if the image doesn't need any rotation
+            Projectile.Type[] NeedsRotation = [Projectile.Type.Arrow_Small, Projectile.Type.Arrow_Big, Projectile.Type.Fireball_Small, Projectile.Type.Fireball_Big];
+
+            if (!NeedsRotation.Contains(GivenType))
+                return (Bitmap)ReturnedImage.Clone();
+
             using (Bitmap OriginalImage = (Bitmap)ReturnedImage.Clone())
             {
                 Bitmap RotatedImage = new Bitmap(OriginalImage.Width, OriginalImage.Height);
@@ -712,7 +718,7 @@ namespace ShootMeUp
             if (waveNumber % 5 == 0)
             {
                 for (int i = -2; i < waveNumber / 5; i++)
-                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE, Character.Type.Wither, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE * 2, Character.Type.Wither, GAMESPEED, _player));
             }
 
             return WaveEnemies;
@@ -739,6 +745,9 @@ namespace ShootMeUp
 
                     // Put the enemy in the right spot
                     enemy.Position = (512 + OBSTACLE_SIZE / 2 + enemy.Size.Width / 4, 512 + OBSTACLE_SIZE / 2 + enemy.Size.Height / 4);
+
+                    // Update its LastDamage value
+                    enemy.LastDamageTime = DateTime.Now;
 
                     // Add the enemy to the character list
                     Characters.Add(enemy);
