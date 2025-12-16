@@ -57,16 +57,6 @@ namespace ShootMeUp.Model
         /// </summary>
         public bool Active { get; set; }
 
-        /// <summary>
-        /// Whether the projectile has obstacle collisions or not
-        /// </summary>
-        private bool _canCollide;
-        public bool CanCollide
-        {
-            get { return _canCollide; }
-            private set { _canCollide = value; }
-        }
-
         // <summary>
         /// The Projectile's current type
         /// </summary>
@@ -77,7 +67,7 @@ namespace ShootMeUp.Model
         /// </summary>
         public float RotationAngle { get; private set; }
 
-        public Projectile(Type type, Character ShotBy, float fltTargetX, float fltTargetY, int GAMESPEED) : base(ShotBy.Position.X, ShotBy.Position.Y)
+        public Projectile(Type type, Character ShotBy, float fltTargetX, float fltTargetY, int GAMESPEED): base(0, 0)
         {
             ProjType = type;
             _shotBy = ShotBy;
@@ -149,12 +139,22 @@ namespace ShootMeUp.Model
                     break;
             }
 
+            // Center projectile on shooter
+            float shooterCenterX = ShotBy.Position.X + ShotBy.Size.Width / 2f;
+            float shooterCenterY = ShotBy.Position.Y + ShotBy.Size.Height / 2f;
+
+            Position.X = shooterCenterX - Size.Width / 2f;
+            Position.Y = shooterCenterY - Size.Height / 2f;
+
             // Multiply the movement speed by the game speed
             _fltMovementSpeed *= GAMESPEED;
 
             // Calculate direction to target
-            float deltaX = _fltTarget.X - Position.X;
-            float deltaY = _fltTarget.Y - Position.Y;
+            float projCenterX = Position.X + Size.Width / 2f;
+            float projCenterY = Position.Y + Size.Height / 2f;
+
+            float deltaX = _fltTarget.X - projCenterX;
+            float deltaY = _fltTarget.Y - projCenterY;
 
             // Calculate rotation angle in degrees
             // We add 90 here because the image faces upwards
@@ -184,8 +184,8 @@ namespace ShootMeUp.Model
             // Move the arrow if it wouldn't hit anything
             if (Hit == null)
             {
-                Position.X += _fltSpeed.X;
-                Position.Y += _fltSpeed.Y;
+                Position.X += _fltSpeed.X * ShootMeUp.DeltaTime;
+                Position.Y += _fltSpeed.Y * ShootMeUp.DeltaTime;
             }
             else
             {
@@ -212,8 +212,11 @@ namespace ShootMeUp.Model
         public CFrame? GetColliding()
         {
             // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
-            CFrame cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
+            float stepX = _fltSpeed.X * ShootMeUp.DeltaTime;
+            float stepY = _fltSpeed.Y * ShootMeUp.DeltaTime;
+
+            CFrame cfrX = new(Position.X + stepX, Position.Y, Size.Width, Size.Height);
+            CFrame cfrY = new(Position.X, Position.Y + stepY, Size.Width, Size.Height);
 
             // Create a list that contains both obstacles (only if CanCollide is true) and characters
             List<CFrame> listCFrames = new List<CFrame>();

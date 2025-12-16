@@ -25,19 +25,14 @@ namespace ShootMeUp.Model
         private Character _Target;
 
         /// <summary>
-        /// The time until the enemy's next update
+        /// The cooldown that is used to check if enemies can attack or not (in seconds)
         /// </summary>
-        private DateTime _nextUpdateTime = DateTime.MinValue;
+        private float DamageCooldown;
 
         /// <summary>
-        /// How long the cooldown lasts after damaging a player
+        /// A timer used to determine if the enemy can attack
         /// </summary>
-        private TimeSpan DamageCooldown;
-
-        /// <summary>
-        /// The last time where the enemy hurt or sent a projectile towards the player
-        /// </summary>
-        public DateTime LastDamageTime = DateTime.MinValue;
+        public float LastDamageTimer;
 
         /// <summary>
         /// The score that the enemy gives when it dies
@@ -148,40 +143,40 @@ namespace ShootMeUp.Model
             {
                 case Projectile.Type.Arrow_Small:
                 case Projectile.Type.Arrow_Big:
-                    DamageCooldown = TimeSpan.FromSeconds(6);
+                    DamageCooldown = 6f / GAMESPEED;
                     break;
                 case Projectile.Type.Fireball_Small:
                 case Projectile.Type.Fireball_Big:
-                    DamageCooldown = TimeSpan.FromSeconds(12);
+                    DamageCooldown = 12f;
                     break;
                 case Projectile.Type.WitherSkull:
-                    DamageCooldown = TimeSpan.FromSeconds(4);
+                    DamageCooldown = 4f;
                     break;
                 case Projectile.Type.DragonFireball:
-                    DamageCooldown = TimeSpan.FromSeconds(10);
+                    DamageCooldown = 10;
                     break;
                 default:
                     // No projectile, check the enemy type
                     switch (type)
                     {
                         case Type.Baby_Zombie:
-                            DamageCooldown = TimeSpan.FromSeconds(3);
+                            DamageCooldown = 3f;
                             break;
                         case Type.Zombie_Pigman:
-                            DamageCooldown = TimeSpan.FromSeconds(8);
+                            DamageCooldown = 8f;
                             break;
                         default:
-                            DamageCooldown = TimeSpan.FromSeconds(5);
+                            DamageCooldown = 5;
 
                             break;
                     }
                     break;
             }
 
-            // Divide the speed by GAMESPEED
-            DamageCooldown = TimeSpan.FromSeconds(DamageCooldown.TotalSeconds / GAMESPEED);
+            // Add 60 to the cooldown
+            DamageCooldown *= 60;
 
-            LastDamageTime = DateTime.Now;
+            LastDamageTimer = 0;
         }
 
         public bool CheckPlayerCollision()
@@ -240,9 +235,11 @@ namespace ShootMeUp.Model
         {
             if (Lives <= 0) return;
 
+            LastDamageTimer += ShootMeUp.DeltaTime;
+
             // Calculate direction to target
-            float deltaX = _Target.Position.X - Position.X;
-            float deltaY = _Target.Position.Y - Position.Y;
+            float deltaX = (_Target.Position.X + _Target.Size.Width / 2) - (Position.X + Size.Width / 2);
+            float deltaY = (_Target.Position.Y + _Target.Size.Height / 2) - (Position.Y + Size.Height / 2);
 
             float length = MathF.Sqrt(deltaX * deltaX + deltaY * deltaY);
             if (length != 0)
@@ -252,8 +249,8 @@ namespace ShootMeUp.Model
             }
 
             // Apply game speed and base speed
-            float speedX = deltaX * _GAMESPEED * _fltBaseSpeed;
-            float speedY = deltaY * _GAMESPEED * _fltBaseSpeed;
+            float speedX = deltaX * _GAMESPEED * _fltBaseSpeed * ShootMeUp.DeltaTime;
+            float speedY = deltaY * _GAMESPEED * _fltBaseSpeed * ShootMeUp.DeltaTime;
 
             // Move smoothly along X and Y axes
             Position.X = MoveAxis(Position.X, Position.Y, speedX, true);
@@ -274,35 +271,35 @@ namespace ShootMeUp.Model
         {
             if (!_blnShoots)
             {
-                if (DateTime.Now < _nextUpdateTime) return;
+                if (LastDamageTimer < DamageCooldown) return;
 
                 bool blnPlayerCollision = CheckPlayerCollision();
                 Obstacle? obstacleHit = GetCollidingObstacle();
 
                 if (blnPlayerCollision || (obstacleHit != null && !obstacleHit.Invincible))
-                    _nextUpdateTime = DateTime.Now + DamageCooldown;
+                {
+                    if (blnPlayerCollision)
+                        Damage((CFrame)_Target);
+                    else if (obstacleHit != null && !obstacleHit.Invincible)
+                        Damage((CFrame)obstacleHit);
 
-                if (blnPlayerCollision)
-                    Damage((CFrame)_Target);
-                else if (obstacleHit != null && !obstacleHit.Invincible)
-                    Damage((CFrame)obstacleHit);
+                    LastDamageTimer = 0;
+                }
             }
             else
             {
-                TimeSpan TimeSinceLastDamage = DateTime.Now - LastDamageTime;
-                bool blnCanShoot = TimeSinceLastDamage > DamageCooldown;
-
-                if (!blnCanShoot)
+                if (LastDamageTimer < DamageCooldown)
                     return;
 
-                if (_Target.Lives <= 0) return;
+                if (_Target.Lives <= 0)
+                    return;
 
                 Projectile? proj = Shoot();
                 if (proj != null)
                 {
                     ShootMeUp.Projectiles.Add(proj);
-                    
-                    LastDamageTime = DateTime.Now;
+
+                    LastDamageTimer = 0;
                 }
             }
         }
@@ -312,15 +309,11 @@ namespace ShootMeUp.Model
         /// </summary>
         public Projectile? Shoot()
         {
-            
-            // Store the current time
-            DateTime now = DateTime.Now;
-
             // Shoot an arrow from the player's position to the cursor's position if they are alive
             if (Lives > 0)
             {
-                float fltTargetX = _Target.Position.X;
-                float fltTargetY = _Target.Position.Y;
+                float fltTargetX = _Target.Position.X + _Target.Size.Width/2;
+                float fltTargetY = _Target.Position.Y + _Target.Size.Height/2;
 
                 // Slow the projectile down by dividing its GAMESPEED reference by 2
                 int intFakeGameSpeed = _GAMESPEED/2;

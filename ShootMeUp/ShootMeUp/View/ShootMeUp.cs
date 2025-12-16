@@ -33,7 +33,7 @@ namespace ShootMeUp
         /// <summary>
         /// The game's speed multiplier for movement, projectiles, etc.)
         /// </summary>
-        public static readonly int GAMESPEED = 4;
+        public static readonly int GAMESPEED = 4 * 30;
 
         /// <summary>
         /// Any obstacle's height and length
@@ -134,6 +134,9 @@ namespace ShootMeUp
         PictureBox pauseModale;
         Button resumeButton;
 
+        // Variables used for time handling
+        public static long LastFrameTime;
+        public static float DeltaTime;
 
         public ShootMeUp()
         {
@@ -245,6 +248,7 @@ namespace ShootMeUp
 
         private void ResumeButton_Click(object? sender, EventArgs e)
         {
+            DisplayPauseMenu();
         }
         /// <summary>
         /// pauses the game and displays the pause menu
@@ -255,6 +259,9 @@ namespace ShootMeUp
             {
                 Controls.Add(resumeButton);
                 Controls.Add(pauseModale);
+
+                resumeButton.BringToFront();
+
                 //stops the ticker to pause the game
                 this.ticker.Stop();
                 this._gamestate = Gamestate.paused;
@@ -262,8 +269,8 @@ namespace ShootMeUp
             }
             else if (this._gamestate == Gamestate.paused)
             {
-                Controls.Remove(resumeButton);
                 Controls.Remove(pauseModale);
+                Controls.Remove(resumeButton);
                 //restart the ticker
                 this.ticker.Start();
                 this._gamestate = Gamestate.running;
@@ -516,6 +523,7 @@ namespace ShootMeUp
             // Reset values
             Score = 0;
             _intWaveNumber = 1;
+            LastFrameTime = Environment.TickCount64;
 
             Characters.Clear();
             Obstacles.Clear();
@@ -537,7 +545,7 @@ namespace ShootMeUp
             float fltLeftBound = 32;
             float fltRightBound = (BORDER_SIZE + 4) * 32;
 
-            float fltAreaCenterX = (fltLeftBound + fltRightBound) / 2.0f;
+            float fltAreaCenterX = (fltLeftBound + fltRightBound) / 2;
 
             // Center the character horizontally
             float characterX = fltAreaCenterX - (DEFAULT_CHARACTER_SIZE / 2);
@@ -724,7 +732,7 @@ namespace ShootMeUp
 
                 Character.Type selectedType = enemyTypes[0].Type;
                 float sizeMultiplier = 1f;
-                float cumulative = 0f;
+                float cumulative = 0;
 
                 for (int i = 0; i < enemyTypes.Count; i++)
                 {
@@ -792,6 +800,12 @@ namespace ShootMeUp
             return WaveEnemies;
         }
 
+        private async Task WaitWhilePaused()
+        {
+            while (_gamestate == Gamestate.paused)
+                await Task.Delay(50);
+        }
+
         /// <summary>
         /// Starts the wave system
         /// </summary>
@@ -799,12 +813,8 @@ namespace ShootMeUp
         {
             while (_gamestate != Gamestate.finished && (_player != null && _player.Lives > 0))
             {
-                //supposed to waits if the game is paused, but doesn't works
-                //do
-                //    await Task.Delay(25);
-                //while (_gamestate == Gamestate.paused);
-
                 // Add a wait before the next wave
+                await WaitWhilePaused();
                 await Task.Delay(2000);
 
                 // Get the wave's enemies
@@ -816,11 +826,12 @@ namespace ShootMeUp
                     if (_gamestate == Gamestate.finished)
                         return;
 
+                    await WaitWhilePaused();
                     // Put the enemy in the right spot
                     enemy.Position = (512 + OBSTACLE_SIZE / 2 + enemy.Size.Width / 4, 512 + OBSTACLE_SIZE / 2 + enemy.Size.Height / 4);
 
                     // Update its LastDamage value
-                    enemy.LastDamageTime = DateTime.Now;
+                    enemy.LastDamageTimer = 0;
 
                     // Add the enemy to the character list
                     Characters.Add(enemy);
@@ -837,10 +848,13 @@ namespace ShootMeUp
 
                 // Wait until all enemies are dead
                 while (Characters.Count > 1 && _gamestate != Gamestate.finished)
+                {
                     await Task.Delay(25);
+                    await WaitWhilePaused();
+                }
 
-                // Increment the wave number
-                _intWaveNumber++;
+                    // Increment the wave number
+                    _intWaveNumber++;
             }
         }
 
@@ -1045,63 +1059,67 @@ namespace ShootMeUp
 
         private void NewFrame(object sender, EventArgs e)
         {
-            // Update the playspace if the player is in game
-            if (_player != null)
-            {
-                // Update camera position to the player's
-                cameraX = _player.Position.X - (Size.Width / 2);
-                cameraY = _player.Position.Y - (Size.Height / 2);
+            long now = Environment.TickCount64;
+            DeltaTime = (now - LastFrameTime) / 1000f; // seconds
+            LastFrameTime = now;
 
-                // Create a new frame
-                RenderFrame();
+            if (_gamestate != Gamestate.running || _player == null)
+                return;
 
-                // Tell the program to render the game again
-                Invalidate();
+            // Update camera position to the player's
+            cameraX = _player.Position.X - (Size.Width / 2);
+            cameraY = _player.Position.Y - (Size.Height / 2);
 
-                if (_gamestate != Gamestate.running)
-                    return;
+            // Create a new frame
+            RenderFrame();
 
-                // Clean up the dead entities
-                CleanupEntities();
+            // Tell the program to render the game again
+            Invalidate();
 
-                // Create movement-related boolean variables
-                bool blnLeftHeld = _keysHeldDown.Contains(Keys.A) || _keysHeldDown.Contains(Keys.Left);
-                bool blnRightHeld = _keysHeldDown.Contains(Keys.D) || _keysHeldDown.Contains(Keys.Right);
-                bool blnUpHeld = _keysHeldDown.Contains(Keys.W) || _keysHeldDown.Contains(Keys.Up);
-                bool blnDownHeld = _keysHeldDown.Contains(Keys.S) || _keysHeldDown.Contains(Keys.Down);
+            if (_gamestate != Gamestate.running)
+                return;
+            // Clean up the dead entities
+            CleanupEntities();
 
-                // Create movement-related int variables
-                int intMoveX = 0;
-                int intMoveY = 0;
+            // Create movement-related boolean variables
+            bool blnLeftHeld = _keysHeldDown.Contains(Keys.A) || _keysHeldDown.Contains(Keys.Left);
+            bool blnRightHeld = _keysHeldDown.Contains(Keys.D) || _keysHeldDown.Contains(Keys.Right);
+            bool blnUpHeld = _keysHeldDown.Contains(Keys.W) || _keysHeldDown.Contains(Keys.Up);
+            bool blnDownHeld = _keysHeldDown.Contains(Keys.S) || _keysHeldDown.Contains(Keys.Down);
 
-                // Increment/decrement the movement-related int variables based off of the boolean variables
-                if (blnLeftHeld)
-                    intMoveX -= 1;
-                if (blnRightHeld)
-                    intMoveX += 1;
-                if (blnUpHeld)
-                    intMoveY -= 1;
-                if (blnDownHeld)
-                    intMoveY += 1;
+            // Create movement-related int variables
+            int intMoveX = 0;
+            int intMoveY = 0;
 
-                // Multiple the movement-related int variables by the game speed
-                intMoveX *= GAMESPEED;
-                intMoveY *= GAMESPEED;
+            // Increment/decrement the movement-related int variables based off of the boolean variables
+            if (blnLeftHeld)
+                intMoveX -= 1;
+            if (blnRightHeld)
+                intMoveX += 1;
+            if (blnUpHeld)
+                intMoveY -= 1;
+            if (blnDownHeld)
+                intMoveY += 1;
 
+            // Multiple the movement-related int variables by the game speed
+            intMoveX *= GAMESPEED;
+            intMoveY *= GAMESPEED;
 
-                // Move the player if he should
-                if (intMoveX  != 0 || intMoveY != 0)
-                    _player?.Move(intMoveX, intMoveY);
+            // Update the player's cooldown
+            _player?.UpdateTimers();
 
-                // Update the projectiles
-                foreach (Projectile projectile in Projectiles)
-                    projectile.Update();
+            // Move the player if he should
+            if (intMoveX != 0 || intMoveY != 0)
+                _player?.Move(intMoveX, intMoveY);
 
-                // Update the enemies
-                foreach (Character character in Characters)
-                    if (character is Enemy enemy)
-                        enemy.Move();
-            }
+            // Update the projectiles
+            foreach (Projectile projectile in Projectiles)
+                projectile.Update();
+
+            // Update the enemies
+            foreach (Character character in Characters)
+                if (character is Enemy enemy)
+                    enemy.Move();
         }
 
         private void ShootMeUp_KeyDown(object sender, KeyEventArgs e)

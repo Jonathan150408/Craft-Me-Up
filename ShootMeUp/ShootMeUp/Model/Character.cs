@@ -23,11 +23,11 @@ namespace ShootMeUp.Model
         protected float _fltBaseSpeed;
 
         // Variables used for projectile cooldown
-        private DateTime _lastArrowShotTime = DateTime.MinValue;
-        private DateTime _lastFireballShotTime = DateTime.MinValue;
+        protected float _arrowCooldownTimer = 0;
+        protected float _fireballCooldownTimer = 0;
 
-        private readonly TimeSpan ArrowCooldown = TimeSpan.FromSeconds(1.5);
-        private readonly TimeSpan FireballCooldown = TimeSpan.FromSeconds(4.5);
+        private float _arrowCooldown;
+        private float _fireballCooldown;
 
         protected Type _Type;
 
@@ -69,15 +69,15 @@ namespace ShootMeUp.Model
         /// <param name="length">The length of the character</param>
         /// <param name="type">The character's type (player, enemy)</param>
         /// <param name="GAMESPEED">The game's speed</param>
-        public Character(float x, float y, int length, Character.Type type, int GAMESPEED) : base(x, y, length)
+        public Character(float x, float y, int length, Character.Type type, int GAMESPEED) : base(x - length / 2f, y - length / 2f, length)
         {
             _GAMESPEED = GAMESPEED;
             Lives = 10;
             _Type = type;
             _fltBaseSpeed = 1;
 
-            ArrowCooldown = TimeSpan.FromSeconds(ArrowCooldown.TotalSeconds / GAMESPEED);
-            FireballCooldown = TimeSpan.FromSeconds(FireballCooldown.TotalSeconds / GAMESPEED);
+            _arrowCooldown = 1.5f / GAMESPEED * 60;
+            _fireballCooldown = 4.5f / GAMESPEED * 60;
         }
 
         protected (bool X, bool Y) CheckObstacleCollision()
@@ -129,11 +129,22 @@ namespace ShootMeUp.Model
 
             // Move along X axis
             if (_fltSpeed.X != 0)
-                Position.X = MoveAxis(Position.X, Position.Y, _fltSpeed.X, true);
+                Position.X = MoveAxis(Position.X, Position.Y, _fltSpeed.X * ShootMeUp.DeltaTime, true);
 
             // Move along Y axis
             if (_fltSpeed.Y != 0)
-                Position.Y = MoveAxis(Position.X, Position.Y, _fltSpeed.Y, false);
+                Position.Y = MoveAxis(Position.X, Position.Y, _fltSpeed.Y * ShootMeUp.DeltaTime, false);
+        }
+
+        /// <summary>
+        /// Update the character's timers
+        /// </summary>
+        public void UpdateTimers()
+        {
+            float dt = ShootMeUp.DeltaTime;
+
+            _arrowCooldownTimer += dt;
+            _fireballCooldownTimer += dt;
         }
 
         /// <summary>
@@ -197,25 +208,25 @@ namespace ShootMeUp.Model
         /// <returns>A projectile if it shot, otherwise none</returns>
         public Projectile? Shoot(CFrame target, Projectile.Type type)
         {
-            // Store the current time
-            DateTime now = DateTime.Now;
+            if (Lives <= 0)
+                return null;
 
-            // Shoot an arrow from the player's position to the cursor's position if they are alive
-            if (Lives > 0)
+            // Shoot a projectile from the player's position to the cursor's position
+            if (type == Projectile.Type.Arrow_Big)
             {
-                // Send the corresponding projectile if the character is allowed to
-                if (type == Projectile.Type.Arrow_Big && now - _lastArrowShotTime >= ArrowCooldown)
-                {
-                    _lastArrowShotTime = now;
+                if (_arrowCooldownTimer < _arrowCooldown)
+                    return null;
 
-                    return new Projectile(type, this, target.Position.X, target.Position.Y, _GAMESPEED);
-                }
-                else if (type == Projectile.Type.Fireball_Big && now - _lastFireballShotTime >= FireballCooldown)
-                {
-                    _lastFireballShotTime = now;
+                _arrowCooldownTimer = 0;
+                return new Projectile(type, this, target.Position.X, target.Position.Y, _GAMESPEED);
+            }
+            else if (type == Projectile.Type.Fireball_Big)
+            {
+                if (_fireballCooldownTimer < _fireballCooldown)
+                    return null;
 
-                    return new Projectile(type, this, target.Position.X, target.Position.Y, _GAMESPEED);
-                }
+                _fireballCooldownTimer = 0f;
+                return new Projectile(type, this, target.Position.X, target.Position.Y, _GAMESPEED);
             }
 
             return null;
