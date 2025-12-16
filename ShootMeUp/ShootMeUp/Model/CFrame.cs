@@ -23,6 +23,16 @@ namespace ShootMeUp.Model
         public (int Width, int Height) Size;
 
         /// <summary>
+        /// Whether the current CFrame has obstacle collisions or not
+        /// </summary>
+        private bool _canCollide;
+        public bool CanCollide
+        {
+            get { return _canCollide; }
+            protected set { _canCollide = value; }
+        }
+
+        /// <summary>
         /// Create a new CFrame
         /// </summary>
         /// <param name="X">The x pos</param>
@@ -46,6 +56,8 @@ namespace ShootMeUp.Model
         /// <param name="intHeight">The height</param>
         public CFrame(float X, float Y, int intWidth, int intHeight)
         {
+            CanCollide = true;
+
             Position.X = X;
             Position.Y = Y;
             this.Size.Width = intWidth;

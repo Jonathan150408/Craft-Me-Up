@@ -448,6 +448,7 @@ namespace ShootMeUp
             {
                 case Projectile.Type.Arrow_Small:
                 case Projectile.Type.Arrow_Big:
+                case Projectile.Type.Arrow_Jockey:
                     fltRotationAngle -= 45f;
 
                     ReturnedImage = Sprites.Arrow;
@@ -469,9 +470,9 @@ namespace ShootMeUp
             }
 
             // Return early if the image doesn't need any rotation
-            Projectile.Type[] NeedsRotation = [Projectile.Type.Arrow_Small, Projectile.Type.Arrow_Big, Projectile.Type.Fireball_Small, Projectile.Type.Fireball_Big];
+            Projectile.Type[] NoRotation = [Projectile.Type.WitherSkull, Projectile.Type.DragonFireball, Projectile.Type.Undefined];
 
-            if (!NeedsRotation.Contains(GivenType))
+            if (NoRotation.Contains(GivenType))
                 return (Bitmap)ReturnedImage.Clone();
 
             using (Bitmap OriginalImage = (Bitmap)ReturnedImage.Clone())
@@ -768,7 +769,7 @@ namespace ShootMeUp
                 else if (isMultipleOf25)
                 {
                     intBossAmount = waveNumber / 50;
-                    intSizeMultiplicator = 4;
+                    intSizeMultiplicator = 6;
                     BossType = Character.Type.Wither;
                 }
                 else if (isMultipleOf10)
@@ -890,25 +891,13 @@ namespace ShootMeUp
                 // Clear the frame
                 DrawBackground(bufferG, cameraX, cameraY);
 
-				// Draw all characters' health (not including player)
-                foreach (Character character in Characters)
-                {
-                    if (character.CharType == Character.Type.Player) continue;
-                    // Draw their health bar
-                    SizeF textSize = bufferG.MeasureString($"{character}", TextHelpers.drawFont);
-
-                    // Calculate the X coordinate to center the text
-                    float centeredX = character.Position.X + (character.Size.Width / 2f) - (textSize.Width / 2f);
-
-                    bufferG.DrawString($"{character}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX - cameraX, (character.Position.Y - 16) - cameraY);
-
-                }
-
                 // Draw all the background assets first
                 foreach (Obstacle Floor in Obstacles)
                 {
+                    Obstacle.Type[] FloorTypes = [Obstacle.Type.Sand, Obstacle.Type.Grass, Obstacle.Type.Stone];
+
                     // Only continue if they're from one of the floor types
-                    if (Floor.ObstType == Obstacle.Type.Sand || Floor.ObstType == Obstacle.Type.Grass || Floor.ObstType == Obstacle.Type.Stone)
+                    if (FloorTypes.Contains(Floor.ObstType))
                     {
                         float drawX = Floor.Position.X - cameraX;
                         float drawY = Floor.Position.Y - cameraY;
@@ -919,10 +908,10 @@ namespace ShootMeUp
                 }
 
 
-                // Draw all characters (not including player)
+                // Draw all characters (not including player or characters with collisions off)
                 foreach (Character character in Characters)
                 {
-                    if (character.CharType == Character.Type.Player) continue;
+                    if (character.CharType == Character.Type.Player || !character.CanCollide) continue;
 
                     float drawX = character.Position.X - cameraX;
                     float drawY = character.Position.Y - cameraY;
@@ -955,6 +944,32 @@ namespace ShootMeUp
                     }
                 }
 
+                // Draw all characters (not including player or characters with collisions on)
+                foreach (Character character in Characters)
+                {
+                    if (character.CharType == Character.Type.Player || character.CanCollide) continue;
+
+                    float drawX = character.Position.X - cameraX;
+                    float drawY = character.Position.Y - cameraY;
+
+                    using (Bitmap Image = GetSprite(character.CharType))
+                        bufferG.DrawImage(Image, drawX, drawY, character.Size.Width, character.Size.Height);
+                }
+
+                // Draw all characters' health (not including player)
+                foreach (Character character in Characters)
+                {
+                    if (character.CharType == Character.Type.Player) continue;
+                    // Draw their health bar
+                    SizeF textSize = bufferG.MeasureString($"{character}", TextHelpers.drawFont);
+
+                    // Calculate the X coordinate to center the text
+                    float centeredX = character.Position.X + (character.Size.Width / 2f) - (textSize.Width / 2f);
+
+                    bufferG.DrawString($"{character}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX - cameraX, (character.Position.Y - 16) - cameraY);
+
+                }
+
                 // Draw projectiles
                 foreach (Projectile projectile in Projectiles)
                 {
@@ -979,7 +994,7 @@ namespace ShootMeUp
                     for (int i = 0; i < _player.Lives; i++)
                     {
                         int x = 8 + (i * 24);
-                        using (Bitmap Image = GetSprite(_player.CharType))
+                        using (Bitmap Image = (Bitmap)Sprites.Heart.Clone())
                             bufferG.DrawImage(Image, x, 32, 16, 16);
                     }
                 }

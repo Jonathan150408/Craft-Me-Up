@@ -73,6 +73,16 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap Character_Dragon {
+            get {
+                object obj = ResourceManager.GetObject("Character_Dragon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Character_Player {
             get {
                 object obj = ResourceManager.GetObject("Character_Player", resourceCulture);
@@ -86,6 +96,16 @@ namespace ShootMeUp.Properties {
         internal static System.Drawing.Bitmap Character_Skeleton {
             get {
                 object obj = ResourceManager.GetObject("Character_Skeleton", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Character_SpiderJockey {
+            get {
+                object obj = ResourceManager.GetObject("Character_SpiderJockey", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

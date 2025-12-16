@@ -57,6 +57,16 @@ namespace ShootMeUp.Model
         /// </summary>
         public bool Active { get; set; }
 
+        /// <summary>
+        /// Whether the projectile has obstacle collisions or not
+        /// </summary>
+        private bool _canCollide;
+        public bool CanCollide
+        {
+            get { return _canCollide; }
+            private set { _canCollide = value; }
+        }
+
         // <summary>
         /// The Projectile's current type
         /// </summary>
@@ -75,6 +85,7 @@ namespace ShootMeUp.Model
             _fltTarget.Y = fltTargetY;
 
             Active = true;
+            CanCollide = true;
 
             // Define the different properties depending on the projectile type
             switch (type)
@@ -82,7 +93,7 @@ namespace ShootMeUp.Model
                 case Type.Arrow_Big:
                     this.Size.Width = ShotBy.Size.Width;
                     this.Size.Height = ShotBy.Size.Height;
-                    _intDamage = 3;
+                    _intDamage = 2;
                     _fltMovementSpeed = 3;
 
                     break;
@@ -97,7 +108,7 @@ namespace ShootMeUp.Model
                     this.Size.Width = ShotBy.Size.Width / 2;
                     this.Size.Height = ShotBy.Size.Height / 2;
                     _intDamage = 2;
-                    _fltMovementSpeed = 1.5f;
+                    _fltMovementSpeed = 1.8f;
 
                     break;
                 case Type.Fireball_Big:
@@ -122,10 +133,12 @@ namespace ShootMeUp.Model
 
                     break;
                 case Type.DragonFireball:
-                    this.Size.Width = ShotBy.Size.Width / 8;
-                    this.Size.Height = ShotBy.Size.Height / 8;
+                    this.Size.Width = ShotBy.Size.Width / 4;
+                    this.Size.Height = ShotBy.Size.Height / 4;
                     _intDamage = 5;
                     _fltMovementSpeed = 1;
+
+                    CanCollide = false;
 
                     break;
                 default:
@@ -202,10 +215,11 @@ namespace ShootMeUp.Model
             CFrame cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
             CFrame cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
 
-            // Create a list that contains both obstacles and characters
+            // Create a list that contains both obstacles (only if CanCollide is true) and characters
             List<CFrame> listCFrames = new List<CFrame>();
-            listCFrames = ShootMeUp.Characters.Cast<CFrame>().ToList();
-            listCFrames.AddRange(ShootMeUp.Obstacles.Cast<CFrame>().ToList());
+            listCFrames = [.. ShootMeUp.Characters.Cast<CFrame>()];
+            if (CanCollide)
+                listCFrames.AddRange([.. ShootMeUp.Obstacles.Cast<CFrame>()]);
 
             foreach (CFrame singularCFrame in listCFrames)
             {

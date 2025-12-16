@@ -43,15 +43,6 @@ namespace ShootMeUp.Model
         public int Health { get; set; }
 
         /// <summary>
-        /// Whether the obstacle has collisions or not
-        /// </summary>
-        private bool _canCollide;
-        public bool CanCollide
-        {
-            get { return _canCollide; }
-        }
-
-        /// <summary>
         /// Whether the obstacle is invincible or not
         /// </summary>
         private bool _invincible;
@@ -74,8 +65,6 @@ namespace ShootMeUp.Model
         /// <param name="type">The obstacle's type (Bush, Barrier, ...)</param>
         public Obstacle(float x, float y, int intLength, Obstacle.Type type) : base(x, y, intLength)
         {
-            _canCollide = true;
-
             switch (type)
             {
                 case Type.Dirt:
@@ -98,27 +87,27 @@ namespace ShootMeUp.Model
 
                 case Type.Spawner:
                     _invincible = true;
-                    _canCollide = false;
+                    CanCollide = false;
                     break;
                 case Type.Bush:
-                    _canCollide = false;
+                    CanCollide = false;
                     Health = int.MaxValue;
                     break;
 
                 case Type.Grass:
-                    _canCollide = false;
+                    CanCollide = false;
                     _invincible = true;
                     break;
                 case Type.Stone:
-                    _canCollide = false;
+                    CanCollide = false;
                     _invincible = true;
                     break;
                 case Type.Sand:
-                    _canCollide = false;
+                    CanCollide = false;
                     _invincible = true;
                     break;
                 default:
-                    _canCollide = false;
+                    CanCollide = false;
                     _invincible = true;
                     break;
             }            

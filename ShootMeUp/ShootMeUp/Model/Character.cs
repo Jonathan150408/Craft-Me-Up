@@ -157,25 +157,30 @@ namespace ShootMeUp.Model
                 float testX = currentX + (isX ? step * sign : 0);
                 float testY = currentY + (isX ? 0 : step * sign);
 
-                // Create a test CFrame at this new position
-                CFrame testFrame = new CFrame(testX, testY, Size.Width, Size.Height);
-
-                bool colliding = false;
-                foreach (Obstacle obstacle in ShootMeUp.Obstacles)
+                // Handle collisions if needed
+                if (CanCollide)
                 {
-                    if (!obstacle.CanCollide) continue;
+                    // Create a test CFrame at this new position
+                    CFrame testFrame = new CFrame(testX, testY, Size.Width, Size.Height);
 
-                    if (ShootMeUp.IsOverlapping(testFrame, obstacle))
+                    bool colliding = false;
+                    foreach (Obstacle obstacle in ShootMeUp.Obstacles)
                     {
-                        colliding = true;
-                        break;
+                        if (!obstacle.CanCollide) continue;
+
+                        if (ShootMeUp.IsOverlapping(testFrame, obstacle))
+                        {
+                            colliding = true;
+                            break;
+                        }
                     }
+
+                    // Don't move in the current axis if they would collide with something 
+                    if (colliding)
+                        break;
                 }
 
-                if (colliding)
-                    break; // Stop moving along this axis
-
-                // Otherwise, move
+                // Move the character
                 currentX = testX;
                 currentY = testY;
                 remaining -= step;

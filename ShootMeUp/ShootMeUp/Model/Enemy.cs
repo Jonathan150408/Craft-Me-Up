@@ -66,42 +66,50 @@ namespace ShootMeUp.Model
                 case Type.Zombie:
                     ScoreValue = 1;
                     Lives = 10;
+
                     _fltBaseSpeed = 0.4f;
                     break;
                 case Type.Skeleton:
                     ScoreValue = 3;
                     Lives = 5;
+
                     _fltBaseSpeed = -0.5f;
+
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Arrow_Small;
                     break;
                 case Type.Baby_Zombie:
                     ScoreValue = 4;
                     Lives = 3;
+
                     _fltBaseSpeed = 1.5f;
-                    DamageCooldown = TimeSpan.FromSeconds(3);
+
                     break;
                 case Type.Blaze:
                     ScoreValue = 6;
                     Lives = 10;
+
                     _fltBaseSpeed = -0.25f;
+
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Fireball_Small;
                     break;
                 case Type.Zombie_Pigman:
                     ScoreValue = 5;
                     Lives = 20;
+
                     _fltBaseSpeed = 0.2f;
 
-                    DamageCooldown = TimeSpan.FromSeconds(8);
                     break;
                 case Type.SpiderJockey:
                     ScoreValue = 20;
                     Lives = 25;
+
                     _fltBaseSpeed = 0.75f;
 
+                    CanCollide = false;
                     _blnShoots = true;
-                    _ProjectileType = Projectile.Type.Arrow_Small;
+                    _ProjectileType = Projectile.Type.Arrow_Jockey;
                     break;
                 case Type.WitherSkeleton:
                     ScoreValue = 50;
@@ -114,6 +122,8 @@ namespace ShootMeUp.Model
                     Lives = 50;
 
                     _fltBaseSpeed = 0.2f;
+
+                    CanCollide = false;
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.WitherSkull;
                     break;
@@ -122,6 +132,8 @@ namespace ShootMeUp.Model
                     Lives = 100;
 
                     _fltBaseSpeed = 0.5f;
+
+                    CanCollide = false;
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.DragonFireball;
 
@@ -146,7 +158,7 @@ namespace ShootMeUp.Model
                     DamageCooldown = TimeSpan.FromSeconds(4);
                     break;
                 case Projectile.Type.DragonFireball:
-                    DamageCooldown = TimeSpan.FromSeconds(20);
+                    DamageCooldown = TimeSpan.FromSeconds(10);
                     break;
                 default:
                     // No projectile, check the enemy type
