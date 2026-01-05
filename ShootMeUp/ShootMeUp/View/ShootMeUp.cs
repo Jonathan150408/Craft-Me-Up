@@ -837,7 +837,27 @@ namespace ShootMeUp
                         return;
 
                     // Put the enemy in the right spot
-                    enemy.Position = (512 + OBSTACLE_SIZE / 2 + enemy.Size.Width / 4, 512 + OBSTACLE_SIZE / 2 + enemy.Size.Height / 4);
+                    bool reroll;
+                    do
+                    {
+                        //determines the coordinates
+                        reroll = false;
+                        int spawn_angle = new Random().Next(361);
+                        enemy.Position = (
+                            _player.Position.X + (float)(Math.Sin(spawn_angle) * 8 + new Random().Next(2)) * DEFAULT_CHARACTER_SIZE,
+                            _player.Position.Y + (float)(Math.Cos(spawn_angle) * 8 + new Random().Next(2)) * DEFAULT_CHARACTER_SIZE
+                            );
+
+                        //check if the ennemy is in a wall
+                        foreach (Obstacle obstacle in Obstacles)
+                        {
+                            if (IsOverlapping(enemy, obstacle))
+                            {
+                                reroll = true;
+                            }
+                        }
+                        //reroll if the ennemy is in a wall
+                    } while (reroll);
 
                     // Update its LastDamage value
                     enemy.LastDamageTimer = 0;
