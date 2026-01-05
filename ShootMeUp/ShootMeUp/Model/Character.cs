@@ -77,7 +77,7 @@ namespace ShootMeUp.Model
             _fltBaseSpeed = 1;
 
             _arrowCooldown = 1.5f / GAMESPEED * 60;
-            _fireballCooldown = 4.5f / GAMESPEED * 60;
+            _fireballCooldown = 0.5f / GAMESPEED * 60;
         }
 
         protected (bool X, bool Y) CheckObstacleCollision()

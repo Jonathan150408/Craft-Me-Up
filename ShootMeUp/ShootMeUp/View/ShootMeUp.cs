@@ -33,7 +33,7 @@ namespace ShootMeUp
         /// <summary>
         /// The game's speed multiplier for movement, projectiles, etc.)
         /// </summary>
-        public static readonly int GAMESPEED = 4 * 30;
+        public static readonly int GAMESPEED = 8 * 30;
 
         /// <summary>
         /// Any obstacle's height and length
@@ -769,45 +769,52 @@ namespace ShootMeUp
 
                 // Initialize spawn variables
                 int intBossAmount;
-                int intSizeMultiplicator;
+                float fltSizeMultiplicator;
                 Character.Type BossType;
 
                 if (isMultipleOf50)
                 {
-                    intBossAmount = waveNumber / 25;
-                    intSizeMultiplicator = 8;
+                    intBossAmount = waveNumber / 50;
+                    fltSizeMultiplicator = 8;
                     BossType = Character.Type.Dragon;
                 }
                 else if (isMultipleOf25)
                 {
-                    intBossAmount = waveNumber / 50;
-                    intSizeMultiplicator = 6;
+                    intBossAmount = waveNumber / 25;
+                    fltSizeMultiplicator = 6;
                     BossType = Character.Type.Wither;
                 }
                 else if (isMultipleOf10)
                 {
                     intBossAmount = waveNumber / 10;
-                    intSizeMultiplicator = 2;
+                    fltSizeMultiplicator = 1.5f;
                     BossType = Character.Type.WitherSkeleton;
                 }
                 else
                 {
                     intBossAmount = waveNumber / 5;
-                    intSizeMultiplicator = 2;
+                    fltSizeMultiplicator = 2;
                     BossType = Character.Type.SpiderJockey;
                 }
 
                 for (int i = 0; i < intBossAmount; i++)
-                    WaveEnemies.Add(new Enemy(0, 0, DEFAULT_CHARACTER_SIZE * intSizeMultiplicator, BossType, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * fltSizeMultiplicator), BossType, GAMESPEED, _player));
             }
 
             return WaveEnemies;
         }
 
-        private async Task WaitWhilePaused()
+        private async Task Wait(int miliseconds)
         {
-            while (_gamestate == Gamestate.paused)
-                await Task.Delay(50);
+            do
+            {
+                do
+                {
+                    await Task.Delay(1);
+                } while (_gamestate == Gamestate.paused);
+
+                miliseconds--;
+            } while (miliseconds > 0);
         }
 
         /// <summary>
@@ -818,8 +825,7 @@ namespace ShootMeUp
             while (_gamestate != Gamestate.finished && (_player != null && _player.Lives > 0))
             {
                 // Add a wait before the next wave
-                await WaitWhilePaused();
-                await Task.Delay(2000);
+                await Wait(20000 / GAMESPEED);
 
                 // Get the wave's enemies
                 List<Enemy> waveEnemies = GenerateWaves(_intWaveNumber);
@@ -830,7 +836,6 @@ namespace ShootMeUp
                     if (_gamestate == Gamestate.finished)
                         return;
 
-                    await WaitWhilePaused();
                     // Put the enemy in the right spot
                     enemy.Position = (512 + OBSTACLE_SIZE / 2 + enemy.Size.Width / 4, 512 + OBSTACLE_SIZE / 2 + enemy.Size.Height / 4);
 
@@ -840,11 +845,9 @@ namespace ShootMeUp
                     // Add the enemy to the character list
                     Characters.Add(enemy);
 
-                    //waits if the game is paused - breaks the game
-                    //while (_gamestate == Gamestate.paused) ;
-                    //    await Task.Delay(25);
+
                     // Add a wait before adding the next enemy
-                    await Task.Delay(2000);
+                    await Wait(20000 / GAMESPEED);
                 }
 
                 // Clear the wave enemies table
@@ -853,12 +856,11 @@ namespace ShootMeUp
                 // Wait until all enemies are dead
                 while (Characters.Count > 1 && _gamestate != Gamestate.finished)
                 {
-                    await Task.Delay(25);
-                    await WaitWhilePaused();
+                    await Wait(1);
                 }
 
-                    // Increment the wave number
-                    _intWaveNumber++;
+                // Increment the wave number
+                _intWaveNumber++;
             }
         }
 
@@ -1012,8 +1014,8 @@ namespace ShootMeUp
                     for (int i = 0; i < _player.Lives; i++)
                     {
                         int x = 8 + (i * 20);
-                        using (Bitmap Image = (Bitmap)Sprites.Heart.Clone())
-                            bufferG.DrawImage(Image, x, 32, 24, 24);
+                        using (Bitmap Heart = (Bitmap)Sprites.Heart.Clone())
+                            bufferG.DrawImage(Heart, x, 32, 24, 24);
                     }
                 }
             }

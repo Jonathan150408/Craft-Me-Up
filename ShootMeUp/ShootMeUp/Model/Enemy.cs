@@ -143,17 +143,18 @@ namespace ShootMeUp.Model
             {
                 case Projectile.Type.Arrow_Small:
                 case Projectile.Type.Arrow_Big:
+                case Projectile.Type.Arrow_Jockey:
                     DamageCooldown = 6f / GAMESPEED;
                     break;
                 case Projectile.Type.Fireball_Small:
                 case Projectile.Type.Fireball_Big:
-                    DamageCooldown = 12f;
+                    DamageCooldown = 12f / GAMESPEED;
                     break;
                 case Projectile.Type.WitherSkull:
-                    DamageCooldown = 4f;
+                    DamageCooldown = 4f / GAMESPEED;
                     break;
                 case Projectile.Type.DragonFireball:
-                    DamageCooldown = 10;
+                    DamageCooldown = 10f / GAMESPEED;
                     break;
                 default:
                     // No projectile, check the enemy type
@@ -336,7 +337,7 @@ namespace ShootMeUp.Model
             switch (CharType)
             {
                 case Type.WitherSkeleton:
-                    intDamage = 5;
+                    intDamage = 3;
                     break;
             }
 
