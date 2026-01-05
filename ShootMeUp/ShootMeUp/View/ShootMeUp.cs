@@ -843,19 +843,46 @@ namespace ShootMeUp
                         //determines the coordinates
                         reroll = false;
                         int spawn_angle = new Random().Next(361);
-                        enemy.Position = (
-                            _player.Position.X + (float)(Math.Sin(spawn_angle) * 8 + new Random().Next(2)) * DEFAULT_CHARACTER_SIZE,
-                            _player.Position.Y + (float)(Math.Cos(spawn_angle) * 8 + new Random().Next(2)) * DEFAULT_CHARACTER_SIZE
-                            );
-
-                        //check if the ennemy is in a wall
-                        foreach (Obstacle obstacle in Obstacles)
+                        float random_X = (float)(Math.Sin(spawn_angle) * 8 + new Random().Next(10)) * DEFAULT_CHARACTER_SIZE;
+                        float random_Y = (float)(Math.Cos(spawn_angle) * 8 + new Random().Next(10)) * DEFAULT_CHARACTER_SIZE;
+                        if (spawn_angle > 270)
                         {
-                            if (IsOverlapping(enemy, obstacle))
-                            {
-                                reroll = true;
-                            }
+                            enemy.Position = (
+                                _player.Position.X - random_X,
+                                _player.Position.Y + random_Y
+                            );
                         }
+                        else if (spawn_angle > 180)
+                        {
+                            enemy.Position = (
+                                _player.Position.X + random_X,
+                                _player.Position.Y + random_Y
+                            );
+                        }
+                        else if (spawn_angle > 90)
+                        {
+                            enemy.Position = (
+                                _player.Position.X + random_X,
+                                _player.Position.Y - random_Y
+                            );
+                        }
+                        else
+                        {
+                            enemy.Position = (
+                                _player.Position.X - random_X,
+                                _player.Position.Y - random_Y
+                            );
+                        }
+
+
+                            //check if the ennemy is in a wall
+                            foreach (Obstacle obstacle in Obstacles)
+                            {
+                                if (IsOverlapping(enemy, obstacle))
+                                {
+                                    reroll = true;
+                                }
+                            }
                         //reroll if the ennemy is in a wall
                     } while (reroll);
 
