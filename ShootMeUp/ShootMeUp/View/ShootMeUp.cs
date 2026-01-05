@@ -271,6 +271,10 @@ namespace ShootMeUp
             {
                 Controls.Remove(pauseModale);
                 Controls.Remove(resumeButton);
+                long now = Environment.TickCount64;
+                DeltaTime = (now - LastFrameTime) / 1000f; // seconds
+                LastFrameTime = now;
+
                 //restart the ticker
                 this.ticker.Start();
                 this._gamestate = Gamestate.running;
@@ -1007,9 +1011,9 @@ namespace ShootMeUp
 
                     for (int i = 0; i < _player.Lives; i++)
                     {
-                        int x = 8 + (i * 24);
+                        int x = 8 + (i * 20);
                         using (Bitmap Image = (Bitmap)Sprites.Heart.Clone())
-                            bufferG.DrawImage(Image, x, 32, 16, 16);
+                            bufferG.DrawImage(Image, x, 32, 24, 24);
                     }
                 }
             }
