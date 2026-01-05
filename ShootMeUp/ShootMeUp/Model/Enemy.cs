@@ -35,6 +35,11 @@ namespace ShootMeUp.Model
         public float LastDamageTimer;
 
         /// <summary>
+        /// The enemy's max distance value to the player
+        /// </summary>
+        public float? MaxDistance;
+
+        /// <summary>
         /// The score that the enemy gives when it dies
         /// </summary>
         public int ScoreValue { get; private set; }
@@ -68,7 +73,9 @@ namespace ShootMeUp.Model
                     ScoreValue = 3;
                     Lives = 5;
 
-                    _fltBaseSpeed = -0.5f;
+                    _fltBaseSpeed = 0.5f;
+
+                    MaxDistance = 8 * ShootMeUp.DEFAULT_CHARACTER_SIZE;
 
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Arrow_Small;
@@ -84,7 +91,9 @@ namespace ShootMeUp.Model
                     ScoreValue = 6;
                     Lives = 10;
 
-                    _fltBaseSpeed = -0.25f;
+                    _fltBaseSpeed = 0.25f;
+
+                    MaxDistance = 12 * ShootMeUp.DEFAULT_CHARACTER_SIZE;
 
                     _blnShoots = true;
                     _ProjectileType = Projectile.Type.Fireball_Small;
@@ -242,16 +251,30 @@ namespace ShootMeUp.Model
             float deltaX = (_Target.Position.X + _Target.Size.Width / 2) - (Position.X + Size.Width / 2);
             float deltaY = (_Target.Position.Y + _Target.Size.Height / 2) - (Position.Y + Size.Height / 2);
 
-            float length = MathF.Sqrt(deltaX * deltaX + deltaY * deltaY);
-            if (length != 0)
+            float distanceToPlayer = MathF.Sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            // add a negative if closer to player than distance, add positive if closer to distance
+
+            float fltDirection = 1f;
+
+            // Decide whether or not the enemy should move backwards/forwards if the MaxDistance value is set
+            if (MaxDistance.HasValue)
             {
-                deltaX /= length;
-                deltaY /= length;
+                float distanceToMax = distanceToPlayer - MaxDistance.Value;
+
+                // Smoothly scale direction (-1 to +1)
+                fltDirection = Math.Clamp(distanceToMax / MaxDistance.Value, -1f, 1f);
+            }
+
+            if (distanceToPlayer != 0 && fltDirection != 0)
+            {
+                deltaX /= distanceToPlayer;
+                deltaY /= distanceToPlayer;
             }
 
             // Apply game speed and base speed
-            float speedX = deltaX * _GAMESPEED * _fltBaseSpeed * ShootMeUp.DeltaTime;
-            float speedY = deltaY * _GAMESPEED * _fltBaseSpeed * ShootMeUp.DeltaTime;
+            float speedX = deltaX * _GAMESPEED * _fltBaseSpeed * ShootMeUp.DeltaTime * fltDirection;
+            float speedY = deltaY * _GAMESPEED * _fltBaseSpeed * ShootMeUp.DeltaTime * fltDirection;
 
             // Move smoothly along X and Y axes
             Position.X = MoveAxis(Position.X, Position.Y, speedX, true);
