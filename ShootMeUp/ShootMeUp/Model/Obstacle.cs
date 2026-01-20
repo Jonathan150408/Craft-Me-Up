@@ -90,6 +90,7 @@ namespace ShootMeUp.Model
                     CanCollide = false;
                     break;
                 case Type.Bush:
+                    _invincible = true;
                     CanCollide = false;
                     Health = int.MaxValue;
                     break;

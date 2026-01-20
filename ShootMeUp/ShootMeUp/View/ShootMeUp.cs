@@ -2,6 +2,7 @@
 using ShootMeUp.Helpers;
 using ShootMeUp.Model;
 using ShootMeUp.Properties;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -46,16 +47,21 @@ namespace ShootMeUp
         public static readonly int DEFAULT_CHARACTER_SIZE = OBSTACLE_SIZE - 8;
 
         /// <summary>
-        /// The number of barrier blocks shown on screen
+        /// The number of tiles in one chunk
         /// </summary>
-        private static readonly int BORDER_SIZE = 29;
+        private static readonly int CHUNK_SIZE_IN_TILES = 16;
+
+        /// <summary>
+        /// The amount of chunks on the x and y axis
+        /// </summary>
+        private static readonly int CHUNK_AMOUNT = 16;
 
         /// <summary>
         /// The current state of the game
         /// </summary>
         private enum Gamestate
         {
-            running, 
+            running,
             paused,
             finished
         }
@@ -122,7 +128,16 @@ namespace ShootMeUp
         [DefaultValue(0)]
         public int Score { get; set; }
 
+        /// <summary>
+        /// The RNG seed
+        /// </summary>
+        public static readonly int GAMESEED = (new Random()).Next(int.MinValue, int.MaxValue);
+        private readonly Random rnd;
 
+        /// <summary>
+        /// A cache for floor textures, as they can make the game lag
+        /// </summary>
+        private static readonly Dictionary<Obstacle.Type, Bitmap> FloorChunkCache = new Dictionary<Obstacle.Type, Bitmap>();
 
         private Bitmap backBuffer;
         private Graphics bufferG;
@@ -155,6 +170,8 @@ namespace ShootMeUp
             this.DoubleBuffered = true;
 
             BackColor = ColorTranslator.FromHtml("#7f7f7f");
+
+            rnd = new(GAMESEED);
 
             cameraX = 0;
             cameraY = 0;
@@ -265,7 +282,7 @@ namespace ShootMeUp
                 //stops the ticker to pause the game
                 this.ticker.Stop();
                 this._gamestate = Gamestate.paused;
-                
+
             }
             else if (this._gamestate == Gamestate.paused)
             {
@@ -279,7 +296,7 @@ namespace ShootMeUp
                 this.ticker.Start();
                 this._gamestate = Gamestate.running;
             }
-            
+
         }
 
         /// <summary>
@@ -428,6 +445,10 @@ namespace ShootMeUp
             // Create the tiles
             using (Graphics g = Graphics.FromImage(TiledSprite))
             {
+                g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                g.PixelOffsetMode = PixelOffsetMode.Half;
+                g.SmoothingMode = SmoothingMode.None;
+
                 for (int x = 0; x < Size.Width; x += ShootMeUp.OBSTACLE_SIZE)
                 {
                     for (int y = 0; y < Size.Height; y += ShootMeUp.OBSTACLE_SIZE)
@@ -510,6 +531,29 @@ namespace ShootMeUp
             }
         }
 
+        private static void InitializeFloorChunks()
+        {
+            int chunkSizePx = CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE;
+
+            Obstacle.Type[] floorTypes =
+            {
+        Obstacle.Type.Grass,
+        Obstacle.Type.Sand,
+        Obstacle.Type.Stone
+    };
+
+            foreach (var type in floorTypes)
+            {
+                if (!FloorChunkCache.ContainsKey(type))
+                {
+                    FloorChunkCache[type] = GetSprite(
+                        type,
+                        (chunkSizePx, chunkSizePx)
+                    );
+                }
+            }
+        }
+
         /// <summary>
         /// Start the game up
         /// </summary>
@@ -533,8 +577,29 @@ namespace ShootMeUp
             Obstacles.Clear();
             Projectiles.Clear();
 
+            // Cache floor textures for easier render
+            InitializeFloorChunks();
+
             // Generate the world, then start it
             GenerateWorld();
+        }
+
+        /// <summary>
+        /// Noise algorithm used for biome generation
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="seed"></param>
+        /// <returns></returns>
+        static float BiomeNoise(int x, int y)
+        {
+            unchecked
+            {
+                int n = x * 1619 + y * 31337 + GAMESEED * 1013;
+                n = (n << 13) ^ n;
+                return 1f - ((n * (n * n * 60493 + 19990303) + 1376312589)
+                             & 0x7fffffff) / 1073741824f;
+            }
         }
 
         /// <summary>
@@ -545,148 +610,149 @@ namespace ShootMeUp
             // Set the game state to true
             _gamestate = Gamestate.running;
 
-            // Calculate the bottom-center, related to the player
-            float fltLeftBound = 32;
-            float fltRightBound = (BORDER_SIZE + 4) * 32;
+            // Calculate the center of the map
+            float fltMapSize = CHUNK_SIZE_IN_TILES * CHUNK_AMOUNT * OBSTACLE_SIZE;
 
-            float fltAreaCenterX = (fltLeftBound + fltRightBound) / 2;
-
-            // Center the character horizontally
-            float characterX = fltAreaCenterX - (DEFAULT_CHARACTER_SIZE / 2);
+            float fltAreaCenterX = fltMapSize / 2;
 
             // Create a new player
-            _player = new(characterX, BORDER_SIZE * 32 + (32 - DEFAULT_CHARACTER_SIZE), DEFAULT_CHARACTER_SIZE, Character.Type.Player, GAMESPEED);
+            _player = new(fltAreaCenterX, fltAreaCenterX, DEFAULT_CHARACTER_SIZE, Character.Type.Player, GAMESPEED);
             Characters.Add(_player);
 
-            // Create a new border, piece by piece
-            for (int x = 0; x <= BORDER_SIZE; x++)
-                for (int y = 0; y <= BORDER_SIZE; y++)
-                    if (x == 0 || x == BORDER_SIZE || y == 0 || y == BORDER_SIZE)
-                        Obstacles.Add(new(32 * (2 + x), 32 * (2 + y), 32, Obstacle.Type.Bedrock));
-
-            // Create a variable to store the border's size
-            int intBorderLength = BORDER_SIZE * 32 + 32;
-
-            //// Creating the world environment ////
-
-            // Top left corner
-            const Obstacle.Type BEDROCK = Obstacle.Type.Bedrock;
-
-            Obstacles.Add(new(32 * 3, 32 * 3, OBSTACLE_SIZE, BEDROCK));
-            Obstacles.Add(new(32 * 4, 32 * 3, OBSTACLE_SIZE, BEDROCK));
-            Obstacles.Add(new(32 * 3, 32 * 4, OBSTACLE_SIZE, BEDROCK));
-
-            // Top right corner
-            Obstacles.Add(new(intBorderLength, 32 * 3, OBSTACLE_SIZE, BEDROCK));
-            Obstacles.Add(new(intBorderLength - 32, 32 * 3, OBSTACLE_SIZE, BEDROCK));
-            Obstacles.Add(new(intBorderLength, 32 * 4, OBSTACLE_SIZE, BEDROCK));
-
-            // Bottom left corner
-            Obstacles.Add(new(32 * 3, intBorderLength, OBSTACLE_SIZE, BEDROCK));
-            Obstacles.Add(new(32 * 4, intBorderLength, OBSTACLE_SIZE, BEDROCK));
-            Obstacles.Add(new(32 * 3, intBorderLength - 32, OBSTACLE_SIZE, BEDROCK));
-
-            // Bottom right corner
-            Obstacles.Add(new(intBorderLength, intBorderLength, OBSTACLE_SIZE, BEDROCK));
-            Obstacles.Add(new(intBorderLength - 32, intBorderLength, OBSTACLE_SIZE, BEDROCK));
-            Obstacles.Add(new(intBorderLength, intBorderLength - 32, OBSTACLE_SIZE, BEDROCK));
-
-            // The pillars' type value
-            const Obstacle.Type COBBLE = Obstacle.Type.CobbleStone;
-
-            // Top left pillars
-            for (int x = 0; x < 2; x++)
+            // Generate the border around the world
+            for (int x = -32; x <= fltMapSize; x += 32)
             {
-                for (int y = 0; y < 2; y++)
+                for (int y = -32; y <= fltMapSize; y += 32)
                 {
-                    Obstacles.Add(new(192 + (160 * x), 192 + (160 * y), OBSTACLE_SIZE * 2, COBBLE));
-                }
-            }
-
-            // Top right pillars
-            for (int x = 0; x < 2; x++)
-            {
-                for (int y = 0; y < 2; y++)
-                {
-                    Obstacles.Add(new(intBorderLength - 128 - (160 * x), 192 + (160 * y), OBSTACLE_SIZE * 2, COBBLE));
-                }
-            }
-
-            // Bottom left pillars
-            for (int x = 0; x < 2; x++)
-            {
-                for (int y = 0; y < 2; y++)
-                {
-                    Obstacles.Add(new(192 + (160 * x), intBorderLength - 128 - (160 * y), OBSTACLE_SIZE * 2, COBBLE));
-                }
-            }
-
-            // Bottom right pillars
-            for (int x = 0; x < 2; x++)
-            {
-                for (int y = 0; y < 2; y++)
-                {
-                    Obstacles.Add(new(intBorderLength - 128 - (160 * x), intBorderLength - 128 - (160 * y), OBSTACLE_SIZE * 2, COBBLE));
+                    if (x == -32 || y == -32 || x == fltMapSize || y == fltMapSize)
+                    {
+                        // Create a new border block
+                        Obstacles.Add(new(x, y, OBSTACLE_SIZE, Obstacle.Type.Barrier));
+                    }
                 }
             }
 
 
-            // The barriers' type
-            const Obstacle.Type WOOD = Obstacle.Type.Wood;
+            // The max amount of health (from obstacles) inside of one chunk
+            int intMaxHealthInAChunk = 120;
 
-            // Top barriers
-            for (int x = 0; x < 2; x++)
+            // Generate the environment, chunk by chunk
+            for (int chunkX = 0; chunkX < CHUNK_AMOUNT; chunkX++)
             {
-                Obstacles.Add(new(448 + (128 * x), 192, OBSTACLE_SIZE * 2, WOOD));
+                for (int chunkY = 0; chunkY < CHUNK_AMOUNT; chunkY++)
+                {
+                    // Get a random floor and apply it
+                    List<Obstacle.Type> Floors = [Obstacle.Type.Grass, Obstacle.Type.Sand, Obstacle.Type.Stone];
+
+                    float scale = 0.15f;
+                    float noise = BiomeNoise(
+                        (int)(chunkX * scale),
+                        (int)(chunkY * scale)
+                    );
+
+                    Obstacle.Type randomFloor =
+                        noise < -0.35f ? Obstacle.Type.Sand :
+                        noise < 0.35f ? Obstacle.Type.Grass :
+                                         Obstacle.Type.Stone;
+
+                    // Chunk based values
+                    int intChunkLength = (CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE);
+
+                    float fltX = 0 + chunkX * intChunkLength;
+                    float fltY = 0 + chunkY * intChunkLength;
+
+                    Obstacle floor = new(fltX, fltY, intChunkLength, randomFloor);
+                    Obstacles.Add(floor);
+
+                    // The total amount of health in the current chunk
+                    int intHealthInChunk = 0;
+
+                    Dictionary<Obstacle.Type, Obstacle.Type[]> biomeObstacles =
+                        new()
+                        {
+                            [Obstacle.Type.Grass] = new[] { Obstacle.Type.Bush, Obstacle.Type.Wood },
+                            [Obstacle.Type.Sand] = new[] { Obstacle.Type.Dirt },
+                            [Obstacle.Type.Stone] = new[] { Obstacle.Type.CobbleStone }
+                        };
+
+                    while (intHealthInChunk < intMaxHealthInAChunk)
+                    {
+                        int intCurrentObstacleHealth;
+
+                        int remainingHealth = intMaxHealthInAChunk - intHealthInChunk;
+
+                        List<Obstacle.Type> valid = biomeObstacles[randomFloor].Where(t => (t == Obstacle.Type.Bush && 5 <= remainingHealth) || (t == Obstacle.Type.Dirt && 10 <= remainingHealth) || (t == Obstacle.Type.Wood && 20 <= remainingHealth) || (t == Obstacle.Type.CobbleStone && 50 <= remainingHealth)).ToList();
+
+                        Obstacle.Type randomObstacleType;
+
+                        if (valid.Count == 0)
+                            break;
+
+                        randomObstacleType = valid[rnd.Next(valid.Count)];
+
+                        intCurrentObstacleHealth = randomObstacleType switch
+                        {
+                            Obstacle.Type.Bush => 5,
+                            Obstacle.Type.Dirt => 10,
+                            Obstacle.Type.Wood => 20,
+                            Obstacle.Type.CobbleStone => 50,
+                            _ => 0
+                        };
+
+                        // Add the current obstacle's health to the total
+                        intHealthInChunk += intCurrentObstacleHealth;
+
+                        Obstacle newObstacle = new(0, 0, OBSTACLE_SIZE, randomObstacleType);
+
+
+                        // Set the obstacle up in a random spot in the chunk
+                        int attempts = 0;
+
+                        bool blnOk;
+                        do
+                        {
+                            attempts++;
+                            // Get random values for the obstacles
+                            (int X, int Y) randomPos = (rnd.Next(0, CHUNK_SIZE_IN_TILES - 1), rnd.Next(0, CHUNK_SIZE_IN_TILES - 1));
+
+                            randomPos.X *= OBSTACLE_SIZE;
+                            randomPos.Y *= OBSTACLE_SIZE;
+
+                            randomPos.X += intChunkLength * chunkX;
+                            randomPos.Y += intChunkLength * chunkY;
+
+                            // Try to place the obstacle somewhere
+                            newObstacle.Position = randomPos;
+
+                            blnOk = true;
+
+                            // Check to see if the obstacle is colliding with anything
+                            foreach (Obstacle obstacle in Obstacles)
+                            {
+                                if ((IsOverlapping(newObstacle, obstacle) || !blnOk) && !Floors.Contains(obstacle.ObstType))
+                                {
+                                    blnOk = false;
+                                    break;
+                                }
+                            }
+
+                            foreach (Character character in Characters)
+                            {
+                                if ((IsOverlapping(newObstacle, character) && newObstacle.CanCollide) || !blnOk)
+                                {
+                                    blnOk = false;
+                                    break;
+                                }
+                            }
+
+                            // Add the obstacle if everything is okay
+                            if (blnOk)
+                                Obstacles.Add(newObstacle);
+
+                        } while (!blnOk && attempts < 100);
+                    }
+                }
             }
-
-            Obstacles.Add(new(512, 352, OBSTACLE_SIZE * 2, WOOD));
-
-            // Left barriers
-            for (int x = 0; x < 2; x++)
-            {
-                Obstacles.Add(new(192, 448 + (128 * x), OBSTACLE_SIZE, WOOD));
-            }
-
-            Obstacles.Add(new(352, 512, OBSTACLE_SIZE, WOOD));
-
-            // Right barriers
-            for (int x = 0; x < 2; x++)
-            {
-                Obstacles.Add(new(intBorderLength - 128, 448 + (128 * x), OBSTACLE_SIZE, WOOD));
-            }
-
-            Obstacles.Add(new(intBorderLength - 256, 512, OBSTACLE_SIZE, WOOD));
-
-            // Bottom barriers
-            for (int x = 0; x < 2; x++)
-            {
-                Obstacles.Add(new(448 + (128 * x), intBorderLength - 128, OBSTACLE_SIZE * 2, WOOD));
-            }
-
-            Obstacles.Add(new(512, intBorderLength - 256, OBSTACLE_SIZE * 2, WOOD));
-
-
-            // The smaller obstacles' type
-            const Obstacle.Type DIRT = Obstacle.Type.Dirt;
-
-            // Top left small obstacle
-            Obstacles.Add(new(288, 288, OBSTACLE_SIZE, DIRT));
-
-            // Top right small obstacle
-            Obstacles.Add(new(intBorderLength - 192, 288, OBSTACLE_SIZE, DIRT));
-
-            // Bottom left small obstacle
-            Obstacles.Add(new(288, intBorderLength - 192, OBSTACLE_SIZE, DIRT));
-
-            // Bottom right small obstacle
-            Obstacles.Add(new(intBorderLength - 192, intBorderLength - 192, OBSTACLE_SIZE, DIRT));
-
-            // Middle small obstacles
-            Obstacles.Add(new(448, 448, OBSTACLE_SIZE, DIRT));
-            Obstacles.Add(new(intBorderLength - 352, 448, OBSTACLE_SIZE, DIRT));
-            Obstacles.Add(new(448, intBorderLength - 352, OBSTACLE_SIZE, DIRT));
-            Obstacles.Add(new(intBorderLength - 352, intBorderLength - 352, OBSTACLE_SIZE, DIRT));
         }
 
         /// <summary>
@@ -700,10 +766,9 @@ namespace ShootMeUp
                 return new List<Enemy>();
 
             List<Enemy> WaveEnemies = new List<Enemy>();
-            Random rnd = new Random();
 
             // Base number of enemies plus some random variation
-            int baseEnemies = 3; // minimum
+            int baseEnemies = 3;
             int totalEnemies = baseEnemies + rnd.Next(waveNumber, waveNumber * 3);
 
             // Define enemy types with score values
@@ -874,15 +939,23 @@ namespace ShootMeUp
                             );
                         }
 
+                        // Retry if the enemy is outside of the world
+                        if (!IsInsideWorld(enemy))
+                        {
+                            reroll = true;
+                            continue;
+                        }
 
-                            //check if the ennemy is in a wall
-                            foreach (Obstacle obstacle in Obstacles)
+                        //check if the ennemy is in a wall
+                        foreach (Obstacle obstacle in Obstacles)
+                        {
+                            if (IsOverlapping(enemy, obstacle) && obstacle.CanCollide)
                             {
-                                if (IsOverlapping(enemy, obstacle))
-                                {
-                                    reroll = true;
-                                }
+                                reroll = true;
+                                break;
+
                             }
+                        }
                         //reroll if the ennemy is in a wall
                     } while (reroll);
 
@@ -922,6 +995,21 @@ namespace ShootMeUp
             bool overlapX = entity1.Position.X < entity2.Position.X + entity2.Size.Width && entity1.Position.X + entity1.Size.Width > entity2.Position.X;
             bool overlapY = entity1.Position.Y < entity2.Position.Y + entity2.Size.Height && entity1.Position.Y + entity1.Size.Height > entity2.Position.Y;
             return overlapX && overlapY;
+        }
+
+        /// <summary>
+        /// Tests to see if the given entity is inside or outside the world
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public static bool IsInsideWorld(CFrame entity)
+        {
+            int intMapSize = CHUNK_SIZE_IN_TILES * CHUNK_AMOUNT * OBSTACLE_SIZE;
+            return
+                entity.Position.X >= 0 &&
+                entity.Position.Y >= 0 &&
+                entity.Position.X + entity.Size.Width <= intMapSize &&
+                entity.Position.Y + entity.Size.Height <= intMapSize;
         }
 
         private void DrawBackground(Graphics g, float cameraX, float cameraY)
@@ -968,9 +1056,11 @@ namespace ShootMeUp
                     {
                         float drawX = Floor.Position.X - cameraX;
                         float drawY = Floor.Position.Y - cameraY;
-                        
-                        using (Bitmap Image = GetSprite(Floor.ObstType, Floor.Size))
-                            bufferG.DrawImage(Image, drawX, drawY, Floor.Size.Width, Floor.Size.Height);
+
+                        if (FloorChunkCache.TryGetValue(Floor.ObstType, out Bitmap? chunk))
+                        {
+                            bufferG.DrawImage(chunk, drawX, drawY);
+                        }
                     }
                 }
 
@@ -1043,7 +1133,7 @@ namespace ShootMeUp
                     float drawX = projectile.Position.X - cameraX;
                     float drawY = projectile.Position.Y - cameraY;
 
-                    using(Bitmap Image = GetSprite(projectile.ProjType, projectile.RotationAngle))
+                    using (Bitmap Image = GetSprite(projectile.ProjType, projectile.RotationAngle))
                         bufferG.DrawImage(Image, drawX, drawY, projectile.Size.Width, projectile.Size.Height);
                 }
 
