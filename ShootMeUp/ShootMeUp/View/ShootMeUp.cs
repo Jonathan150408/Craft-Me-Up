@@ -22,16 +22,6 @@ namespace ShootMeUp
     public partial class ShootMeUp : Form
     {
         /// <summary>
-        /// Width of the game area
-        /// </summary>
-        public static readonly int WIDTH = 1024;
-
-        /// <summary>
-        /// Height of the game area
-        /// </summary>
-        public static readonly int HEIGHT = 1024;
-
-        /// <summary>
         /// The game's speed multiplier for movement, projectiles, etc.)
         /// </summary>
         public static readonly int GAMESPEED = 8 * 30;
@@ -55,6 +45,8 @@ namespace ShootMeUp
         /// The amount of chunks on the x and y axis
         /// </summary>
         private static readonly int CHUNK_AMOUNT = 16;
+
+        private bool isResizing = false;
 
         /// <summary>
         /// The current state of the game
@@ -153,11 +145,19 @@ namespace ShootMeUp
         public static long LastFrameTime;
         public static float DeltaTime;
 
+        /// <summary>
+        /// The game's zoom (the smaller it is, the more you see)
+        /// </summary>
+        public static float Zoom = 1f;
+
         public ShootMeUp()
         {
             InitializeComponent();
 
-            ClientSize = new Size(WIDTH, HEIGHT);
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.MaximizeBox = true;
+            this.MinimumSize = new Size(640, 640);
+
             _intWaveNumber = 1;
             _gamestate = Gamestate.finished;
 
@@ -196,12 +196,35 @@ namespace ShootMeUp
             };
             this.resumeButton.Click += ResumeButton_Click;
 
-            backBuffer = new Bitmap(WIDTH, HEIGHT);
+            ResizeBackbuffer();
+
+            ShowTitle();
+        }
+
+        private void ResizeBackbuffer()
+        {
+            backBuffer?.Dispose();
+            bufferG?.Dispose();
+
+            backBuffer = new Bitmap(ClientSize.Width, ClientSize.Height);
             bufferG = Graphics.FromImage(backBuffer);
             bufferG.InterpolationMode = InterpolationMode.NearestNeighbor;
             bufferG.PixelOffsetMode = PixelOffsetMode.Half;
+        }
 
-            ShowTitle();
+        private void CenterTitleUI()
+        {
+            if (_titleLabel != null)
+            {
+                _titleLabel.Left = (ClientSize.Width - _titleLabel.Width) / 2;
+                _titleLabel.Top = ClientSize.Height / 3 - _titleLabel.Height / 2;
+            }
+
+            if (_playButton != null)
+            {
+                _playButton.Left = (ClientSize.Width - _playButton.Width) / 2;
+                _playButton.Top = (_titleLabel?.Bottom ?? (ClientSize.Height / 3)) + 256;
+            }
         }
 
         /// <summary>
@@ -254,6 +277,9 @@ namespace ShootMeUp
 
             // Set up the button wait
             _playButton.Click += _playButton_Click;
+
+            // Center the ui
+            CenterTitleUI();
         }
 
         private async void _playButton_Click(object? sender, EventArgs e)
@@ -267,6 +293,22 @@ namespace ShootMeUp
         {
             DisplayPauseMenu();
         }
+
+        private void CenterPauseUI()
+        {
+            if (pauseModale != null)
+            {
+                pauseModale.Width = ClientSize.Width;
+                pauseModale.Height = ClientSize.Height;
+            }
+
+            if (resumeButton != null)
+            {
+                resumeButton.Left = (ClientSize.Width - resumeButton.Width) / 2;
+                resumeButton.Top = (ClientSize.Height - resumeButton.Height) / 2;
+            }
+        }
+
         /// <summary>
         /// pauses the game and displays the pause menu
         /// </summary>
@@ -274,6 +316,7 @@ namespace ShootMeUp
         {
             if (this._gamestate == Gamestate.running)
             {
+                CenterPauseUI();
                 Controls.Add(resumeButton);
                 Controls.Add(pauseModale);
 
@@ -1059,7 +1102,13 @@ namespace ShootMeUp
 
                         if (FloorChunkCache.TryGetValue(Floor.ObstType, out Bitmap? chunk))
                         {
-                            bufferG.DrawImage(chunk, drawX, drawY);
+                            bufferG.DrawImage(
+                                chunk,
+                                drawX * Zoom,
+                                drawY * Zoom,
+                                chunk.Width * Zoom,
+                                chunk.Height * Zoom
+                            );
                         }
                     }
                 }
@@ -1074,7 +1123,7 @@ namespace ShootMeUp
                     float drawY = character.Position.Y - cameraY;
 
                     using (Bitmap Image = GetSprite(character.CharType))
-                        bufferG.DrawImage(Image, drawX, drawY, character.Size.Width, character.Size.Height);
+                        bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, character.Size.Width * Zoom, character.Size.Height * Zoom);
                 }
 
                 // Draw obstacles
@@ -1087,16 +1136,27 @@ namespace ShootMeUp
                         float drawY = obstacle.Position.Y - cameraY;
 
                         using (Bitmap Image = GetSprite(obstacle.ObstType, obstacle.Size))
-                            bufferG.DrawImage(Image, drawX, drawY, obstacle.Size.Width, obstacle.Size.Height);
+                            bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, obstacle.Size.Width * Zoom, obstacle.Size.Height * Zoom);
 
 
                         // Draw its life
-                        SizeF textSize = bufferG.MeasureString($"{obstacle}", TextHelpers.drawFont);
+                        float screenX = (obstacle.Position.X - cameraX) * Zoom;
+                        float screenY = (obstacle.Position.Y - cameraY) * Zoom;
 
-                        // Calculate the X coordinate to center the text
-                        float centeredX = obstacle.Position.X + (obstacle.Size.Width / 2f) - (textSize.Width / 2f);
+                        using (Font scaledFont = new Font(TextHelpers.drawFont.FontFamily, TextHelpers.drawFont.Size * Zoom, TextHelpers.drawFont.Style))
+                        {
+                            SizeF textSize = bufferG.MeasureString($"{obstacle}", scaledFont);
 
-                        bufferG.DrawString($"{obstacle}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX - cameraX, (obstacle.Position.Y - 16) - cameraY);
+                            float centeredX = screenX + (obstacle.Size.Width * Zoom / 2f) - (textSize.Width / 2f);
+
+                            bufferG.DrawString(
+                                $"{obstacle}",
+                                scaledFont,
+                                TextHelpers.writingBrush,
+                                centeredX,
+                                screenY - 16 * Zoom
+                            );
+                        }
 
                     }
                 }
@@ -1110,21 +1170,32 @@ namespace ShootMeUp
                     float drawY = character.Position.Y - cameraY;
 
                     using (Bitmap Image = GetSprite(character.CharType))
-                        bufferG.DrawImage(Image, drawX, drawY, character.Size.Width, character.Size.Height);
+                        bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, character.Size.Width * Zoom, character.Size.Height * Zoom);
                 }
 
                 // Draw all characters' health (not including player)
                 foreach (Character character in Characters)
                 {
                     if (character.CharType == Character.Type.Player) continue;
-                    // Draw their health bar
-                    SizeF textSize = bufferG.MeasureString($"{character}", TextHelpers.drawFont);
 
-                    // Calculate the X coordinate to center the text
-                    float centeredX = character.Position.X + (character.Size.Width / 2f) - (textSize.Width / 2f);
+                    // Draw its life
+                    float screenX = (character.Position.X - cameraX) * Zoom;
+                    float screenY = (character.Position.Y - cameraY) * Zoom;
 
-                    bufferG.DrawString($"{character}", TextHelpers.drawFont, TextHelpers.writingBrush, centeredX - cameraX, (character.Position.Y - 16) - cameraY);
+                    using (Font scaledFont = new Font(TextHelpers.drawFont.FontFamily, TextHelpers.drawFont.Size * Zoom, TextHelpers.drawFont.Style))
+                    {
+                        SizeF textSize = bufferG.MeasureString($"{character}", scaledFont);
 
+                        float centeredX = screenX + (character.Size.Width * Zoom / 2f) - (textSize.Width / 2f);
+
+                        bufferG.DrawString(
+                            $"{character}",
+                            scaledFont,
+                            TextHelpers.writingBrush,
+                            centeredX,
+                            screenY - 16 * Zoom
+                        );
+                    }
                 }
 
                 // Draw projectiles
@@ -1134,41 +1205,74 @@ namespace ShootMeUp
                     float drawY = projectile.Position.Y - cameraY;
 
                     using (Bitmap Image = GetSprite(projectile.ProjType, projectile.RotationAngle))
-                        bufferG.DrawImage(Image, drawX, drawY, projectile.Size.Width, projectile.Size.Height);
+                        bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, projectile.Size.Width * Zoom, projectile.Size.Height * Zoom);
                 }
 
-                // Draw the player along with their lives and the game's statistics
+                // Draw the player
                 if (_player != null)
                 {
                     float px = _player.Position.X - cameraX;
                     float py = _player.Position.Y - cameraY;
 
                     using (Bitmap Image = GetSprite(_player.CharType))
-                        bufferG.DrawImage(Image, px, py, _player.Size.Width, _player.Size.Height);
+                        bufferG.DrawImage(Image, px * Zoom, py * Zoom, _player.Size.Width * Zoom, _player.Size.Height * Zoom);
+                }
+            }
+        }
 
-                    bufferG.DrawString($"Wave {_intWaveNumber} | Score: {Score} | Lives remaining: {_player.Lives}", TextHelpers.drawFont, TextHelpers.writingBrush, 8, 8);
+        private void ClampCamera()
+        {
+            int mapSize = CHUNK_SIZE_IN_TILES * CHUNK_AMOUNT * OBSTACLE_SIZE + OBSTACLE_SIZE;
 
-                    for (int i = 0; i < _player.Lives; i++)
-                    {
-                        int x = 8 + (i * 20);
-                        using (Bitmap Heart = (Bitmap)Sprites.Heart.Clone())
-                            bufferG.DrawImage(Heart, x, 32, 24, 24);
-                    }
+            float viewportW = ClientSize.Width / Zoom;
+            float viewportH = ClientSize.Height / Zoom;
+
+            cameraX = Math.Clamp(cameraX, 0 - OBSTACLE_SIZE, mapSize - viewportW);
+            cameraY = Math.Clamp(cameraY, 0 - OBSTACLE_SIZE, mapSize - viewportH);
+        }
+
+        private void UpdateCamera()
+        {
+            if (_player == null) return;
+
+            float viewportW = ClientSize.Width / Zoom;
+            float viewportH = ClientSize.Height / Zoom;
+
+            cameraX = _player.Position.X + _player.Size.Width / 2f - viewportW / 2f;
+            cameraY = _player.Position.Y + _player.Size.Height / 2f - viewportH / 2f;
+
+            ClampCamera();
+        }
+
+        private void DrawUI(Graphics g)
+        {
+            if (_player != null)
+            {
+                g.DrawString($"Wave {_intWaveNumber} | Score: {Score} | Lives remaining: {_player.Lives}", TextHelpers.drawFont, TextHelpers.writingBrush, 8, 8);
+
+                for (int i = 0; i < _player.Lives; i++)
+                {
+                    int x = 8 + (i * 20);
+                    using (Bitmap Heart = (Bitmap)Sprites.Heart.Clone())
+                        g.DrawImage(Heart, x, 32, 24, 24);
                 }
             }
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (_gamestate != Gamestate.finished && backBuffer != null)
+            if (_gamestate == Gamestate.finished || backBuffer == null)
             {
-                e.Graphics.DrawImageUnscaled(backBuffer, 0, 0);
-            }
-            else
-            {
-                // Let WinForms draw the normal background (including BackgroundImage)
                 base.OnPaint(e);
+                return;
             }
+
+            e.Graphics.Clear(Color.Black);
+
+            e.Graphics.DrawImage(backBuffer, 0, 0);
+
+            // Draw UI on top
+            DrawUI(e.Graphics);
         }
 
         /// <summary>
@@ -1210,8 +1314,7 @@ namespace ShootMeUp
                 return;
 
             // Update camera position to the player's
-            cameraX = _player.Position.X - (Size.Width / 2);
-            cameraY = _player.Position.Y - (Size.Height / 2);
+            UpdateCamera();
 
             // Create a new frame
             RenderFrame();
@@ -1285,28 +1388,59 @@ namespace ShootMeUp
                 _keysHeldDown.Remove(e.KeyCode);
         }
 
+        private CFrame ScreenToWorld(Point screen)
+        {
+            return new CFrame(screen.X / Zoom + cameraX, screen.Y / Zoom + cameraY);
+        }
+
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            Zoom += e.Delta > 0 ? 0.1f : -0.1f;
+            Zoom = Math.Clamp(Zoom, 0.25f, 2f);
+        }
+
         private void ShootMeUp_MouseClick(object sender, MouseEventArgs e)
         {
             // Only try and shoot something if the player is in game
-            if (_gamestate == Gamestate.running && _player != null)
+            if (_gamestate != Gamestate.running || _player == null) return;
+
+            // If it's a left click, shoot an arrow. Otherwise, shoot a fireball.
+            Projectile.Type type = (e.Button == MouseButtons.Right)
+                ? Projectile.Type.Fireball_Big
+                : Projectile.Type.Arrow_Big;
+
+            CFrame target = ScreenToWorld(e.Location);
+            Projectile? projectile = _player.Shoot(target, type);
+
+            if (projectile != null)
+                Projectiles.Add(projectile);
+        }
+
+        protected override void OnResizeBegin(EventArgs e)
+        {
+            base.OnResizeBegin(e);
+            isResizing = true;
+        }
+
+        protected override void OnResizeEnd(EventArgs e)
+        {
+            base.OnResizeEnd(e);
+            isResizing = false;
+            ResizeBackbuffer();
+            Invalidate();
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+
+            CenterTitleUI();
+            CenterPauseUI();
+
+            if (!isResizing)
             {
-                //default is arrow
-                Projectile.Type type = Projectile.Type.Arrow_Big;
-
-                // If it's a left click, strType is "arrow". if its a right click, strType is "fireball".
-                if (e.Button == MouseButtons.Left)
-                    type = Projectile.Type.Arrow_Big;
-                else if (e.Button == MouseButtons.Right)
-                    type = Projectile.Type.Fireball_Big;
-
-                // Create a new CFrame of where the click was
-                CFrame target = new(e.X + cameraX, e.Y + cameraY);
-
-                // Shoot an arrow using the player's shoot method and add it to the projectile list
-                Projectile? possibleProjectile = _player.Shoot(target, type);
-
-                if (possibleProjectile != null)
-                    Projectiles.Add(possibleProjectile);
+                ResizeBackbuffer();
+                Invalidate();
             }
         }
     }
