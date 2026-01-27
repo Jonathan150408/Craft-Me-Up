@@ -1,7 +1,9 @@
 ﻿using ShootMeUp.Helpers;
 using ShootMeUp.Model;
 using System.ComponentModel;
+using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Xml.Serialization;
 using static ShootMeUp.Model.GameSettings;
 using Font = System.Drawing.Font;
 
@@ -30,7 +32,7 @@ namespace ShootMeUp
         /// <summary>
         /// The amount of chunks on the x and y axis
         /// </summary>
-        private static readonly int CHUNK_AMOUNT = 16;
+        private static readonly int CHUNK_AMOUNT = 32;
 
         private bool isResizing = false;
 
@@ -40,6 +42,7 @@ namespace ShootMeUp
         private enum GameState
         {
             running,
+            loading,
             paused,
             finished
         }
@@ -74,6 +77,26 @@ namespace ShootMeUp
         /// The game's settings button
         /// </summary>
         private Button? _settingsButton;
+
+        /// <summary>
+        /// The settings' title
+        /// </summary>
+        private Label? _settingsTitle;
+
+        /// <summary>
+        /// The settings' done button 
+        /// </summary>
+        private Button? _settingsDone;
+
+        /// <summary>
+        /// The settings' speed label
+        /// </summary>
+        private Label? _settingsSpeedLabel;
+
+        /// <summary>
+        /// The settings' speed panel
+        /// </summary>
+        private Panel? _settingsSpeedPanel;
 
         /// <summary>
         /// A list that contains all the projectiles
@@ -157,6 +180,11 @@ namespace ShootMeUp
 
         private static readonly List<BiomeInfo> Biomes = [];
 
+        /// <summary>
+        /// Whether the world has generated or not
+        /// </summary>
+        private bool _worldReady;
+
         public ShootMeUp()
         {
             InitializeComponent();
@@ -185,7 +213,9 @@ namespace ShootMeUp
             CameraX = 0;
             CameraY = 0;
 
-            GameSettings.GameSpeed = GameSettings.GameSpeedOption.Normal;
+            _worldReady = false;
+
+            GameSettings.Load();
 
             pauseModale = new()
             {
@@ -288,7 +318,7 @@ namespace ShootMeUp
                 Controls.Remove(_playButton);
                 _playButton.Dispose();
             }
-
+            
             if (_settingsButton != null)
             {
                 Controls.Remove(_settingsButton);
@@ -351,29 +381,9 @@ namespace ShootMeUp
 
         private async void PlayButton_Click(object? sender, EventArgs e)
         {
-            StartGame();
+            await StartGame();
             await StartWaves();
         }
-
-        /// <summary>
-        /// The settings' title
-        /// </summary>
-        private Label? _settingsTitle;
-
-        /// <summary>
-        /// The settings' done button 
-        /// </summary>
-        private Button? _settingsDone;
-
-        /// <summary>
-        /// The settings' speed label
-        /// </summary>
-        private Label? _settingsSpeedLabel;
-
-        /// <summary>
-        /// The settings' speed panel
-        /// </summary>
-        private Panel? _settingsSpeedPanel;
 
         private void CenterSettingsUI()
         {
@@ -434,11 +444,11 @@ namespace ShootMeUp
                     b.BackColor = Color.White;
             }
 
-            int index = GameSettings.GameSpeed switch
+            int index = GameSettings.Current.GameSpeed switch
             {
-                GameSpeedOption.Slow => 0,
-                GameSpeedOption.Normal => 1,
-                GameSpeedOption.Fast => 2,
+                GameSettings.GameSpeedOption.Slow => 0,
+                GameSettings.GameSpeedOption.Normal => 1,
+                GameSettings.GameSpeedOption.Fast => 2,
                 _ => 1
             };
 
@@ -506,19 +516,22 @@ namespace ShootMeUp
 
             Button slowBtn = CreateOptionButton("Slow", () =>
             {
-                GameSettings.GameSpeed = GameSpeedOption.Slow;
+                GameSettings.Current.GameSpeed = GameSettings.GameSpeedOption.Slow;
+                GameSettings.Save();
                 RefreshSpeedButtons();
             });
 
             Button normalBtn = CreateOptionButton("Normal", () =>
             {
-                GameSettings.GameSpeed = GameSpeedOption.Normal;
+                GameSettings.Current.GameSpeed = GameSettings.GameSpeedOption.Normal;
+                GameSettings.Save();
                 RefreshSpeedButtons();
             });
 
             Button fastBtn = CreateOptionButton("Fast", () =>
             {
-                GameSettings.GameSpeed = GameSpeedOption.Fast;
+                GameSettings.Current.GameSpeed = GameSettings.GameSpeedOption.Fast;
+                GameSettings.Save();
                 RefreshSpeedButtons();
             });
 
@@ -550,6 +563,8 @@ namespace ShootMeUp
 
         private void SettingsDone_Click(object? sender, EventArgs e)
         {
+            GameSettings.Save();
+
             // Remove everything from the settings
             Controls.Remove(_settingsTitle);
             _settingsTitle?.Dispose();
@@ -902,7 +917,7 @@ namespace ShootMeUp
         /// <summary>
         /// Start the game up
         /// </summary>
-        private void StartGame()
+        private async Task StartGame()
         {
             BackgroundImage = null;
             BackgroundImageLayout = ImageLayout.None;
@@ -928,7 +943,21 @@ namespace ShootMeUp
             InitializeFloorChunks();
 
             GenerateBiomeInfo();
-            GenerateWorld();
+
+            // Cache floor textures for easier render
+            InitializeFloorChunks();
+
+            // Force redraw
+            RenderFrame();
+            Invalidate();
+
+            _gameState = GameState.loading;
+            _worldReady = false;
+
+            await Task.Run(() => GenerateWorld());
+
+            _worldReady = true;
+            _gameState = GameState.running;
         }
 
         /// <summary>
@@ -950,6 +979,39 @@ namespace ShootMeUp
             }
         }
 
+        static float SmoothBiomeNoise(float x, float y)
+        {
+            int x0 = (int)Math.Floor(x);
+            int y0 = (int)Math.Floor(y);
+
+            float xFrac = x - x0;
+            float yFrac = y - y0;
+
+            float n00 = BiomeNoise(x0, y0);
+            float n10 = BiomeNoise(x0 + 1, y0);
+            float n01 = BiomeNoise(x0, y0 + 1);
+            float n11 = BiomeNoise(x0 + 1, y0 + 1);
+
+            float u = Fade(xFrac);
+            float v = Fade(yFrac);
+
+            float nx0 = Lerp(n00, n10, u);
+            float nx1 = Lerp(n01, n11, u);
+
+            return Lerp(nx0, nx1, v);
+        }
+
+        static float Fade(float t)
+        {
+            // Perlin fade function (smooth curve)
+            return t * t * t * (t * (t * 6 - 15) + 10);
+        }
+
+        static float Lerp(float a, float b, float t)
+        {
+            return a + (b - a) * t;
+        }
+
         /// <summary>
         /// Generate biome informations
         /// </summary>
@@ -957,7 +1019,8 @@ namespace ShootMeUp
         {
             Biomes.Clear();
 
-            int seedCount = 10;
+            // Seed count proportional to map area
+            int seedCount = Math.Max(10, (CHUNK_AMOUNT * CHUNK_AMOUNT) / 150);
 
             for (int i = 0; i < seedCount; i++)
             {
@@ -981,15 +1044,19 @@ namespace ShootMeUp
             BiomeInfo closest = Biomes[0];
             float bestDist = float.MaxValue;
 
+            // This controls the size of the biome "blobs"
+            float biomeScale = 1f;
+
             foreach (var seed in Biomes)
             {
-                float dx = chunkX - seed.X;
-                float dy = chunkY - seed.Y;
+                float dx = (chunkX - seed.X) * biomeScale;
+                float dy = (chunkY - seed.Y) * biomeScale;
 
-                // Distort edges so blobs aren't perfect circles
-                float distortion = BiomeNoise(chunkX, chunkY) * 1.5f;
+                // Distort edges
+                float distortion = SmoothBiomeNoise(chunkX * 0.1f, chunkY * 0.1f) * 1.5f;
 
-                float dist = dx * dx + dy * dy + distortion;
+                // Add distortion after scaling so it doesn't grow with world size
+                float dist = dx * dx + dy * dy + distortion * distortion;
 
                 if (dist < bestDist)
                 {
@@ -1015,7 +1082,7 @@ namespace ShootMeUp
             float fltAreaCenterX = fltMapSize / 2;
 
             // Create a new player
-            _player = new(fltAreaCenterX, fltAreaCenterX, DEFAULT_CHARACTER_SIZE, Character.Type.Player, GameSettings.GameSpeedValue);
+            _player = new(fltAreaCenterX, fltAreaCenterX, DEFAULT_CHARACTER_SIZE, Character.Type.Player, GameSettings.Current.GameSpeedValue);
             Characters.Add(_player);
 
             // Generate the border around the world
@@ -1148,6 +1215,9 @@ namespace ShootMeUp
                                 Obstacles.Add(newObstacle);
 
                         } while (!blnOk && attempts < 100);
+
+                        if (attempts < 100)
+                            break;
                     }
                 }
             }
@@ -1216,7 +1286,7 @@ namespace ShootMeUp
                 int intCharSize = (int)(DEFAULT_CHARACTER_SIZE * sizeMultiplier);
 
                 // Add enemy to wave
-                WaveEnemies.Add(new Enemy(0, 0, intCharSize, selectedType, GameSettings.GameSpeedValue, _player));
+                WaveEnemies.Add(new Enemy(0, 0, intCharSize, selectedType, GameSettings.Current.GameSpeedValue, _player));
 
                 // Reduce totalEnemies based on Weight (rarer/stronger enemies "cost" more)
                 totalEnemies -= Math.Max(1, enemyTypes.First(e => e.Type == selectedType).Weight);
@@ -1261,7 +1331,7 @@ namespace ShootMeUp
                 }
 
                 for (int i = 0; i < intBossAmount; i++)
-                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * fltSizeMultiplicator), BossType, GameSettings.GameSpeedValue, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * fltSizeMultiplicator), BossType, GameSettings.Current.GameSpeedValue, _player));
             }
 
             return WaveEnemies;
@@ -1293,7 +1363,7 @@ namespace ShootMeUp
             while (_gameState != GameState.finished && (_player != null && _player.Lives > 0))
             {
                 // Add a wait before the next wave
-                await Wait(20000 / GameSettings.GameSpeedValue);
+                await Wait(20000 / GameSettings.Current.GameSpeedValue);
 
                 // Get the wave's enemies
                 List<Enemy> waveEnemies = GenerateWaves(_intWaveNumber);
@@ -1370,7 +1440,7 @@ namespace ShootMeUp
 
 
                     // Add a wait before adding the next enemy
-                    await Wait(20000 / GameSettings.GameSpeedValue);
+                    await Wait(20000 / GameSettings.Current.GameSpeedValue);
                 }
 
                 // Clear the wave enemies table
@@ -1438,26 +1508,62 @@ namespace ShootMeUp
             }
         }
 
+        private bool IsOnScreen(float x, float y, float w, float h)
+        {
+            float screenW = ClientSize.Width;
+            float screenH = ClientSize.Height;
+
+            float screenX = x * Zoom;
+            float screenY = y * Zoom;
+            float screenWObj = w * Zoom;
+            float screenHObj = h * Zoom;
+
+            return screenX + screenWObj >= 0 &&
+                   screenX <= screenW &&
+                   screenY + screenHObj >= 0 &&
+                   screenY <= screenH;
+        }
+
         /// <summary>
         /// Render a new frame
         /// </summary>
         private void RenderFrame()
         {
+            // Show a loading text
+            if (_gameState == GameState.loading || !_worldReady)
+            {
+                bufferG.Clear(Color.Black);
+
+                using Font font = new Font("Consolas", 32, FontStyle.Bold);
+                SizeF textSize = bufferG.MeasureString("Loading...", font);
+
+                float x = (ClientSize.Width - textSize.Width) / 2f;
+                float y = (ClientSize.Height - textSize.Height) / 2f;
+
+                bufferG.DrawString("Loading...", font, Brushes.White, x, y);
+                return;
+            }
+
             if (_player != null)
             {
                 // Clear the frame
                 DrawBackground(bufferG);
 
+                using Font scaledFont = new Font(TextHelpers.drawFont.FontFamily, TextHelpers.drawFont.Size * Zoom, TextHelpers.drawFont.Style);
+
                 // Draw all the background assets first
+                Obstacle.Type[] FloorTypes = [Obstacle.Type.Sand, Obstacle.Type.Grass, Obstacle.Type.Stone];
+
                 foreach (Obstacle Floor in Obstacles)
                 {
-                    Obstacle.Type[] FloorTypes = [Obstacle.Type.Sand, Obstacle.Type.Grass, Obstacle.Type.Stone];
-
                     // Only continue if they're from one of the floor types
                     if (FloorTypes.Contains(Floor.ObstType))
                     {
                         float drawX = Floor.Position.X - CameraX;
                         float drawY = Floor.Position.Y - CameraY;
+
+                        if (!IsOnScreen(drawX, drawY, Floor.Size.Width, Floor.Size.Height))
+                            continue;
 
                         if (FloorChunkCache.TryGetValue(Floor.ObstType, out Bitmap? chunk))
                         {
@@ -1472,7 +1578,6 @@ namespace ShootMeUp
                     }
                 }
 
-
                 // Draw all characters (not including player or characters with collisions off)
                 foreach (Character character in Characters)
                 {
@@ -1481,11 +1586,29 @@ namespace ShootMeUp
                     float drawX = character.Position.X - CameraX;
                     float drawY = character.Position.Y - CameraY;
 
-                    using (Bitmap Image = GetSprite(character.CharType))
-                        bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, character.Size.Width * Zoom, character.Size.Height * Zoom);
+                    if (!IsOnScreen(drawX, drawY, character.Size.Width, character.Size.Height))
+                        continue;
+                    bufferG.DrawImage(GetSprite(character.CharType), drawX * Zoom, drawY * Zoom, character.Size.Width * Zoom, character.Size.Height * Zoom);
                 }
 
-                // Draw obstacles
+                // Draw obstacles that can collide
+                foreach (Obstacle obstacle in Obstacles)
+                {
+                    // Only continue if they're not from one of the floor types, and have collisions on
+                    if (FloorTypes.Contains(obstacle.ObstType) && !obstacle.CanCollide)
+                        continue;
+
+                    float drawX = obstacle.Position.X - CameraX;
+                    float drawY = obstacle.Position.Y - CameraY;
+
+                    if (!IsOnScreen(drawX, drawY, obstacle.Size.Width, obstacle.Size.Height))
+                        continue;
+
+                    bufferG.DrawImage(GetSprite(obstacle.ObstType, obstacle.Size), drawX * Zoom, drawY * Zoom, obstacle.Size.Width * Zoom, obstacle.Size.Height * Zoom);
+
+                }
+
+                // Draw obstacle health
                 foreach (Obstacle obstacle in Obstacles)
                 {
                     // Only continue if they're not from one of the floor types
@@ -1494,28 +1617,24 @@ namespace ShootMeUp
                         float drawX = obstacle.Position.X - CameraX;
                         float drawY = obstacle.Position.Y - CameraY;
 
-                        using (Bitmap Image = GetSprite(obstacle.ObstType, obstacle.Size))
-                            bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, obstacle.Size.Width * Zoom, obstacle.Size.Height * Zoom);
+                        if (!IsOnScreen(drawX, drawY, obstacle.Size.Width, obstacle.Size.Height))
+                            continue;
 
-
-                        // Draw its life
                         float screenX = (obstacle.Position.X - CameraX) * Zoom;
                         float screenY = (obstacle.Position.Y - CameraY) * Zoom;
 
-                        using (Font scaledFont = new Font(TextHelpers.drawFont.FontFamily, TextHelpers.drawFont.Size * Zoom, TextHelpers.drawFont.Style))
-                        {
-                            SizeF textSize = bufferG.MeasureString($"{obstacle}", scaledFont);
 
-                            float centeredX = screenX + (obstacle.Size.Width * Zoom / 2f) - (textSize.Width / 2f);
+                        SizeF textSize = bufferG.MeasureString($"{obstacle}", scaledFont);
 
-                            bufferG.DrawString(
-                                $"{obstacle}",
-                                scaledFont,
-                                TextHelpers.writingBrush,
-                                centeredX,
-                                screenY - 16 * Zoom
-                            );
-                        }
+                        float centeredX = screenX + (obstacle.Size.Width * Zoom / 2f) - (textSize.Width / 2f);
+
+                        bufferG.DrawString(
+                            $"{obstacle}",
+                            scaledFont,
+                            TextHelpers.writingBrush,
+                            centeredX,
+                            screenY - 16 * Zoom
+                        );
 
                     }
                 }
@@ -1528,8 +1647,9 @@ namespace ShootMeUp
                     float drawX = character.Position.X - CameraX;
                     float drawY = character.Position.Y - CameraY;
 
-                    using (Bitmap Image = GetSprite(character.CharType))
-                        bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, character.Size.Width * Zoom, character.Size.Height * Zoom);
+                    if (!IsOnScreen(drawX, drawY, character.Size.Width, character.Size.Height))
+                        continue;
+                    bufferG.DrawImage(GetSprite(character.CharType), drawX * Zoom, drawY * Zoom, character.Size.Width * Zoom, character.Size.Height * Zoom);
                 }
 
                 // Draw all characters' health (not including player)
@@ -1541,20 +1661,17 @@ namespace ShootMeUp
                     float screenX = (character.Position.X - CameraX) * Zoom;
                     float screenY = (character.Position.Y - CameraY) * Zoom;
 
-                    using (Font scaledFont = new Font(TextHelpers.drawFont.FontFamily, TextHelpers.drawFont.Size * Zoom, TextHelpers.drawFont.Style))
-                    {
-                        SizeF textSize = bufferG.MeasureString($"{character}", scaledFont);
+                    SizeF textSize = bufferG.MeasureString($"{character}", scaledFont);
 
-                        float centeredX = screenX + (character.Size.Width * Zoom / 2f) - (textSize.Width / 2f);
+                    float centeredX = screenX + (character.Size.Width * Zoom / 2f) - (textSize.Width / 2f);
 
-                        bufferG.DrawString(
-                            $"{character}",
-                            scaledFont,
-                            TextHelpers.writingBrush,
-                            centeredX,
-                            screenY - 16 * Zoom
-                        );
-                    }
+                    bufferG.DrawString(
+                        $"{character}",
+                        scaledFont,
+                        TextHelpers.writingBrush,
+                        centeredX,
+                        screenY - 16 * Zoom
+                    );
                 }
 
                 // Draw projectiles
@@ -1563,8 +1680,10 @@ namespace ShootMeUp
                     float drawX = projectile.Position.X - CameraX;
                     float drawY = projectile.Position.Y - CameraY;
 
-                    using (Bitmap Image = GetSprite(projectile.ProjType, projectile.RotationAngle))
-                        bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, projectile.Size.Width * Zoom, projectile.Size.Height * Zoom);
+                    if (!IsOnScreen(drawX, drawY, projectile.Size.Width, projectile.Size.Height))
+                        continue;
+
+                    bufferG.DrawImage(GetSprite(projectile.ProjType, projectile.RotationAngle), drawX * Zoom, drawY * Zoom, projectile.Size.Width * Zoom, projectile.Size.Height * Zoom);
                 }
 
                 // Draw the player
@@ -1573,8 +1692,23 @@ namespace ShootMeUp
                     float px = _player.Position.X - CameraX;
                     float py = _player.Position.Y - CameraY;
 
-                    using (Bitmap Image = GetSprite(_player.CharType))
-                        bufferG.DrawImage(Image, px * Zoom, py * Zoom, _player.Size.Width * Zoom, _player.Size.Height * Zoom);
+                    bufferG.DrawImage(GetSprite(_player.CharType), px * Zoom, py * Zoom, _player.Size.Width * Zoom, _player.Size.Height * Zoom);
+                }
+
+                // Draw obstacles that has collisions off
+                foreach (Obstacle obstacle in Obstacles)
+                {
+                    // Only continue if they're not from one of the floor types, and have collisions off
+                    if (FloorTypes.Contains(obstacle.ObstType) && !obstacle.CanCollide)
+                        continue;
+
+                    float drawX = obstacle.Position.X - CameraX;
+                    float drawY = obstacle.Position.Y - CameraY;
+
+                    if (!IsOnScreen(drawX, drawY, obstacle.Size.Width, obstacle.Size.Height))
+                        continue;
+
+                    bufferG.DrawImage(GetSprite(obstacle.ObstType, obstacle.Size), drawX * Zoom, drawY * Zoom, obstacle.Size.Width * Zoom, obstacle.Size.Height * Zoom);
                 }
             }
         }
@@ -1631,8 +1765,7 @@ namespace ShootMeUp
                 for (int i = 0; i < _player.Lives; i++)
                 {
                     int x = 8 + (i * 20);
-                    using (Bitmap Heart = (Bitmap)Sprites.Heart.Clone())
-                        g.DrawImage(Heart, x, 32, 24, 24);
+                    g.DrawImage(Sprites.Heart, x, 32, 24, 24);
                 }
             }
         }
@@ -1726,8 +1859,8 @@ namespace ShootMeUp
                 intMoveY += 1;
 
             // Multiple the movement-related int variables by the game speed
-            intMoveX *= GameSettings.GameSpeedValue;
-            intMoveY *= GameSettings.GameSpeedValue;
+            intMoveX *= GameSettings.Current.GameSpeedValue;
+            intMoveY *= GameSettings.Current.GameSpeedValue;
 
             // Update the player's cooldown
             _player?.UpdateTimers();

@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ShootMeUp.Model
 {
@@ -13,9 +12,10 @@ namespace ShootMeUp.Model
             Fast
         }
 
-        public static GameSpeedOption GameSpeed { get; set; } = GameSpeedOption.Normal;
+        public GameSpeedOption GameSpeed { get; set; } = GameSpeedOption.Normal;
 
-        public static int GameSpeedValue =>
+        [JsonIgnore]
+        public int GameSpeedValue =>
             GameSpeed switch
             {
                 GameSpeedOption.Slow => 128,
@@ -24,5 +24,32 @@ namespace ShootMeUp.Model
                 _ => 256
             };
 
+        [JsonIgnore]
+        private static readonly string FilePath = "GameSettings.json";
+
+        [JsonIgnore]
+        public static GameSettings Current { get; private set; } = new();
+
+        [JsonIgnore]
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            WriteIndented = true
+        };
+
+        public static void Load()
+        {
+            if (!File.Exists(FilePath))
+                return;
+
+            string json = File.ReadAllText(FilePath);
+            Current = JsonSerializer.Deserialize<GameSettings>(json, JsonOptions)
+                      ?? new GameSettings();
+        }
+
+        public static void Save()
+        {
+            string json = JsonSerializer.Serialize(Current, JsonOptions);
+            File.WriteAllText(FilePath, json);
+        }
     }
 }

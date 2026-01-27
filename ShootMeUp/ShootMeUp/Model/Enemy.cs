@@ -51,7 +51,7 @@ namespace ShootMeUp.Model
         /// <param name="y">Its starting Y position</param>
         /// <param name="length">The length of the character</param>
         /// <param name="type">The enemy's type (zombie, skeleton, ...)</param>
-        /// <param name="GameSettings.GameSpeedValue">The game's speed</param>
+        /// <param name="GameSettings.Current.GameSpeedValue">The game's speed</param>
         /// <param name="Target">The enemy's target</param>
         public Enemy(float x, float y, int length, Type type, int GAMESPEED, Character Target) : base(x, y, length, type, GAMESPEED)
         {
@@ -153,17 +153,17 @@ namespace ShootMeUp.Model
                 case Projectile.Type.Arrow_Small:
                 case Projectile.Type.Arrow_Big:
                 case Projectile.Type.Arrow_Jockey:
-                    DamageCooldown = 6f / GameSettings.GameSpeedValue;
+                    DamageCooldown = 6f / GameSettings.Current.GameSpeedValue;
                     break;
                 case Projectile.Type.Fireball_Small:
                 case Projectile.Type.Fireball_Big:
-                    DamageCooldown = 12f / GameSettings.GameSpeedValue;
+                    DamageCooldown = 12f / GameSettings.Current.GameSpeedValue;
                     break;
                 case Projectile.Type.WitherSkull:
-                    DamageCooldown = 4f / GameSettings.GameSpeedValue;
+                    DamageCooldown = 4f / GameSettings.Current.GameSpeedValue;
                     break;
                 case Projectile.Type.DragonFireball:
-                    DamageCooldown = 10f / GameSettings.GameSpeedValue;
+                    DamageCooldown = 10f / GameSettings.Current.GameSpeedValue;
                     break;
                 default:
                     // No projectile, check the enemy type
@@ -339,8 +339,8 @@ namespace ShootMeUp.Model
                 float fltTargetX = _Target.Position.X + _Target.Size.Width/2;
                 float fltTargetY = _Target.Position.Y + _Target.Size.Height/2;
 
-                // Slow the projectile down by dividing its GameSettings.GameSpeedValue reference by 2
-                int intFakeGameSpeed = GameSettings.GameSpeedValue/2;
+                // Slow the projectile down by dividing its GameSettings.Current.GameSpeedValue reference by 2
+                int intFakeGameSpeed = GameSettings.Current.GameSpeedValue/2;
 
                 // Fire a new projectile if possible
                 return new(_ProjectileType, this, fltTargetX, fltTargetY, intFakeGameSpeed);

@@ -68,16 +68,16 @@ namespace ShootMeUp.Model
         /// <param name="y">Its starting Y position</param>
         /// <param name="length">The length of the character</param>
         /// <param name="type">The character's type (player, enemy)</param>
-        /// <param name="GameSettings.GameSpeedValue">The game's speed</param>
+        /// <param name="GameSettings.Current.GameSpeedValue">The game's speed</param>
         public Character(float x, float y, int length, Character.Type type, int GameSpeedValue) : base(x - length / 2f, y - length / 2f, length)
         {
-            _GAMESPEED = GameSettings.GameSpeedValue;
+            _GAMESPEED = GameSettings.Current.GameSpeedValue;
             Lives = 10;
             _Type = type;
             _fltBaseSpeed = 1;
 
-            _arrowCooldown = 1.5f / GameSettings.GameSpeedValue * 60;
-            _fireballCooldown = 4.5f / GameSettings.GameSpeedValue * 60;
+            _arrowCooldown = 1.5f / GameSettings.Current.GameSpeedValue * 60;
+            _fireballCooldown = 4.5f / GameSettings.Current.GameSpeedValue * 60;
         }
 
         protected (bool X, bool Y) CheckObstacleCollision()
