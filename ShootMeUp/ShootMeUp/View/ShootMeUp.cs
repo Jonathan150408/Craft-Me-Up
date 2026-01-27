@@ -142,13 +142,28 @@ namespace ShootMeUp
         Button resumeButton;
 
         // Variables used for time handling
-        public static long LastFrameTime;
-        public static float DeltaTime;
+        public static long LastFrameTime { get; set; }
+        public static float DeltaTime { get; set; }
 
         /// <summary>
         /// The game's zoom (the smaller it is, the more you see)
         /// </summary>
-        public static float Zoom = 1f;
+        public static float Zoom { get; set; }
+        private enum Biome
+        {
+            Plains,
+            Desert,
+            Mountain
+        }
+
+        private struct BiomeInfo
+        {
+            public int X;
+            public int Y;
+            public Biome Type;
+        }
+
+        private static readonly List<BiomeInfo> Biomes = [];
 
         public ShootMeUp()
         {
@@ -173,6 +188,8 @@ namespace ShootMeUp
 
             rnd = new(GAMESEED);
 
+            Zoom = 1;
+
             cameraX = 0;
             cameraY = 0;
 
@@ -195,6 +212,9 @@ namespace ShootMeUp
                 Font = new Font("Consolas", 24, FontStyle.Bold),
             };
             this.resumeButton.Click += ResumeButton_Click;
+
+            backBuffer = new Bitmap(ClientSize.Width, ClientSize.Height);
+            bufferG = Graphics.FromImage(backBuffer);
 
             ResizeBackbuffer();
 
@@ -623,7 +643,7 @@ namespace ShootMeUp
             // Cache floor textures for easier render
             InitializeFloorChunks();
 
-            // Generate the world, then start it
+            GenerateBiomeInfo();
             GenerateWorld();
         }
 
@@ -636,6 +656,7 @@ namespace ShootMeUp
         /// <returns></returns>
         static float BiomeNoise(int x, int y)
         {
+            // Unchecked keyword used to ignore overflow and roll back to 0
             unchecked
             {
                 int n = x * 1619 + y * 31337 + GAMESEED * 1013;
@@ -643,6 +664,57 @@ namespace ShootMeUp
                 return 1f - ((n * (n * n * 60493 + 19990303) + 1376312589)
                              & 0x7fffffff) / 1073741824f;
             }
+        }
+
+        /// <summary>
+        /// Generate biome informations
+        /// </summary>
+        private void GenerateBiomeInfo()
+        {
+            Biomes.Clear();
+
+            int seedCount = 10;
+
+            for (int i = 0; i < seedCount; i++)
+            {
+                Biomes.Add(new BiomeInfo
+                {
+                    X = rnd.Next(CHUNK_AMOUNT),
+                    Y = rnd.Next(CHUNK_AMOUNT),
+                    Type = (Biome)rnd.Next(3)
+                });
+            }
+        }
+
+        /// <summary>
+        /// Gets the chunk's biome info and uses it
+        /// </summary>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkY"></param>
+        /// <returns></returns>
+        private Biome GetChunkBiome(int chunkX, int chunkY)
+        {
+            BiomeInfo closest = Biomes[0];
+            float bestDist = float.MaxValue;
+
+            foreach (var seed in Biomes)
+            {
+                float dx = chunkX - seed.X;
+                float dy = chunkY - seed.Y;
+
+                // Distort edges so blobs aren't perfect circles
+                float distortion = BiomeNoise(chunkX, chunkY) * 1.5f;
+
+                float dist = dx * dx + dy * dy + distortion;
+
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    closest = seed;
+                }
+            }
+
+            return closest.Type;
         }
 
         /// <summary>
@@ -687,16 +759,15 @@ namespace ShootMeUp
                     // Get a random floor and apply it
                     List<Obstacle.Type> Floors = [Obstacle.Type.Grass, Obstacle.Type.Sand, Obstacle.Type.Stone];
 
-                    float scale = 0.15f;
-                    float noise = BiomeNoise(
-                        (int)(chunkX * scale),
-                        (int)(chunkY * scale)
-                    );
+                    Biome biome = GetChunkBiome(chunkX, chunkY);
 
-                    Obstacle.Type randomFloor =
-                        noise < -0.35f ? Obstacle.Type.Sand :
-                        noise < 0.35f ? Obstacle.Type.Grass :
-                                         Obstacle.Type.Stone;
+                    Obstacle.Type randomFloor = biome switch
+                    {
+                        Biome.Plains => Obstacle.Type.Grass,
+                        Biome.Desert => Obstacle.Type.Sand,
+                        Biome.Mountain => Obstacle.Type.Stone,
+                        _ => Obstacle.Type.Barrier
+                    };
 
                     // Chunk based values
                     int intChunkLength = (CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE);
@@ -1055,26 +1126,25 @@ namespace ShootMeUp
                 entity.Position.Y + entity.Size.Height <= intMapSize;
         }
 
-        private void DrawBackground(Graphics g, float cameraX, float cameraY)
+        private void DrawBackground(Graphics g)
         {
             Bitmap tile = Sprites.Stone;
-            int tileSize = ShootMeUp.OBSTACLE_SIZE;
+            int tileSize = OBSTACLE_SIZE;
 
-            // How many tiles are needed to cover the screen
-            int tilesX = (int)Math.Ceiling(bufferG.VisibleClipBounds.Width / (float)tileSize) + 2;
-            int tilesY = (int)Math.Ceiling(bufferG.VisibleClipBounds.Height / (float)tileSize) + 2;
+            int tilesX = (int)Math.Ceiling(ClientSize.Width / (float)tileSize) + 1;
+            int tilesY = (int)Math.Ceiling(ClientSize.Height / (float)tileSize) + 1;
 
-            // Determine starting tile index based on camera offset
-            int startX = (int)Math.Floor(cameraX / tileSize) - 1;
-            int startY = (int)Math.Floor(cameraY / tileSize) - 1;
-
-            for (int x = startX; x < startX + tilesX; x++)
+            for (int x = 0; x < tilesX; x++)
             {
-                for (int y = startY; y < startY + tilesY; y++)
+                for (int y = 0; y < tilesY; y++)
                 {
-                    int drawX = x * tileSize - (int)cameraX;
-                    int drawY = y * tileSize - (int)cameraY;
-                    g.DrawImage(tile, drawX, drawY, tileSize, tileSize);
+                    g.DrawImage(
+                        tile,
+                        x * tileSize,
+                        y * tileSize,
+                        tileSize,
+                        tileSize
+                    );
                 }
             }
         }
@@ -1087,7 +1157,7 @@ namespace ShootMeUp
             if (_player != null)
             {
                 // Clear the frame
-                DrawBackground(bufferG, cameraX, cameraY);
+                DrawBackground(bufferG);
 
                 // Draw all the background assets first
                 foreach (Obstacle Floor in Obstacles)
@@ -1220,15 +1290,34 @@ namespace ShootMeUp
             }
         }
 
+        /// <summary>
+        /// Clamp the camera
+        /// </summary>
         private void ClampCamera()
         {
-            int mapSize = CHUNK_SIZE_IN_TILES * CHUNK_AMOUNT * OBSTACLE_SIZE + OBSTACLE_SIZE;
+            float mapSize = CHUNK_SIZE_IN_TILES * CHUNK_AMOUNT * OBSTACLE_SIZE;
 
             float viewportW = ClientSize.Width / Zoom;
             float viewportH = ClientSize.Height / Zoom;
 
-            cameraX = Math.Clamp(cameraX, 0 - OBSTACLE_SIZE, mapSize - viewportW);
-            cameraY = Math.Clamp(cameraY, 0 - OBSTACLE_SIZE, mapSize - viewportH);
+            // Center map if viewport is larger than world
+            if (viewportW >= mapSize)
+            {
+                cameraX = ((mapSize + OBSTACLE_SIZE) - viewportW) / 2f;
+            }
+            else
+            {
+                cameraX = Math.Clamp(cameraX, -OBSTACLE_SIZE, (mapSize + OBSTACLE_SIZE) - viewportW);
+            }
+
+            if (viewportH >= mapSize)
+            {
+                cameraY = ((mapSize + OBSTACLE_SIZE) - viewportH) / 2f;
+            }
+            else
+            {
+                cameraY = Math.Clamp(cameraY, -OBSTACLE_SIZE, (mapSize + OBSTACLE_SIZE) - viewportH);
+            }
         }
 
         private void UpdateCamera()
@@ -1324,6 +1413,7 @@ namespace ShootMeUp
 
             if (_gamestate != Gamestate.running)
                 return;
+
             // Clean up the dead entities
             CleanupEntities();
 
@@ -1388,15 +1478,18 @@ namespace ShootMeUp
                 _keysHeldDown.Remove(e.KeyCode);
         }
 
-        private CFrame ScreenToWorld(Point screen)
+        private static CFrame ScreenToWorld(Point screen)
         {
             return new CFrame(screen.X / Zoom + cameraX, screen.Y / Zoom + cameraY);
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
         {
+            // Small zoom value = zoom out
+            // Big zoom value = zoom in
+
             Zoom += e.Delta > 0 ? 0.1f : -0.1f;
-            Zoom = Math.Clamp(Zoom, 0.25f, 2f);
+            Zoom = Math.Clamp(Zoom, 0.5f, 2f);
         }
 
         private void ShootMeUp_MouseClick(object sender, MouseEventArgs e)
