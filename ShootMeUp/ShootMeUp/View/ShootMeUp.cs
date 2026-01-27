@@ -365,13 +365,6 @@ namespace ShootMeUp
             Controls.Add(_playButton);
             Controls.Add(_settingsButton);
 
-            _titleLabel.Left = (ClientSize.Width - _titleLabel.Width) / 2;
-            _titleLabel.Top = ClientSize.Height / 3 - _titleLabel.Height / 2;
-
-            _playButton.Left = (ClientSize.Width - _playButton.Width) / 2;
-
-            _playButton.Top = _titleLabel.Bottom + 256;
-
             // Set up the play button
             _playButton.Click += PlayButton_Click;
 
@@ -1212,7 +1205,7 @@ namespace ShootMeUp
 
 
             // The max amount of health (from obstacles) inside of one chunk
-            int intMaxHealthInAChunk = 120;
+            int intMaxHealthInAChunk = 180;
 
             // Generate the environment, chunk by chunk
             for (int chunkX = 0; chunkX < GameSettings.Current.ChunkAmountValue; chunkX++)
@@ -1242,7 +1235,7 @@ namespace ShootMeUp
                     Obstacles.Add(floor);
 
                     // The total amount of health in the current chunk
-                    int intHealthInChunk = 0;
+                    float fltHealthInChunk = 0;
 
                     Dictionary<Obstacle.Type, Obstacle.Type[]> biomeObstacles =
                         new()
@@ -1252,13 +1245,13 @@ namespace ShootMeUp
                             [Obstacle.Type.Stone] = new[] { Obstacle.Type.CobbleStone }
                         };
 
-                    while (intHealthInChunk < intMaxHealthInAChunk)
+                    while (fltHealthInChunk < intMaxHealthInAChunk)
                     {
-                        int intCurrentObstacleHealth;
+                        float fltCurrentObstacleHealth;
 
-                        int remainingHealth = intMaxHealthInAChunk - intHealthInChunk;
+                        float fltRemainingHealth = intMaxHealthInAChunk - fltHealthInChunk;
 
-                        List<Obstacle.Type> valid = biomeObstacles[randomFloor].Where(t => (t == Obstacle.Type.Bush && 5 <= remainingHealth) || (t == Obstacle.Type.Dirt && 10 <= remainingHealth) || (t == Obstacle.Type.Wood && 20 <= remainingHealth) || (t == Obstacle.Type.CobbleStone && 50 <= remainingHealth)).ToList();
+                        List<Obstacle.Type> valid = biomeObstacles[randomFloor].Where(t => (t == Obstacle.Type.Bush && 1.25 <= fltRemainingHealth) || (t == Obstacle.Type.Dirt && 10 <= fltRemainingHealth) || (t == Obstacle.Type.Wood && 20 <= fltRemainingHealth) || (t == Obstacle.Type.CobbleStone && 25 <= fltRemainingHealth)).ToList();
 
                         Obstacle.Type randomObstacleType;
 
@@ -1267,17 +1260,17 @@ namespace ShootMeUp
 
                         randomObstacleType = valid[rnd.Next(valid.Count)];
 
-                        intCurrentObstacleHealth = randomObstacleType switch
+                        fltCurrentObstacleHealth = randomObstacleType switch
                         {
-                            Obstacle.Type.Bush => 5,
+                            Obstacle.Type.Bush => 1.25f,
                             Obstacle.Type.Dirt => 10,
                             Obstacle.Type.Wood => 20,
-                            Obstacle.Type.CobbleStone => 50,
+                            Obstacle.Type.CobbleStone => 25,
                             _ => 0
                         };
 
                         // Add the current obstacle's health to the total
-                        intHealthInChunk += intCurrentObstacleHealth;
+                        fltHealthInChunk += fltCurrentObstacleHealth;
 
                         Obstacle newObstacle = new(0, 0, OBSTACLE_SIZE, randomObstacleType);
 
@@ -1326,10 +1319,7 @@ namespace ShootMeUp
                             if (blnOk)
                                 Obstacles.Add(newObstacle);
 
-                        } while (!blnOk && attempts < 100);
-
-                        if (attempts < 100)
-                            break;
+                        } while (!blnOk && attempts < 1000);
                     }
                 }
             }
