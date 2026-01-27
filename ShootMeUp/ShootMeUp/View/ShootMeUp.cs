@@ -29,11 +29,6 @@ namespace ShootMeUp
         /// </summary>
         private static readonly int CHUNK_SIZE_IN_TILES = 16;
 
-        /// <summary>
-        /// The amount of chunks on the x and y axis
-        /// </summary>
-        private static readonly int CHUNK_AMOUNT = 32;
-
         private bool isResizing = false;
 
         /// <summary>
@@ -97,6 +92,16 @@ namespace ShootMeUp
         /// The settings' speed panel
         /// </summary>
         private Panel? _settingsSpeedPanel;
+
+        /// <summary>
+        /// The settings' chunk label
+        /// </summary>
+        private Label? _settingsChunkLabel;
+
+        /// <summary>
+        /// The settings' chunk panel
+        /// </summary>
+        private Panel? _settingsChunkPanel;
 
         /// <summary>
         /// A list that contains all the projectiles
@@ -189,9 +194,8 @@ namespace ShootMeUp
         {
             InitializeComponent();
 
-            this.FormBorderStyle = FormBorderStyle.Sizable;
             this.MaximizeBox = true;
-            this.MinimumSize = new Size(640, 640);
+            this.WindowState = FormWindowState.Maximized;
 
             _intWaveNumber = 1;
             _gameState = GameState.finished;
@@ -390,7 +394,7 @@ namespace ShootMeUp
             if (_settingsTitle != null)
             {
                 _settingsTitle.Left = (ClientSize.Width - _settingsTitle.Width) / 2;
-                _settingsTitle.Top = ClientSize.Height / 3 - _settingsTitle.Height / 2;
+                _settingsTitle.Top = ClientSize.Height / 4 - _settingsTitle.Height / 2;
             }
 
             if (_settingsSpeedLabel != null)
@@ -426,10 +430,43 @@ namespace ShootMeUp
                 }
             }
 
+            if (_settingsChunkLabel != null)
+            {
+                _settingsChunkLabel.Left = (ClientSize.Width - _settingsChunkLabel.Width) / 2;
+                _settingsChunkLabel.Top = (_settingsSpeedPanel?.Bottom ?? (ClientSize.Height / 3)) + 48;
+            }
+
+            if (_settingsChunkPanel != null)
+            {
+                _settingsChunkPanel.Left = (ClientSize.Width - _settingsChunkPanel.Width) / 2;
+                _settingsChunkPanel.Top = (_settingsChunkLabel?.Bottom ?? 0) + 8;
+
+                int spacing = 16;
+
+                List<Button> buttons = _settingsChunkPanel.Controls.OfType<Button>().ToList();
+
+                if (buttons.Count > 0)
+                {
+                    int totalWidth =
+                        buttons.Sum(b => b.Width) +
+                        spacing * (buttons.Count - 1);
+
+                    int startX = (_settingsChunkPanel.Width - totalWidth) / 2;
+                    int y = (_settingsChunkPanel.Height - buttons[0].Height) / 2;
+
+                    for (int i = 0; i < buttons.Count; i++)
+                    {
+                        buttons[i].Left = startX;
+                        buttons[i].Top = y;
+                        startX += buttons[i].Width + spacing;
+                    }
+                }
+            }
+
             if (_settingsDone != null)
             {
                 _settingsDone.Left = (ClientSize.Width - _settingsDone.Width) / 2;
-                _settingsDone.Top = (_settingsSpeedPanel?.Bottom ?? (_settingsTitle?.Bottom ?? 0)) + 64;
+                _settingsDone.Top = (_settingsChunkPanel?.Bottom ?? (_settingsTitle?.Bottom ?? 0)) + 64;
             }
         }
 
@@ -459,14 +496,40 @@ namespace ShootMeUp
             }
         }
 
-        private static Button CreateOptionButton(string text, Action onClick, bool selected = false)
+        private void RefreshChunkButtons()
+        {
+            if (_settingsChunkPanel == null)
+                return;
+
+            foreach (Control c in _settingsChunkPanel.Controls)
+            {
+                if (c is Button b)
+                    b.BackColor = Color.White;
+            }
+
+            int index = GameSettings.Current.ChunkAmount switch
+            {
+                GameSettings.ChunkAmountOption.Small => 0,
+                GameSettings.ChunkAmountOption.Normal => 1,
+                GameSettings.ChunkAmountOption.Medium => 2,
+                GameSettings.ChunkAmountOption.Large => 3,
+                _ => 1
+            };
+
+            if (index < _settingsChunkPanel.Controls.Count &&
+                _settingsChunkPanel.Controls[index] is Button selected)
+            {
+                selected.BackColor = Color.LightGreen;
+            }
+        }
+
+        private static Button CreateOptionButton(string text, Size size, Action onClick, bool selected = false)
         {
             // Create the button
             Button newButton = new()
             {
                 Text = text,
-                Width = 100,
-                Height = 40,
+                Size = size,
                 BackColor = selected ? Color.LightGreen : Color.White,
                 Font = new Font("Consolas", 12, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat
@@ -514,31 +577,72 @@ namespace ShootMeUp
                 BackColor = Color.Transparent
             };
 
-            Button slowBtn = CreateOptionButton("Slow", () =>
+            Button speedSlowBtn = CreateOptionButton("Slow", new(100, 40), () =>
             {
                 GameSettings.Current.GameSpeed = GameSettings.GameSpeedOption.Slow;
-                GameSettings.Save();
                 RefreshSpeedButtons();
             });
 
-            Button normalBtn = CreateOptionButton("Normal", () =>
+            Button speedNormalBtn = CreateOptionButton("Normal", new(100, 40), () =>
             {
                 GameSettings.Current.GameSpeed = GameSettings.GameSpeedOption.Normal;
-                GameSettings.Save();
                 RefreshSpeedButtons();
             });
 
-            Button fastBtn = CreateOptionButton("Fast", () =>
+            Button speedFastBtn = CreateOptionButton("Fast", new(100, 40), () =>
             {
                 GameSettings.Current.GameSpeed = GameSettings.GameSpeedOption.Fast;
-                GameSettings.Save();
                 RefreshSpeedButtons();
             });
 
-
-            _settingsSpeedPanel?.Controls.AddRange([slowBtn, normalBtn, fastBtn]);
+            _settingsSpeedPanel?.Controls.AddRange([speedSlowBtn, speedNormalBtn, speedFastBtn]);
 
             RefreshSpeedButtons();
+
+            // Chunk settings
+            _settingsChunkLabel = new()
+            {
+                Text = "Chunk amount",
+                Font = new Font("Consolas", 16, FontStyle.Bold),
+                ForeColor = Color.White,
+                AutoSize = true,
+                BackColor = Color.Transparent,
+            };
+
+            _settingsChunkPanel = new()
+            {
+                Width = 640,
+                Height = 64,
+                BackColor = Color.Transparent
+            };
+
+            Button chunkSmallBtn = CreateOptionButton("Small (16x16)", new(128, 64), () =>
+            {
+                GameSettings.Current.ChunkAmount = GameSettings.ChunkAmountOption.Small;
+                RefreshChunkButtons();
+            });
+
+            Button chunkNormalBtn = CreateOptionButton("Normal (32x32)", new(128, 64), () =>
+            {
+                GameSettings.Current.ChunkAmount = GameSettings.ChunkAmountOption.Normal;
+                RefreshChunkButtons();
+            });
+
+            Button chunkMediumBtn = CreateOptionButton("Medium (64x64)", new(128, 64), () =>
+            {
+                GameSettings.Current.ChunkAmount = GameSettings.ChunkAmountOption.Medium;
+                RefreshChunkButtons();
+            });
+
+            Button chunkLargeBtn = CreateOptionButton("Large (128x128)", new(128, 64), () =>
+            {
+                GameSettings.Current.ChunkAmount = GameSettings.ChunkAmountOption.Large;
+                RefreshChunkButtons();
+            });
+
+            _settingsChunkPanel?.Controls.AddRange([chunkSmallBtn, chunkNormalBtn, chunkMediumBtn, chunkLargeBtn]);
+
+            RefreshChunkButtons();
 
             _settingsDone = new Button
             {
@@ -553,7 +657,8 @@ namespace ShootMeUp
             Controls.Add(_settingsDone);
             Controls.Add(_settingsSpeedLabel);
             Controls.Add(_settingsSpeedPanel);
-
+            Controls.Add(_settingsChunkLabel);
+            Controls.Add(_settingsChunkPanel);
 
             _settingsDone.Click += SettingsDone_Click;
 
@@ -577,6 +682,13 @@ namespace ShootMeUp
 
             Controls.Remove(_settingsSpeedPanel);
             _settingsSpeedPanel?.Dispose();
+
+            Controls.Remove(_settingsChunkLabel);
+            _settingsChunkLabel?.Dispose();
+
+
+            Controls.Remove(_settingsChunkPanel);
+            _settingsChunkPanel?.Dispose();
 
             // Add the main menu controls back
             Controls.Add(_titleLabel);
@@ -1020,14 +1132,14 @@ namespace ShootMeUp
             Biomes.Clear();
 
             // Seed count proportional to map area
-            int seedCount = Math.Max(10, (CHUNK_AMOUNT * CHUNK_AMOUNT) / 150);
+            int seedCount = Math.Max(10, (GameSettings.Current.ChunkAmountValue * GameSettings.Current.ChunkAmountValue) / 150);
 
             for (int i = 0; i < seedCount; i++)
             {
                 Biomes.Add(new BiomeInfo
                 {
-                    X = rnd.Next(CHUNK_AMOUNT),
-                    Y = rnd.Next(CHUNK_AMOUNT),
+                    X = rnd.Next(GameSettings.Current.ChunkAmountValue),
+                    Y = rnd.Next(GameSettings.Current.ChunkAmountValue),
                     Type = (Biome)rnd.Next(3)
                 });
             }
@@ -1077,7 +1189,7 @@ namespace ShootMeUp
             _gameState = GameState.running;
 
             // Calculate the center of the map
-            float fltMapSize = CHUNK_SIZE_IN_TILES * CHUNK_AMOUNT * OBSTACLE_SIZE;
+            float fltMapSize = CHUNK_SIZE_IN_TILES * GameSettings.Current.ChunkAmountValue * OBSTACLE_SIZE;
 
             float fltAreaCenterX = fltMapSize / 2;
 
@@ -1103,9 +1215,9 @@ namespace ShootMeUp
             int intMaxHealthInAChunk = 120;
 
             // Generate the environment, chunk by chunk
-            for (int chunkX = 0; chunkX < CHUNK_AMOUNT; chunkX++)
+            for (int chunkX = 0; chunkX < GameSettings.Current.ChunkAmountValue; chunkX++)
             {
-                for (int chunkY = 0; chunkY < CHUNK_AMOUNT; chunkY++)
+                for (int chunkY = 0; chunkY < GameSettings.Current.ChunkAmountValue; chunkY++)
                 {
                     // Get a random floor and apply it
                     List<Obstacle.Type> Floors = [Obstacle.Type.Grass, Obstacle.Type.Sand, Obstacle.Type.Stone];
@@ -1477,7 +1589,7 @@ namespace ShootMeUp
         /// <returns></returns>
         public static bool IsInsideWorld(CFrame entity)
         {
-            int intMapSize = CHUNK_SIZE_IN_TILES * CHUNK_AMOUNT * OBSTACLE_SIZE;
+            int intMapSize = CHUNK_SIZE_IN_TILES * GameSettings.Current.ChunkAmountValue * OBSTACLE_SIZE;
             return
                 entity.Position.X >= 0 &&
                 entity.Position.Y >= 0 &&
@@ -1718,7 +1830,7 @@ namespace ShootMeUp
         /// </summary>
         private void ClampCamera()
         {
-            float mapSize = CHUNK_SIZE_IN_TILES * CHUNK_AMOUNT * OBSTACLE_SIZE;
+            float mapSize = CHUNK_SIZE_IN_TILES * GameSettings.Current.ChunkAmountValue * OBSTACLE_SIZE;
 
             float viewportW = ClientSize.Width / Zoom;
             float viewportH = ClientSize.Height / Zoom;

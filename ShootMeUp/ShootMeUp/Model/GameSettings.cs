@@ -12,6 +12,27 @@ namespace ShootMeUp.Model
             Fast
         }
 
+        public enum ChunkAmountOption
+        {
+            Small,
+            Normal,
+            Medium,
+            Large
+        }
+
+        public ChunkAmountOption ChunkAmount { get; set; } = ChunkAmountOption.Normal;
+
+        [JsonIgnore]
+        public int ChunkAmountValue =>
+            ChunkAmount switch
+            {
+                ChunkAmountOption.Small => 16,
+                ChunkAmountOption.Normal => 32,
+                ChunkAmountOption.Medium => 64,
+                ChunkAmountOption.Large => 128,
+                _ => 32
+            };
+
         public GameSpeedOption GameSpeed { get; set; } = GameSpeedOption.Normal;
 
         [JsonIgnore]
