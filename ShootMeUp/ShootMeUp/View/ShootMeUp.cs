@@ -1,17 +1,8 @@
-﻿using Accessibility;
-using ShootMeUp.Helpers;
+﻿using ShootMeUp.Helpers;
 using ShootMeUp.Model;
-using ShootMeUp.Properties;
-using System;
 using System.ComponentModel;
-using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.Policy;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Net.Mime.MediaTypeNames;
+using static ShootMeUp.Model.GameSettings;
 using Font = System.Drawing.Font;
 
 namespace ShootMeUp
@@ -21,11 +12,6 @@ namespace ShootMeUp
     /// </summary>
     public partial class ShootMeUp : Form
     {
-        /// <summary>
-        /// The game's speed multiplier for movement, projectiles, etc.)
-        /// </summary>
-        public static readonly int GAMESPEED = 8 * 30;
-
         /// <summary>
         /// Any obstacle's height and length
         /// </summary>
@@ -51,13 +37,13 @@ namespace ShootMeUp
         /// <summary>
         /// The current state of the game
         /// </summary>
-        private enum Gamestate
+        private enum GameState
         {
             running,
             paused,
             finished
         }
-        private Gamestate _gamestate;
+        private GameState _gameState;
 
         /// <summary>
         /// The player
@@ -85,9 +71,14 @@ namespace ShootMeUp
         private Button? _playButton;
 
         /// <summary>
+        /// The game's settings button
+        /// </summary>
+        private Button? _settingsButton;
+
+        /// <summary>
         /// A list that contains all the projectiles
         /// </summary>
-        private static List<Projectile> _projectiles = new List<Projectile>();
+        private static List<Projectile> _projectiles = [];
         public static List<Projectile> Projectiles
         {
             get { return _projectiles; }
@@ -97,7 +88,7 @@ namespace ShootMeUp
         /// <summary>
         /// A list that contains all the obstacles
         /// </summary>
-        private static List<Obstacle> _obstacles = new List<Obstacle>();
+        private static List<Obstacle> _obstacles = [];
         public static List<Obstacle> Obstacles
         {
             get { return _obstacles; }
@@ -107,7 +98,7 @@ namespace ShootMeUp
         /// <summary>
         /// A list that contains all the characters
         /// </summary>
-        private static List<Character> _characters = new List<Character>();
+        private static List<Character> _characters = [];
         public static List<Character> Characters
         {
             get { return _characters; }
@@ -129,17 +120,18 @@ namespace ShootMeUp
         /// <summary>
         /// A cache for floor textures, as they can make the game lag
         /// </summary>
-        private static readonly Dictionary<Obstacle.Type, Bitmap> FloorChunkCache = new Dictionary<Obstacle.Type, Bitmap>();
+        private static readonly Dictionary<Obstacle.Type, Bitmap> FloorChunkCache = [];
 
         private Bitmap backBuffer;
         private Graphics bufferG;
 
-        public static float cameraX { get; private set; }
-        public static float cameraY { get; private set; }
+        public static float CameraX { get; private set; }
+        public static float CameraY { get; private set; }
 
         //create a modal and a button for the pause menu
         PictureBox pauseModale;
         Button resumeButton;
+        Button quitButton;
 
         // Variables used for time handling
         public static long LastFrameTime { get; set; }
@@ -174,7 +166,7 @@ namespace ShootMeUp
             this.MinimumSize = new Size(640, 640);
 
             _intWaveNumber = 1;
-            _gamestate = Gamestate.finished;
+            _gameState = GameState.finished;
 
             // Create a new list of keys held down
             _keysHeldDown = [];
@@ -190,8 +182,10 @@ namespace ShootMeUp
 
             Zoom = 1;
 
-            cameraX = 0;
-            cameraY = 0;
+            CameraX = 0;
+            CameraY = 0;
+
+            GameSettings.GameSpeed = GameSettings.GameSpeedOption.Normal;
 
             pauseModale = new()
             {
@@ -203,15 +197,25 @@ namespace ShootMeUp
             };
             resumeButton = new()
             {
-                Height = 100,
-                Width = 300,
-                Top = (this.ClientSize.Height - 100) / 2,
-                Left = (this.ClientSize.Width - 300) / 2,
+                Height = 64,
+                Width = 256,
+                AutoSize = false,
                 Text = "Resume Game",
                 BackColor = Color.White,
                 Font = new Font("Consolas", 24, FontStyle.Bold),
             };
-            this.resumeButton.Click += ResumeButton_Click;
+
+            quitButton = new()
+            {
+                Height = 32,
+                Width = 64,
+                Text = "Quit",
+                BackColor = Color.White,
+                Font = new Font("Consolas", 12, FontStyle.Bold),
+            };
+
+            resumeButton.Click += ResumeButton_Click;
+            quitButton.Click += QuitButton_Click;
 
             backBuffer = new Bitmap(ClientSize.Width, ClientSize.Height);
             bufferG = Graphics.FromImage(backBuffer);
@@ -243,8 +247,21 @@ namespace ShootMeUp
             if (_playButton != null)
             {
                 _playButton.Left = (ClientSize.Width - _playButton.Width) / 2;
-                _playButton.Top = (_titleLabel?.Bottom ?? (ClientSize.Height / 3)) + 256;
+                _playButton.Top = (_titleLabel?.Bottom ?? (ClientSize.Height / 3)) + 128;
             }
+
+            if (_settingsButton != null)
+            {
+                _settingsButton.Left = (ClientSize.Width - _settingsButton.Width) / 2;
+                _settingsButton.Top = (_playButton?.Bottom ?? (ClientSize.Height / 3)) + 64;
+            }
+        }
+
+        private void StopRound()
+        {
+            _gameState = GameState.finished;
+            _player = null;
+            ShowTitle();
         }
 
         /// <summary>
@@ -260,10 +277,25 @@ namespace ShootMeUp
             BackgroundImageLayout = ImageLayout.Tile;
 
             // Remove any previous controls
-            if (_titleLabel != null) Controls.Remove(_titleLabel);
-            if (_playButton != null) Controls.Remove(_playButton);
+            if (_titleLabel != null)
+            { 
+                Controls.Remove(_titleLabel);
+                _titleLabel.Dispose();
+            }
 
-            // Create the text and add some style to it
+            if (_playButton != null)
+            {
+                Controls.Remove(_playButton);
+                _playButton.Dispose();
+            }
+
+            if (_settingsButton != null)
+            {
+                Controls.Remove(_settingsButton);
+                _settingsButton.Dispose();
+            }
+
+            // Create the title label
             _titleLabel = new Label
             {
                 Text = "Craft Me Up",
@@ -274,19 +306,30 @@ namespace ShootMeUp
             };
 
 
-            // Create and style Play button
+            // Create the play button
             _playButton = new Button
             {
                 Text = "Play the game",
                 Font = new Font("Consolas", 24, FontStyle.Bold),
                 BackColor = Color.White,
-                AutoSize = true,
-                Size = PreferredSize,
+                Size = new(384, 64),
+                AutoSize = false
+            };
+
+            // Create the settings button
+            _settingsButton = new Button
+            {
+                Text = "Settings",
+                Font = new Font("Consolas", 18, FontStyle.Regular),
+                BackColor = Color.White,
+                Size = new(224, 48),
+                AutoSize = false
             };
 
             // Add controls to the form
             Controls.Add(_titleLabel);
             Controls.Add(_playButton);
+            Controls.Add(_settingsButton);
 
             _titleLabel.Left = (ClientSize.Width - _titleLabel.Width) / 2;
             _titleLabel.Top = ClientSize.Height / 3 - _titleLabel.Height / 2;
@@ -295,19 +338,247 @@ namespace ShootMeUp
 
             _playButton.Top = _titleLabel.Bottom + 256;
 
-            // Set up the button wait
-            _playButton.Click += _playButton_Click;
+            // Set up the play button
+            _playButton.Click += PlayButton_Click;
+
+            // Set up the pause button
+
+            _settingsButton.Click += SettingsButton_Click;
 
             // Center the ui
             CenterTitleUI();
         }
 
-        private async void _playButton_Click(object? sender, EventArgs e)
+        private async void PlayButton_Click(object? sender, EventArgs e)
         {
             StartGame();
             await StartWaves();
         }
 
+        /// <summary>
+        /// The settings' title
+        /// </summary>
+        private Label? _settingsTitle;
+
+        /// <summary>
+        /// The settings' done button 
+        /// </summary>
+        private Button? _settingsDone;
+
+        /// <summary>
+        /// The settings' speed label
+        /// </summary>
+        private Label? _settingsSpeedLabel;
+
+        /// <summary>
+        /// The settings' speed panel
+        /// </summary>
+        private Panel? _settingsSpeedPanel;
+
+        private void CenterSettingsUI()
+        {
+            if (_settingsTitle != null)
+            {
+                _settingsTitle.Left = (ClientSize.Width - _settingsTitle.Width) / 2;
+                _settingsTitle.Top = ClientSize.Height / 3 - _settingsTitle.Height / 2;
+            }
+
+            if (_settingsSpeedLabel != null)
+            {
+                _settingsSpeedLabel.Left = (ClientSize.Width - _settingsSpeedLabel.Width) / 2;
+                _settingsSpeedLabel.Top = (_settingsTitle?.Bottom ?? (ClientSize.Height / 3)) + 48;
+            }
+
+            if (_settingsSpeedPanel != null)
+            {
+                _settingsSpeedPanel.Left = (ClientSize.Width - _settingsSpeedPanel.Width) / 2;
+                _settingsSpeedPanel.Top = (_settingsSpeedLabel?.Bottom ?? 0) + 8;
+
+                int spacing = 16;
+
+                List<Button> buttons = _settingsSpeedPanel.Controls.OfType<Button>().ToList();
+
+                if (buttons.Count > 0)
+                {
+                    int totalWidth =
+                        buttons.Sum(b => b.Width) +
+                        spacing * (buttons.Count - 1);
+
+                    int startX = (_settingsSpeedPanel.Width - totalWidth) / 2;
+                    int y = (_settingsSpeedPanel.Height - buttons[0].Height) / 2;
+
+                    for (int i = 0; i < buttons.Count; i++)
+                    {
+                        buttons[i].Left = startX;
+                        buttons[i].Top = y;
+                        startX += buttons[i].Width + spacing;
+                    }
+                }
+            }
+
+            if (_settingsDone != null)
+            {
+                _settingsDone.Left = (ClientSize.Width - _settingsDone.Width) / 2;
+                _settingsDone.Top = (_settingsSpeedPanel?.Bottom ?? (_settingsTitle?.Bottom ?? 0)) + 64;
+            }
+        }
+
+        private void RefreshSpeedButtons()
+        {
+            if (_settingsSpeedPanel == null)
+                return;
+
+            foreach (Control c in _settingsSpeedPanel.Controls)
+            {
+                if (c is Button b)
+                    b.BackColor = Color.White;
+            }
+
+            int index = GameSettings.GameSpeed switch
+            {
+                GameSpeedOption.Slow => 0,
+                GameSpeedOption.Normal => 1,
+                GameSpeedOption.Fast => 2,
+                _ => 1
+            };
+
+            if (index < _settingsSpeedPanel.Controls.Count &&
+                _settingsSpeedPanel.Controls[index] is Button selected)
+            {
+                selected.BackColor = Color.LightGreen;
+            }
+        }
+
+        private static Button CreateOptionButton(string text, Action onClick, bool selected = false)
+        {
+            // Create the button
+            Button newButton = new()
+            {
+                Text = text,
+                Width = 100,
+                Height = 40,
+                BackColor = selected ? Color.LightGreen : Color.White,
+                Font = new Font("Consolas", 12, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat
+            };
+
+            // Bind onClick to it
+            newButton.Click += (_, _) => onClick();
+
+            return newButton;
+        }
+
+        /// <summary>
+        /// Displays the settings
+        /// </summary>
+        private void DisplaySettings()
+        {
+            // Removes main menu controls
+            Controls.Remove(_titleLabel);
+            Controls.Remove(_playButton);
+            Controls.Remove(_settingsButton);
+
+            _settingsTitle = new Label
+            {
+                Text = "Settings",
+                Font = new Font("Consolas", 32, FontStyle.Bold),
+                ForeColor = Color.White,
+                AutoSize = true,
+                BackColor = Color.Transparent,
+            };
+
+            // Speed settings
+            _settingsSpeedLabel = new()
+            {
+                Text = "Game Speed",
+                Font = new Font("Consolas", 16, FontStyle.Bold),
+                ForeColor = Color.White,
+                AutoSize = true,
+                BackColor = Color.Transparent,
+            };
+
+            _settingsSpeedPanel = new()
+            {
+                Width = 512,
+                Height = 64,
+                BackColor = Color.Transparent
+            };
+
+            Button slowBtn = CreateOptionButton("Slow", () =>
+            {
+                GameSettings.GameSpeed = GameSpeedOption.Slow;
+                RefreshSpeedButtons();
+            });
+
+            Button normalBtn = CreateOptionButton("Normal", () =>
+            {
+                GameSettings.GameSpeed = GameSpeedOption.Normal;
+                RefreshSpeedButtons();
+            });
+
+            Button fastBtn = CreateOptionButton("Fast", () =>
+            {
+                GameSettings.GameSpeed = GameSpeedOption.Fast;
+                RefreshSpeedButtons();
+            });
+
+
+            _settingsSpeedPanel?.Controls.AddRange([slowBtn, normalBtn, fastBtn]);
+
+            RefreshSpeedButtons();
+
+            _settingsDone = new Button
+            {
+                Text = "Done",
+                Font = new Font("Consolas", 18, FontStyle.Regular),
+                BackColor = Color.White,
+                Size = new(224, 48),
+                AutoSize = false
+            };
+
+            Controls.Add(_settingsTitle);
+            Controls.Add(_settingsDone);
+            Controls.Add(_settingsSpeedLabel);
+            Controls.Add(_settingsSpeedPanel);
+
+
+            _settingsDone.Click += SettingsDone_Click;
+
+            // Center the ui
+            CenterSettingsUI();
+        }
+
+        private void SettingsDone_Click(object? sender, EventArgs e)
+        {
+            // Remove everything from the settings
+            Controls.Remove(_settingsTitle);
+            _settingsTitle?.Dispose();
+
+            Controls.Remove(_settingsDone);
+            _settingsDone?.Dispose();
+
+            Controls.Remove(_settingsSpeedLabel);
+            _settingsSpeedLabel?.Dispose();
+
+            Controls.Remove(_settingsSpeedPanel);
+            _settingsSpeedPanel?.Dispose();
+
+            // Add the main menu controls back
+            Controls.Add(_titleLabel);
+            Controls.Add(_playButton);
+            Controls.Add(_settingsButton);
+        }
+
+        private void SettingsButton_Click(object? sender, EventArgs e)
+        {
+            DisplaySettings();
+        }
+
+        private void QuitButton_Click(object? sender, EventArgs e)
+        {
+            DisplayPauseMenu();
+            StopRound();
+        }
 
         private void ResumeButton_Click(object? sender, EventArgs e)
         {
@@ -327,37 +598,48 @@ namespace ShootMeUp
                 resumeButton.Left = (ClientSize.Width - resumeButton.Width) / 2;
                 resumeButton.Top = (ClientSize.Height - resumeButton.Height) / 2;
             }
+
+            if (quitButton != null)
+            {
+                quitButton.Left = (ClientSize.Width - quitButton.Width) / 2;
+                quitButton.Top = (resumeButton?.Bottom ?? (ClientSize.Height / 3)) + 32;
+
+            }
         }
 
         /// <summary>
-        /// pauses the game and displays the pause menu
+        /// Pauses the game and displays the pause menu
         /// </summary>
         private void DisplayPauseMenu()
         {
-            if (this._gamestate == Gamestate.running)
+            if (this._gameState == GameState.running)
             {
-                CenterPauseUI();
                 Controls.Add(resumeButton);
                 Controls.Add(pauseModale);
+                Controls.Add(quitButton);
 
+                quitButton.BringToFront();
                 resumeButton.BringToFront();
 
                 //stops the ticker to pause the game
                 this.ticker.Stop();
-                this._gamestate = Gamestate.paused;
+                this._gameState = GameState.paused;
 
+                CenterPauseUI();
             }
-            else if (this._gamestate == Gamestate.paused)
+            else if (this._gameState == GameState.paused)
             {
                 Controls.Remove(pauseModale);
                 Controls.Remove(resumeButton);
+                Controls.Remove(quitButton);
+
                 long now = Environment.TickCount64;
                 DeltaTime = (now - LastFrameTime) / 1000f; // seconds
                 LastFrameTime = now;
 
                 //restart the ticker
                 this.ticker.Start();
-                this._gamestate = Gamestate.running;
+                this._gameState = GameState.running;
             }
 
         }
@@ -628,8 +910,10 @@ namespace ShootMeUp
             // Remove title screen controls
             Controls.Remove(_titleLabel);
             Controls.Remove(_playButton);
+            Controls.Remove(_settingsButton);
             _titleLabel?.Dispose();
             _playButton?.Dispose();
+            _settingsButton?.Dispose();
 
             // Reset values
             Score = 0;
@@ -723,7 +1007,7 @@ namespace ShootMeUp
         private void GenerateWorld()
         {
             // Set the game state to true
-            _gamestate = Gamestate.running;
+            _gameState = GameState.running;
 
             // Calculate the center of the map
             float fltMapSize = CHUNK_SIZE_IN_TILES * CHUNK_AMOUNT * OBSTACLE_SIZE;
@@ -731,7 +1015,7 @@ namespace ShootMeUp
             float fltAreaCenterX = fltMapSize / 2;
 
             // Create a new player
-            _player = new(fltAreaCenterX, fltAreaCenterX, DEFAULT_CHARACTER_SIZE, Character.Type.Player, GAMESPEED);
+            _player = new(fltAreaCenterX, fltAreaCenterX, DEFAULT_CHARACTER_SIZE, Character.Type.Player, GameSettings.GameSpeedValue);
             Characters.Add(_player);
 
             // Generate the border around the world
@@ -932,7 +1216,7 @@ namespace ShootMeUp
                 int intCharSize = (int)(DEFAULT_CHARACTER_SIZE * sizeMultiplier);
 
                 // Add enemy to wave
-                WaveEnemies.Add(new Enemy(0, 0, intCharSize, selectedType, GAMESPEED, _player));
+                WaveEnemies.Add(new Enemy(0, 0, intCharSize, selectedType, GameSettings.GameSpeedValue, _player));
 
                 // Reduce totalEnemies based on Weight (rarer/stronger enemies "cost" more)
                 totalEnemies -= Math.Max(1, enemyTypes.First(e => e.Type == selectedType).Weight);
@@ -977,23 +1261,28 @@ namespace ShootMeUp
                 }
 
                 for (int i = 0; i < intBossAmount; i++)
-                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * fltSizeMultiplicator), BossType, GAMESPEED, _player));
+                    WaveEnemies.Add(new Enemy(0, 0, (int)(DEFAULT_CHARACTER_SIZE * fltSizeMultiplicator), BossType, GameSettings.GameSpeedValue, _player));
             }
 
             return WaveEnemies;
         }
 
-        private async Task Wait(int miliseconds)
+        /// <summary>
+        /// Wait for a specified amount of time
+        /// </summary>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        private async Task Wait(int amount)
         {
             do
             {
                 do
                 {
                     await Task.Delay(1);
-                } while (_gamestate == Gamestate.paused);
+                } while (_gameState == GameState.paused);
 
-                miliseconds--;
-            } while (miliseconds > 0);
+                amount--;
+            } while (amount > 0);
         }
 
         /// <summary>
@@ -1001,10 +1290,10 @@ namespace ShootMeUp
         /// </summary>
         private async Task StartWaves()
         {
-            while (_gamestate != Gamestate.finished && (_player != null && _player.Lives > 0))
+            while (_gameState != GameState.finished && (_player != null && _player.Lives > 0))
             {
                 // Add a wait before the next wave
-                await Wait(20000 / GAMESPEED);
+                await Wait(20000 / GameSettings.GameSpeedValue);
 
                 // Get the wave's enemies
                 List<Enemy> waveEnemies = GenerateWaves(_intWaveNumber);
@@ -1012,7 +1301,7 @@ namespace ShootMeUp
                 foreach (Enemy enemy in waveEnemies)
                 {
                     // End the wave system if the game stopped
-                    if (_gamestate == Gamestate.finished)
+                    if (_gameState == GameState.finished)
                         return;
 
                     // Put the enemy in the right spot
@@ -1081,14 +1370,14 @@ namespace ShootMeUp
 
 
                     // Add a wait before adding the next enemy
-                    await Wait(20000 / GAMESPEED);
+                    await Wait(20000 / GameSettings.GameSpeedValue);
                 }
 
                 // Clear the wave enemies table
                 waveEnemies.Clear();
 
                 // Wait until all enemies are dead
-                while (Characters.Count > 1 && _gamestate != Gamestate.finished)
+                while (Characters.Count > 1 && _gameState != GameState.finished)
                 {
                     await Wait(1);
                 }
@@ -1167,8 +1456,8 @@ namespace ShootMeUp
                     // Only continue if they're from one of the floor types
                     if (FloorTypes.Contains(Floor.ObstType))
                     {
-                        float drawX = Floor.Position.X - cameraX;
-                        float drawY = Floor.Position.Y - cameraY;
+                        float drawX = Floor.Position.X - CameraX;
+                        float drawY = Floor.Position.Y - CameraY;
 
                         if (FloorChunkCache.TryGetValue(Floor.ObstType, out Bitmap? chunk))
                         {
@@ -1189,8 +1478,8 @@ namespace ShootMeUp
                 {
                     if (character.CharType == Character.Type.Player || !character.CanCollide) continue;
 
-                    float drawX = character.Position.X - cameraX;
-                    float drawY = character.Position.Y - cameraY;
+                    float drawX = character.Position.X - CameraX;
+                    float drawY = character.Position.Y - CameraY;
 
                     using (Bitmap Image = GetSprite(character.CharType))
                         bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, character.Size.Width * Zoom, character.Size.Height * Zoom);
@@ -1202,16 +1491,16 @@ namespace ShootMeUp
                     // Only continue if they're not from one of the floor types
                     if (!(obstacle.ObstType == Obstacle.Type.Sand || obstacle.ObstType == Obstacle.Type.Grass || obstacle.ObstType == Obstacle.Type.Stone))
                     {
-                        float drawX = obstacle.Position.X - cameraX;
-                        float drawY = obstacle.Position.Y - cameraY;
+                        float drawX = obstacle.Position.X - CameraX;
+                        float drawY = obstacle.Position.Y - CameraY;
 
                         using (Bitmap Image = GetSprite(obstacle.ObstType, obstacle.Size))
                             bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, obstacle.Size.Width * Zoom, obstacle.Size.Height * Zoom);
 
 
                         // Draw its life
-                        float screenX = (obstacle.Position.X - cameraX) * Zoom;
-                        float screenY = (obstacle.Position.Y - cameraY) * Zoom;
+                        float screenX = (obstacle.Position.X - CameraX) * Zoom;
+                        float screenY = (obstacle.Position.Y - CameraY) * Zoom;
 
                         using (Font scaledFont = new Font(TextHelpers.drawFont.FontFamily, TextHelpers.drawFont.Size * Zoom, TextHelpers.drawFont.Style))
                         {
@@ -1236,8 +1525,8 @@ namespace ShootMeUp
                 {
                     if (character.CharType == Character.Type.Player || character.CanCollide) continue;
 
-                    float drawX = character.Position.X - cameraX;
-                    float drawY = character.Position.Y - cameraY;
+                    float drawX = character.Position.X - CameraX;
+                    float drawY = character.Position.Y - CameraY;
 
                     using (Bitmap Image = GetSprite(character.CharType))
                         bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, character.Size.Width * Zoom, character.Size.Height * Zoom);
@@ -1249,8 +1538,8 @@ namespace ShootMeUp
                     if (character.CharType == Character.Type.Player) continue;
 
                     // Draw its life
-                    float screenX = (character.Position.X - cameraX) * Zoom;
-                    float screenY = (character.Position.Y - cameraY) * Zoom;
+                    float screenX = (character.Position.X - CameraX) * Zoom;
+                    float screenY = (character.Position.Y - CameraY) * Zoom;
 
                     using (Font scaledFont = new Font(TextHelpers.drawFont.FontFamily, TextHelpers.drawFont.Size * Zoom, TextHelpers.drawFont.Style))
                     {
@@ -1271,8 +1560,8 @@ namespace ShootMeUp
                 // Draw projectiles
                 foreach (Projectile projectile in Projectiles)
                 {
-                    float drawX = projectile.Position.X - cameraX;
-                    float drawY = projectile.Position.Y - cameraY;
+                    float drawX = projectile.Position.X - CameraX;
+                    float drawY = projectile.Position.Y - CameraY;
 
                     using (Bitmap Image = GetSprite(projectile.ProjType, projectile.RotationAngle))
                         bufferG.DrawImage(Image, drawX * Zoom, drawY * Zoom, projectile.Size.Width * Zoom, projectile.Size.Height * Zoom);
@@ -1281,8 +1570,8 @@ namespace ShootMeUp
                 // Draw the player
                 if (_player != null)
                 {
-                    float px = _player.Position.X - cameraX;
-                    float py = _player.Position.Y - cameraY;
+                    float px = _player.Position.X - CameraX;
+                    float py = _player.Position.Y - CameraY;
 
                     using (Bitmap Image = GetSprite(_player.CharType))
                         bufferG.DrawImage(Image, px * Zoom, py * Zoom, _player.Size.Width * Zoom, _player.Size.Height * Zoom);
@@ -1303,20 +1592,20 @@ namespace ShootMeUp
             // Center map if viewport is larger than world
             if (viewportW >= mapSize)
             {
-                cameraX = ((mapSize + OBSTACLE_SIZE) - viewportW) / 2f;
+                CameraX = ((mapSize + OBSTACLE_SIZE) - viewportW) / 2f;
             }
             else
             {
-                cameraX = Math.Clamp(cameraX, -OBSTACLE_SIZE, (mapSize + OBSTACLE_SIZE) - viewportW);
+                CameraX = Math.Clamp(CameraX, -OBSTACLE_SIZE, (mapSize + OBSTACLE_SIZE) - viewportW);
             }
 
             if (viewportH >= mapSize)
             {
-                cameraY = ((mapSize + OBSTACLE_SIZE) - viewportH) / 2f;
+                CameraY = ((mapSize + OBSTACLE_SIZE) - viewportH) / 2f;
             }
             else
             {
-                cameraY = Math.Clamp(cameraY, -OBSTACLE_SIZE, (mapSize + OBSTACLE_SIZE) - viewportH);
+                CameraY = Math.Clamp(CameraY, -OBSTACLE_SIZE, (mapSize + OBSTACLE_SIZE) - viewportH);
             }
         }
 
@@ -1327,8 +1616,8 @@ namespace ShootMeUp
             float viewportW = ClientSize.Width / Zoom;
             float viewportH = ClientSize.Height / Zoom;
 
-            cameraX = _player.Position.X + _player.Size.Width / 2f - viewportW / 2f;
-            cameraY = _player.Position.Y + _player.Size.Height / 2f - viewportH / 2f;
+            CameraX = _player.Position.X + _player.Size.Width / 2f - viewportW / 2f;
+            CameraY = _player.Position.Y + _player.Size.Height / 2f - viewportH / 2f;
 
             ClampCamera();
         }
@@ -1350,7 +1639,7 @@ namespace ShootMeUp
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (_gamestate == Gamestate.finished || backBuffer == null)
+            if (_gameState == GameState.finished || backBuffer == null)
             {
                 base.OnPaint(e);
                 return;
@@ -1384,9 +1673,7 @@ namespace ShootMeUp
                 }
                 else if (c.CharType == Character.Type.Player && c.Lives <= 0)
                 {
-                    _gamestate = Gamestate.finished;
-                    _player = null;
-                    ShowTitle();
+                    StopRound();
                     return true;
                 }
                 return false;
@@ -1399,7 +1686,7 @@ namespace ShootMeUp
             DeltaTime = (now - LastFrameTime) / 1000f; // seconds
             LastFrameTime = now;
 
-            if (_gamestate != Gamestate.running || _player == null)
+            if (_player == null)
                 return;
 
             // Update camera position to the player's
@@ -1411,7 +1698,8 @@ namespace ShootMeUp
             // Tell the program to render the game again
             Invalidate();
 
-            if (_gamestate != Gamestate.running)
+            // Don't continue if the game is finished/paused
+            if (_gameState != GameState.running)
                 return;
 
             // Clean up the dead entities
@@ -1438,8 +1726,8 @@ namespace ShootMeUp
                 intMoveY += 1;
 
             // Multiple the movement-related int variables by the game speed
-            intMoveX *= GAMESPEED;
-            intMoveY *= GAMESPEED;
+            intMoveX *= GameSettings.GameSpeedValue;
+            intMoveY *= GameSettings.GameSpeedValue;
 
             // Update the player's cooldown
             _player?.UpdateTimers();
@@ -1480,7 +1768,7 @@ namespace ShootMeUp
 
         private static CFrame ScreenToWorld(Point screen)
         {
-            return new CFrame(screen.X / Zoom + cameraX, screen.Y / Zoom + cameraY);
+            return new CFrame(screen.X / Zoom + CameraX, screen.Y / Zoom + CameraY);
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
@@ -1495,7 +1783,7 @@ namespace ShootMeUp
         private void ShootMeUp_MouseClick(object sender, MouseEventArgs e)
         {
             // Only try and shoot something if the player is in game
-            if (_gamestate != Gamestate.running || _player == null) return;
+            if (_gameState != GameState.running || _player == null) return;
 
             // If it's a left click, shoot an arrow. Otherwise, shoot a fireball.
             Projectile.Type type = (e.Button == MouseButtons.Right)
@@ -1529,6 +1817,7 @@ namespace ShootMeUp
 
             CenterTitleUI();
             CenterPauseUI();
+            CenterSettingsUI();
 
             if (!isResizing)
             {
