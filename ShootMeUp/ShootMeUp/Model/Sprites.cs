@@ -42,6 +42,7 @@ namespace ShootMeUp.Model
 
         // Misc
         public static readonly Bitmap PlayerHeart       = Resources.Misc_PlayerHeart;
+        public static readonly Bitmap EmptyHeart        = Resources.Misc_EmptyHeart;
         public static readonly Bitmap EnemyHeart        = Resources.Misc_EnemyHeart;
         public static readonly Bitmap BossHeart         = Resources.Misc_BossHeart;
     }

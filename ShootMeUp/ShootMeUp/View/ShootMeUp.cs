@@ -192,6 +192,7 @@ namespace ShootMeUp
 
             this.MaximizeBox = true;
             this.WindowState = FormWindowState.Maximized;
+            this.FormBorderStyle = FormBorderStyle.Sizable;
 
             _intWaveNumber = 1;
             _gameState = GameState.finished;
@@ -876,9 +877,7 @@ namespace ShootMeUp
                     Color grassTint = Color.FromArgb(0x91, 0xBD, 0x59);
 
                     // Apply tint to grayscale texture
-                    Bitmap tinted = ApplyTint(Sprites.Grass, grassTint);
-
-                    ReturnedImage = tinted;
+                    ReturnedImage = ApplyTint(Sprites.Grass, grassTint);
                     break;
                 case Obstacle.Type.Stone:
                     ReturnedImage = Sprites.Stone;
@@ -1913,17 +1912,91 @@ namespace ShootMeUp
             ClampCamera();
         }
 
+        public static GraphicsPath CreateRoundedRectangle(RectangleF rect, float radius)
+        {
+            float diameter = radius * 2f;
+            GraphicsPath path = new GraphicsPath();
+
+            path.AddArc(rect.X, rect.Y, diameter, diameter, 180, 90);
+            path.AddArc(rect.Right - diameter, rect.Y, diameter, diameter, 270, 90);
+            path.AddArc(rect.Right - diameter, rect.Bottom - diameter, diameter, diameter, 0, 90);
+            path.AddArc(rect.X, rect.Bottom - diameter, diameter, diameter, 90, 90);
+
+            path.CloseFigure();
+            return path;
+        }
+
+        /// <summary>
+        /// Draw the user interface
+        /// </summary>
+        /// <param name="g"></param>
         private void DrawUI(Graphics g)
         {
-            if (_player != null)
-            {
-                g.DrawString($"Wave {_intWaveNumber} | Score: {Score} | Lives remaining: {_player.Lives}", TextHelpers.drawFont, TextHelpers.writingBrush, 8, 8);
+            if (_player == null)
+                return;
 
-                for (int i = 0; i < _player.Lives; i++)
-                {
-                    int x = 8 + (i * 20);
-                    g.DrawImage(Sprites.PlayerHeart, x, 32, 24, 24);
-                }
+            // Store the UI text
+            string strText = $"Wave {_intWaveNumber} | Score: {Score}";
+
+            Font font = TextHelpers.drawFont;
+            Brush textBrush = TextHelpers.writingBrush;
+
+            // Layout variables
+            float fltPadding = 12f;
+            float fltCornerRadius = 8f;
+            float fltTopY = 16f;
+            float fltSpacingY = 6f;
+
+            int intHeartSize = 24;
+            int intHeartSpacing = 22;
+
+            // Measure text
+            SizeF textSize = g.MeasureString(strText, font);
+
+            // Hearts width
+            int heartsWidth = 10 * intHeartSpacing;
+            int heartsHeight = intHeartSize + 4;
+
+            // Panel size
+            float panelWidth = Math.Max(textSize.Width, heartsWidth) + fltPadding * 2;
+            float panelHeight = textSize.Height + fltSpacingY + heartsHeight + fltPadding * 2;
+
+            // Center panel horizontally
+            float panelX = (ClientSize.Width / 2f) - (panelWidth / 2f);
+            float panelY = fltTopY;
+
+            RectangleF panelRect = new(panelX, panelY, panelWidth, panelHeight);
+
+            // Rounded background + border
+            using (GraphicsPath path = CreateRoundedRectangle(panelRect, fltCornerRadius))
+            using (Brush bgBrush = new SolidBrush(Color.FromArgb(150, 40, 40, 40)))
+            using (Pen borderPen = new(Color.FromArgb(200, 90, 90, 90), 1.5f))
+            {
+                g.FillPath(bgBrush, path);
+                g.DrawPath(borderPen, path);
+            }
+
+            // Draw the text
+            float textX = panelX + (panelWidth / 2f) - (textSize.Width / 2f);
+            float textY = panelY + fltPadding;
+
+            g.DrawString(strText, font, textBrush, textX, textY);
+
+            // Draw the hearts
+            float heartsX = panelX + (panelWidth / 2f) - (heartsWidth / 2f);
+            float heartsY = textY + textSize.Height + fltSpacingY + 8;
+
+            for (int i = 0; i < 10; i++)
+            {
+                Bitmap HeartIcon = (i < _player.Lives) ? Sprites.PlayerHeart : Sprites.EmptyHeart;
+
+                g.DrawImage(
+                    HeartIcon,
+                    heartsX + (i * intHeartSpacing),
+                    heartsY,
+                    intHeartSize,
+                    intHeartSize
+                );
             }
         }
 
@@ -1936,6 +2009,8 @@ namespace ShootMeUp
             }
 
             e.Graphics.Clear(Color.Black);
+
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
             e.Graphics.DrawImage(backBuffer, 0, 0);
 
@@ -2097,7 +2172,11 @@ namespace ShootMeUp
         {
             base.OnResizeEnd(e);
             isResizing = false;
+
             ResizeBackbuffer();
+
+            UpdateCamera();
+            RenderFrame();
             Invalidate();
         }
 
@@ -2112,6 +2191,9 @@ namespace ShootMeUp
             if (!isResizing)
             {
                 ResizeBackbuffer();
+
+                UpdateCamera();
+                RenderFrame();
                 Invalidate();
             }
         }
