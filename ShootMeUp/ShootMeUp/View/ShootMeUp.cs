@@ -292,6 +292,13 @@ namespace ShootMeUp
         {
             _gameState = GameState.finished;
             _player = null;
+
+            Characters.Clear();
+            Projectiles.Clear();
+            Obstacles.Clear();
+
+            ResizeBackbuffer();
+
             ShowTitle();
         }
 
@@ -767,77 +774,8 @@ namespace ShootMeUp
         /// <returns>A sprite</returns>
         private static Bitmap GetSprite(Character.Type GivenType)
         {
-            Bitmap ReturnedImage;
-
-            switch (GivenType)
-            {
-                case Character.Type.Player:
-                    ReturnedImage = Sprites.Player;
-                    break;
-                case Character.Type.Zombie:
-                    ReturnedImage = Sprites.Zombie;
-                    break;
-                case Character.Type.Skeleton:
-                    ReturnedImage = Sprites.Skeleton;
-                    break;
-                case Character.Type.Baby_Zombie:
-                    ReturnedImage = Sprites.Zombie;
-                    break;
-                case Character.Type.Blaze:
-                    ReturnedImage = Sprites.Blaze;
-                    break;
-                case Character.Type.Zombie_Pigman:
-                    ReturnedImage = Sprites.Pigman;
-                    break;
-                case Character.Type.SpiderJockey:
-                    ReturnedImage = Sprites.SpiderJockey;
-                    break;
-                case Character.Type.WitherSkeleton:
-                    ReturnedImage = Sprites.WitherSkull;
-                    break;
-                case Character.Type.Wither:
-                    ReturnedImage = Sprites.Wither;
-                    break;
-                case Character.Type.Dragon:
-                    ReturnedImage = Sprites.Dragon;
-                    break;
-                default:
-                    ReturnedImage = Sprites.Player;
-                    break;
-            }
-
-            return (Bitmap)ReturnedImage.Clone();
+            return Sprites.GetCharacterSprite(GivenType);
         }
-
-        /// <summary>
-        /// Recolor a gray texture
-        /// </summary>
-        /// <param name="gray">Default gray image</param>
-        /// <param name="tint">The tint</param>
-        /// <returns>The same image, but recolored</returns>
-        private static Bitmap ApplyTint(Bitmap gray, Color tint)
-        {
-            Bitmap result = new Bitmap(gray.Width, gray.Height);
-
-            for (int x = 0; x < gray.Width; x++)
-            {
-                for (int y = 0; y < gray.Height; y++)
-                {
-                    Color px = gray.GetPixel(x, y);
-
-                    // Multiply the grayscale pixel by the tint (Minecraft-style)
-                    int r = (px.R * tint.R) / 255;
-                    int g = (px.G * tint.G) / 255;
-                    int b = (px.B * tint.B) / 255;
-
-                    result.SetPixel(x, y, Color.FromArgb(px.A, r, g, b));
-                }
-            }
-
-            return result;
-        }
-
-        private static readonly Bitmap GrassTinted = ApplyTint(Sprites.Grass, Color.FromArgb(0x91, 0xBD, 0x59));
 
         /// <summary>
         /// Get a obstacle's sprite
@@ -846,81 +784,7 @@ namespace ShootMeUp
         /// <returns>A sprite</returns>
         private static Bitmap GetSprite(Obstacle.Type GivenType, (int Width, int Height) Size)
         {
-            Bitmap ReturnedImage;
-
-            switch (GivenType)
-            {
-                case Obstacle.Type.Dirt:
-                    ReturnedImage = Sprites.Dirt;
-                    break;
-                case Obstacle.Type.Wood:
-                    ReturnedImage = Sprites.WoodenPlanks;
-                    break;
-                case Obstacle.Type.CobbleStone:
-                    ReturnedImage = Sprites.Cobblestone;
-                    break;
-
-                case Obstacle.Type.Barrier:
-                    ReturnedImage = Sprites.Barrier;
-                    break;
-                case Obstacle.Type.Bedrock:
-                    ReturnedImage = Sprites.Bedrock;
-                    break;
-
-                case Obstacle.Type.Spawner:
-                    ReturnedImage = Sprites.Spawner;
-                    break;
-                case Obstacle.Type.Bush:
-                    ReturnedImage = Sprites.Bush;
-                    break;
-                case Obstacle.Type.Grass:
-                    ReturnedImage = GrassTinted;
-                    break;
-                case Obstacle.Type.Stone:
-                    ReturnedImage = Sprites.Stone;
-                    break;
-                case Obstacle.Type.Sand:
-                    ReturnedImage = Sprites.Sand;
-                    break;
-
-                default:
-                    ReturnedImage = Sprites.Player;
-                    break;
-            }
-
-            // Return the sprite without any modifications if the obstacle isn't a floor
-            if (GivenType != Obstacle.Type.Grass &&
-                GivenType != Obstacle.Type.Stone &&
-                GivenType != Obstacle.Type.Sand)
-            {
-                return (Bitmap)ReturnedImage.Clone();
-            }
-
-            // Create a new bitmap matching obstacle size
-            Bitmap TiledSprite = new Bitmap(Size.Width, Size.Height);
-
-            // Create the tiles
-            using (Graphics g = Graphics.FromImage(TiledSprite))
-            {
-                g.InterpolationMode = InterpolationMode.NearestNeighbor;
-                g.PixelOffsetMode = PixelOffsetMode.Half;
-                g.SmoothingMode = SmoothingMode.None;
-
-                for (int x = 0; x < Size.Width; x += ShootMeUp.OBSTACLE_SIZE)
-                {
-                    for (int y = 0; y < Size.Height; y += ShootMeUp.OBSTACLE_SIZE)
-                    {
-                        g.DrawImage(
-                            ReturnedImage,
-                            new Rectangle(x, y, ShootMeUp.OBSTACLE_SIZE, ShootMeUp.OBSTACLE_SIZE),
-                            new Rectangle(0, 0, ReturnedImage.Width, ReturnedImage.Height),
-                            GraphicsUnit.Pixel
-                        );
-                    }
-                }
-            }
-
-            return TiledSprite;
+            return Sprites.GetObstacleSprite(GivenType, Size.Width, Size.Height);
         }
 
         /// <summary>
@@ -931,83 +795,24 @@ namespace ShootMeUp
         /// <returns>A sprite</returns>
         private static Bitmap GetSprite(Projectile.Type GivenType, float fltRotationAngle)
         {
-            Bitmap ReturnedImage;
-
-            switch (GivenType)
+            if (GivenType == Projectile.Type.Arrow_Small || GivenType == Projectile.Type.Arrow_Big || GivenType == Projectile.Type.Arrow_Jockey)
             {
-                case Projectile.Type.Arrow_Small:
-                case Projectile.Type.Arrow_Big:
-                case Projectile.Type.Arrow_Jockey:
-                    fltRotationAngle -= 45f;
-
-                    ReturnedImage = Sprites.Arrow;
-                    break;
-                case Projectile.Type.Fireball_Small:
-                case Projectile.Type.Fireball_Big:
-                    ReturnedImage = Sprites.Fireball;
-                    break;
-                case Projectile.Type.WitherSkull:
-                    ReturnedImage = Sprites.WitherSkull;
-                    break;
-                case Projectile.Type.DragonFireball:
-                    ReturnedImage = Sprites.DragonFireball;
-                    break;
-                default:
-                    ReturnedImage = Sprites.Player;
-
-                    break;
+                fltRotationAngle -= 45f;
             }
 
-            // Return early if the image doesn't need any rotation
-            Projectile.Type[] NoRotation = [Projectile.Type.WitherSkull, Projectile.Type.DragonFireball, Projectile.Type.Undefined];
-
-            if (NoRotation.Contains(GivenType))
-                return (Bitmap)ReturnedImage.Clone();
-
-            using (Bitmap OriginalImage = (Bitmap)ReturnedImage.Clone())
-            {
-                Bitmap RotatedImage = new Bitmap(OriginalImage.Width, OriginalImage.Height);
-                RotatedImage.SetResolution(OriginalImage.HorizontalResolution, OriginalImage.VerticalResolution);
-
-                using (Graphics g = Graphics.FromImage(RotatedImage))
-                {
-                    g.SmoothingMode = SmoothingMode.AntiAlias;
-                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-                    // Transform to center → rotate → restore offset
-                    g.TranslateTransform(OriginalImage.Width / 2f, OriginalImage.Height / 2f);
-                    g.RotateTransform(fltRotationAngle);
-                    g.TranslateTransform(-OriginalImage.Width / 2f, -OriginalImage.Height / 2f);
-
-                    g.DrawImage(OriginalImage, 0, 0);
-                }
-
-                OriginalImage.Dispose();
-                return RotatedImage;
-            }
+            return Sprites.GetProjectileSprite(GivenType, fltRotationAngle);
         }
 
         private static void InitializeFloorChunks()
         {
             int chunkSizePx = CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE;
 
-            Obstacle.Type[] floorTypes =
-            {
-        Obstacle.Type.Grass,
-        Obstacle.Type.Sand,
-        Obstacle.Type.Stone
-    };
+            Obstacle.Type[] floorTypes = { Obstacle.Type.Grass, Obstacle.Type.Sand, Obstacle.Type.Stone };
 
-            foreach (var type in floorTypes)
+            foreach (Obstacle.Type type in floorTypes)
             {
-                if (!FloorChunkCache.ContainsKey(type))
-                {
-                    FloorChunkCache[type] = GetSprite(
-                        type,
-                        (chunkSizePx, chunkSizePx)
-                    );
-                }
+                // This will be cached inside Sprites already
+                FloorChunkCache[type] = Sprites.GetObstacleSprite(type, chunkSizePx, chunkSizePx);
             }
         }
 
@@ -1056,6 +861,9 @@ namespace ShootMeUp
             _worldReady = true;
             _gameState = GameState.running;
         }
+
+        private static readonly Dictionary<(int, int), Biome> ChunkBiomeCache = [];
+        private static readonly Dictionary<(int, int), List<Obstacle>> ChunkObstacleCache = [];
 
         /// <summary>
         /// Noise algorithm used for biome generation
@@ -1138,21 +946,22 @@ namespace ShootMeUp
         /// <returns></returns>
         private static Biome GetChunkBiome(int chunkX, int chunkY)
         {
+            (int chunkX, int chunkY) key = (chunkX, chunkY);
+
+            if (ChunkBiomeCache.TryGetValue(key, out Biome cached))
+                return cached;
+
             BiomeInfo closest = Biomes[0];
             float bestDist = float.MaxValue;
 
-            // This controls the size of the biome "blobs"
             float biomeScale = 1f;
+            float distortion = SmoothBiomeNoise(chunkX * 0.1f, chunkY * 0.1f) * 1.5f;
 
-            foreach (var seed in Biomes)
+            foreach (BiomeInfo seed in Biomes)
             {
                 float dx = (chunkX - seed.X) * biomeScale;
                 float dy = (chunkY - seed.Y) * biomeScale;
 
-                // Distort edges
-                float distortion = SmoothBiomeNoise(chunkX * 0.1f, chunkY * 0.1f) * 1.5f;
-
-                // Add distortion after scaling so it doesn't grow with world size
                 float dist = dx * dx + dy * dy + distortion * distortion;
 
                 if (dist < bestDist)
@@ -1162,7 +971,40 @@ namespace ShootMeUp
                 }
             }
 
+            ChunkBiomeCache[key] = closest.Type;
             return closest.Type;
+        }
+
+        private static readonly int CHUNK_SIZE_PX = CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE;
+
+        private static (int, int) GetChunkCoord(float x, float y)
+        {
+            return ((int)(x / CHUNK_SIZE_PX), (int)(y / CHUNK_SIZE_PX));
+        }
+        private IEnumerable<(int, int)> GetVisibleChunks()
+        {
+            float viewLeft = CameraX;
+            float viewTop = CameraY;
+            float viewRight = CameraX + ClientSize.Width / Zoom;
+            float viewBottom = CameraY + ClientSize.Height / Zoom;
+
+            int x0 = (int)Math.Floor(viewLeft / CHUNK_SIZE_PX);
+            int x1 = (int)Math.Floor(viewRight / CHUNK_SIZE_PX);
+            int y0 = (int)Math.Floor(viewTop / CHUNK_SIZE_PX);
+            int y1 = (int)Math.Floor(viewBottom / CHUNK_SIZE_PX);
+
+            for (int x = x0; x <= x1; x++)
+                for (int y = y0; y <= y1; y++)
+                    yield return (x, y);
+        }
+        private void AddObstacleToChunk(Obstacle obstacle)
+        {
+            var chunk = GetChunkCoord(obstacle.Position.X, obstacle.Position.Y);
+
+            if (!ChunkObstacleCache.TryGetValue(chunk, out var list))
+                ChunkObstacleCache[chunk] = list = new List<Obstacle>();
+
+            list.Add(obstacle);
         }
 
         /// <summary>
@@ -1170,40 +1012,37 @@ namespace ShootMeUp
         /// </summary>
         private void GenerateWorld()
         {
-            // Calculate the center of the map
             float fltMapSize = CHUNK_SIZE_IN_TILES * GameSettings.Current.ChunkAmountValue * OBSTACLE_SIZE;
-
             float fltAreaCenterX = fltMapSize / 2;
 
-            // Create a new player
             _player = new(fltAreaCenterX, fltAreaCenterX, DEFAULT_CHARACTER_SIZE, Character.Type.Player, GameSettings.Current.GameSpeedValue);
             Characters.Add(_player);
 
-            // Generate the border around the world
+            // Generate border
             for (int x = -32; x <= fltMapSize; x += 32)
             {
                 for (int y = -32; y <= fltMapSize; y += 32)
                 {
                     if (x == -32 || y == -32 || x == fltMapSize || y == fltMapSize)
-                    {
-                        // Create a new border block
                         Obstacles.Add(new(x, y, OBSTACLE_SIZE, Obstacle.Type.Barrier));
-                    }
                 }
             }
 
-
-            // The max amount of health (from obstacles) inside of one chunk
+            int intChunkLength = CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE;
             int intMaxHealthInAChunk = 180;
 
-            // Generate the environment, chunk by chunk
+            // Precompute biome obstacles once
+            Dictionary<Obstacle.Type, Obstacle.Type[]> biomeObstacles = new Dictionary<Obstacle.Type, Obstacle.Type[]>
+            {
+                [Obstacle.Type.Grass] = [Obstacle.Type.Bush, Obstacle.Type.Wood],
+                [Obstacle.Type.Sand] = [Obstacle.Type.Dirt],
+                [Obstacle.Type.Stone] = [Obstacle.Type.CobbleStone]
+            };
+
             for (int chunkX = 0; chunkX < GameSettings.Current.ChunkAmountValue; chunkX++)
             {
                 for (int chunkY = 0; chunkY < GameSettings.Current.ChunkAmountValue; chunkY++)
                 {
-                    // Get a random floor and apply it
-                    List<Obstacle.Type> Floors = [Obstacle.Type.Grass, Obstacle.Type.Sand, Obstacle.Type.Stone];
-
                     Biome biome = GetChunkBiome(chunkX, chunkY);
 
                     Obstacle.Type randomFloor = biome switch
@@ -1214,42 +1053,36 @@ namespace ShootMeUp
                         _ => Obstacle.Type.Barrier
                     };
 
-                    // Chunk based values
-                    int intChunkLength = (CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE);
-
-                    float fltX = 0 + chunkX * intChunkLength;
-                    float fltY = 0 + chunkY * intChunkLength;
+                    float fltX = chunkX * intChunkLength;
+                    float fltY = chunkY * intChunkLength;
 
                     Obstacle floor = new(fltX, fltY, intChunkLength, randomFloor);
                     Obstacles.Add(floor);
 
-                    // The total amount of health in the current chunk
-                    float fltHealthInChunk = 0;
+                    // Create a per-chunk obstacle list for fast collision checks
+                    List<Obstacle> localObstacles = new();
+                    ChunkObstacleCache[(chunkX, chunkY)] = localObstacles;
 
-                    Dictionary<Obstacle.Type, Obstacle.Type[]> biomeObstacles =
-                        new()
-                        {
-                            [Obstacle.Type.Grass] = new[] { Obstacle.Type.Bush, Obstacle.Type.Wood },
-                            [Obstacle.Type.Sand] = new[] { Obstacle.Type.Dirt },
-                            [Obstacle.Type.Stone] = new[] { Obstacle.Type.CobbleStone }
-                        };
+                    float fltHealthInChunk = 0;
 
                     while (fltHealthInChunk < intMaxHealthInAChunk)
                     {
-                        float fltCurrentObstacleHealth;
-
                         float fltRemainingHealth = intMaxHealthInAChunk - fltHealthInChunk;
 
-                        List<Obstacle.Type> valid = biomeObstacles[randomFloor].Where(t => (t == Obstacle.Type.Bush && 1.25 <= fltRemainingHealth) || (t == Obstacle.Type.Dirt && 10 <= fltRemainingHealth) || (t == Obstacle.Type.Wood && 20 <= fltRemainingHealth) || (t == Obstacle.Type.CobbleStone && 25 <= fltRemainingHealth)).ToList();
+                        Obstacle.Type[] valid = biomeObstacles[randomFloor]
+                            .Where(t =>
+                                (t == Obstacle.Type.Bush && 1.25 <= fltRemainingHealth) ||
+                                (t == Obstacle.Type.Dirt && 10 <= fltRemainingHealth) ||
+                                (t == Obstacle.Type.Wood && 20 <= fltRemainingHealth) ||
+                                (t == Obstacle.Type.CobbleStone && 25 <= fltRemainingHealth))
+                            .ToArray();
 
-                        Obstacle.Type randomObstacleType;
-
-                        if (valid.Count == 0)
+                        if (valid.Length == 0)
                             break;
 
-                        randomObstacleType = valid[rnd.Next(valid.Count)];
+                        Obstacle.Type randomObstacleType = valid[rnd.Next(valid.Length)];
 
-                        fltCurrentObstacleHealth = randomObstacleType switch
+                        float fltCurrentObstacleHealth = randomObstacleType switch
                         {
                             Obstacle.Type.Bush => 1.25f,
                             Obstacle.Type.Dirt => 10,
@@ -1258,57 +1091,52 @@ namespace ShootMeUp
                             _ => 0
                         };
 
-                        // Add the current obstacle's health to the total
                         fltHealthInChunk += fltCurrentObstacleHealth;
 
                         Obstacle newObstacle = new(0, 0, OBSTACLE_SIZE, randomObstacleType);
 
-
-                        // Set the obstacle up in a random spot in the chunk
+                        // Reduced attempts to avoid lag
                         int attempts = 0;
-
                         bool blnOk;
+
                         do
                         {
                             attempts++;
-                            // Get random values for the obstacles
-                            (int X, int Y) randomPos = (rnd.Next(0, CHUNK_SIZE_IN_TILES - 1), rnd.Next(0, CHUNK_SIZE_IN_TILES - 1));
 
-                            randomPos.X *= OBSTACLE_SIZE;
-                            randomPos.Y *= OBSTACLE_SIZE;
+                            (float X, float Y) randomPos = (
+                                rnd.Next(0, CHUNK_SIZE_IN_TILES) * OBSTACLE_SIZE,
+                                rnd.Next(0, CHUNK_SIZE_IN_TILES) * OBSTACLE_SIZE
+                            );
 
-                            randomPos.X += intChunkLength * chunkX;
-                            randomPos.Y += intChunkLength * chunkY;
+                            randomPos.X += chunkX * intChunkLength;
+                            randomPos.Y += chunkY * intChunkLength;
 
-                            // Try to place the obstacle somewhere
                             newObstacle.Position = randomPos;
 
                             blnOk = true;
 
-                            // Check to see if the obstacle is colliding with anything
-                            foreach (Obstacle obstacle in Obstacles)
+                            // Only check collisions against objects inside this chunk
+                            foreach (Obstacle obstacle in localObstacles)
                             {
-                                if ((IsOverlapping(newObstacle, obstacle) || !blnOk) && !Floors.Contains(obstacle.ObstType))
+                                if (IsOverlapping(newObstacle, obstacle))
                                 {
                                     blnOk = false;
                                     break;
                                 }
                             }
 
-                            foreach (Character character in Characters)
-                            {
-                                if ((IsOverlapping(newObstacle, character) && newObstacle.CanCollide) || !blnOk)
-                                {
-                                    blnOk = false;
-                                    break;
-                                }
-                            }
+                            // Check player overlap
+                            if (blnOk && IsOverlapping(newObstacle, _player))
+                                blnOk = false;
 
-                            // Add the obstacle if everything is okay
                             if (blnOk)
+                            {
                                 Obstacles.Add(newObstacle);
+                                AddObstacleToChunk(newObstacle);
+                                localObstacles.Add(newObstacle);
+                            }
 
-                        } while (!blnOk && attempts < 1000);
+                        } while (!blnOk && attempts < 100);
                     }
                 }
             }
@@ -1331,7 +1159,7 @@ namespace ShootMeUp
             int totalEnemies = baseEnemies + rnd.Next(waveNumber, waveNumber * 3);
 
             // Define enemy types with score values
-            var enemyTypes = new List<(Character.Type Type, int Weight, float SizeMultiplier)>
+            List<(Character.Type Type, int Weight, float SizeMultiplier)> enemyTypes = new List<(Character.Type Type, int Weight, float SizeMultiplier)>
             {
                 (Character.Type.Zombie,         1,       1f),
                 (Character.Type.Skeleton,       3,       1f),
@@ -1736,54 +1564,60 @@ namespace ShootMeUp
                     bufferG.DrawImage(GetSprite(character.CharType), drawX * Zoom, drawY * Zoom, character.Size.Width * Zoom, character.Size.Height * Zoom);
                 }
 
-                // Draw obstacles that can collide
-                foreach (Obstacle obstacle in Obstacles)
+                // Draw obstacles based on chunks
+                foreach ((int, int) chunk in GetVisibleChunks())
                 {
-                    // Only continue if they're not from one of the floor types, and have collisions on
-                    if (FloorTypes.Contains(obstacle.ObstType) || !obstacle.CanCollide)
-                        continue;
-
-                    float drawX = obstacle.Position.X - CameraX;
-                    float drawY = obstacle.Position.Y - CameraY;
-
-                    if (!IsOnScreen(drawX, drawY, obstacle.Size.Width, obstacle.Size.Height))
-                        continue;
-
-                    bufferG.DrawImage(GetSprite(obstacle.ObstType, obstacle.Size), drawX * Zoom, drawY * Zoom, obstacle.Size.Width * Zoom, obstacle.Size.Height * Zoom);
-
-                }
-
-                // Draw obstacle health
-                foreach (Obstacle obstacle in Obstacles)
-                {
-                    // Only continue if they're not from one of the floor types, and aren't invincible
-                    if (!(obstacle.ObstType == Obstacle.Type.Sand || obstacle.ObstType == Obstacle.Type.Grass || obstacle.ObstType == Obstacle.Type.Stone) && !obstacle.Invincible)
+                    if (ChunkObstacleCache.TryGetValue(chunk, out List<Obstacle>? currentObstacles))
                     {
-                        float drawX = obstacle.Position.X - CameraX;
-                        float drawY = obstacle.Position.Y - CameraY;
+                        // Draw obstacles that can collide
+                        foreach (Obstacle obstacle in currentObstacles)
+                        {
+                            // Only continue if they're not from one of the floor types, and have collisions on
+                            if (FloorTypes.Contains(obstacle.ObstType) || !obstacle.CanCollide)
+                                continue;
 
-                        if (!IsOnScreen(drawX, drawY, obstacle.Size.Width, obstacle.Size.Height))
-                            continue;
+                            float drawX = obstacle.Position.X - CameraX;
+                            float drawY = obstacle.Position.Y - CameraY;
 
-                        float screenX = (obstacle.Position.X - CameraX) * Zoom;
-                        float screenY = (obstacle.Position.Y - CameraY) * Zoom;
+                            if (!IsOnScreen(drawX, drawY, obstacle.Size.Width, obstacle.Size.Height))
+                                continue;
+
+                            bufferG.DrawImage(GetSprite(obstacle.ObstType, obstacle.Size), drawX * Zoom, drawY * Zoom, obstacle.Size.Width * Zoom, obstacle.Size.Height * Zoom);
+                        }
+
+                        // Draw obstacle health
+                        foreach (Obstacle obstacle in currentObstacles)
+                        {
+                            // Only continue if they're not from one of the floor types, and aren't invincible
+                            if (!(obstacle.ObstType == Obstacle.Type.Sand || obstacle.ObstType == Obstacle.Type.Grass || obstacle.ObstType == Obstacle.Type.Stone) && !obstacle.Invincible)
+                            {
+                                float drawX = obstacle.Position.X - CameraX;
+                                float drawY = obstacle.Position.Y - CameraY;
+
+                                if (!IsOnScreen(drawX, drawY, obstacle.Size.Width, obstacle.Size.Height))
+                                    continue;
+
+                                float screenX = (obstacle.Position.X - CameraX) * Zoom;
+                                float screenY = (obstacle.Position.Y - CameraY) * Zoom;
 
 
-                        SizeF textSize = bufferG.MeasureString($"{obstacle}", scaledFont);
+                                SizeF textSize = bufferG.MeasureString($"{obstacle}", scaledFont);
 
-                        float obstacleScreenWidth = obstacle.Size.Width * Zoom;
-                        float obstacleScreenHeight = obstacle.Size.Height * Zoom;
+                                float obstacleScreenWidth = obstacle.Size.Width * Zoom;
+                                float obstacleScreenHeight = obstacle.Size.Height * Zoom;
 
-                        float centeredX = screenX + (obstacleScreenWidth / 2f) - (textSize.Width / 2f);
-                        float centeredY = screenY + (obstacleScreenHeight / 2f) - (textSize.Height / 2f);
+                                float centeredX = screenX + (obstacleScreenWidth / 2f) - (textSize.Width / 2f);
+                                float centeredY = screenY + (obstacleScreenHeight / 2f) - (textSize.Height / 2f);
 
-                        bufferG.DrawString(
-                            $"{obstacle}",
-                            scaledFont,
-                            TextHelpers.writingBrush,
-                            centeredX,
-                            centeredY
-                        );
+                                bufferG.DrawString(
+                                    $"{obstacle}",
+                                    scaledFont,
+                                    TextHelpers.writingBrush,
+                                    centeredX,
+                                    centeredY
+                                );
+                            }
+                        }
                     }
                 }
 
@@ -1845,20 +1679,27 @@ namespace ShootMeUp
                     RenderHealth(character, character.Lives, HeartType, 0.4f, 10);
                 }
 
-                // Draw obstacles that has collisions off
-                foreach (Obstacle obstacle in Obstacles)
+                // Draw obstacles based on chunks
+                foreach ((int, int) chunk in GetVisibleChunks())
                 {
-                    // Only continue if they're not from one of the floor types, and have collisions off
-                    if (FloorTypes.Contains(obstacle.ObstType) || obstacle.CanCollide)
-                        continue;
+                    if (ChunkObstacleCache.TryGetValue(chunk, out List<Obstacle>? currentObstacles))
+                    {
+                        // Draw obstacles that has collisions off
+                        foreach (Obstacle obstacle in Obstacles)
+                        {
+                            // Only continue if they're not from one of the floor types, and have collisions off
+                            if (FloorTypes.Contains(obstacle.ObstType) || obstacle.CanCollide)
+                                continue;
 
-                    float drawX = obstacle.Position.X - CameraX;
-                    float drawY = obstacle.Position.Y - CameraY;
+                            float drawX = obstacle.Position.X - CameraX;
+                            float drawY = obstacle.Position.Y - CameraY;
 
-                    if (!IsOnScreen(drawX, drawY, obstacle.Size.Width, obstacle.Size.Height))
-                        continue;
+                            if (!IsOnScreen(drawX, drawY, obstacle.Size.Width, obstacle.Size.Height))
+                                continue;
 
-                    bufferG.DrawImage(GetSprite(obstacle.ObstType, obstacle.Size), drawX * Zoom, drawY * Zoom, obstacle.Size.Width * Zoom, obstacle.Size.Height * Zoom);
+                            bufferG.DrawImage(GetSprite(obstacle.ObstType, obstacle.Size), drawX * Zoom, drawY * Zoom, obstacle.Size.Width * Zoom, obstacle.Size.Height * Zoom);
+                        }
+                    }
                 }
             }
         }
