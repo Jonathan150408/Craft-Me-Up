@@ -303,8 +303,7 @@ namespace ShootMeUp
             if (BackgroundImage != null)
                 BackgroundImage.Dispose();
 
-            Bitmap tile = new Bitmap(Sprites.Stone, ShootMeUp.OBSTACLE_SIZE, ShootMeUp.OBSTACLE_SIZE);
-            BackgroundImage = tile;
+            BackgroundImage = new Bitmap(Sprites.Stone, ShootMeUp.OBSTACLE_SIZE, ShootMeUp.OBSTACLE_SIZE);
             BackgroundImageLayout = ImageLayout.Tile;
 
             // Remove any previous controls
@@ -838,6 +837,8 @@ namespace ShootMeUp
             return result;
         }
 
+        private static readonly Bitmap GrassTinted = ApplyTint(Sprites.Grass, Color.FromArgb(0x91, 0xBD, 0x59));
+
         /// <summary>
         /// Get a obstacle's sprite
         /// </summary>
@@ -873,11 +874,7 @@ namespace ShootMeUp
                     ReturnedImage = Sprites.Bush;
                     break;
                 case Obstacle.Type.Grass:
-                    // Minecraft plains biome grass color
-                    Color grassTint = Color.FromArgb(0x91, 0xBD, 0x59);
-
-                    // Apply tint to grayscale texture
-                    ReturnedImage = ApplyTint(Sprites.Grass, grassTint);
+                    ReturnedImage = GrassTinted;
                     break;
                 case Obstacle.Type.Stone:
                     ReturnedImage = Sprites.Stone;
@@ -1139,7 +1136,7 @@ namespace ShootMeUp
         /// <param name="chunkX"></param>
         /// <param name="chunkY"></param>
         /// <returns></returns>
-        private Biome GetChunkBiome(int chunkX, int chunkY)
+        private static Biome GetChunkBiome(int chunkX, int chunkY)
         {
             BiomeInfo closest = Biomes[0];
             float bestDist = float.MaxValue;
@@ -1555,31 +1552,31 @@ namespace ShootMeUp
         }
 
         /// <summary>
-        /// Tests if the 2 entities are overlapping
+        /// Tests if 2 cframes are overlapping
         /// </summary>
-        /// <param name="entity1"></param>
-        /// <param name="entity2"></param>
-        /// <returns>A bool that is true if the entities are overlapping</returns>
-        public static bool IsOverlapping(CFrame entity1, CFrame entity2)
+        /// <param name="cfr1"></param>
+        /// <param name="cfr2"></param>
+        /// <returns>A bool that is true if the cframes are overlapping</returns>
+        public static bool IsOverlapping(CFrame cfr1, CFrame cfr2)
         {
-            bool overlapX = entity1.Position.X < entity2.Position.X + entity2.Size.Width && entity1.Position.X + entity1.Size.Width > entity2.Position.X;
-            bool overlapY = entity1.Position.Y < entity2.Position.Y + entity2.Size.Height && entity1.Position.Y + entity1.Size.Height > entity2.Position.Y;
+            bool overlapX = cfr1.Position.X < cfr2.Position.X + cfr2.Size.Width && cfr1.Position.X + cfr1.Size.Width > cfr2.Position.X;
+            bool overlapY = cfr1.Position.Y < cfr2.Position.Y + cfr2.Size.Height && cfr1.Position.Y + cfr1.Size.Height > cfr2.Position.Y;
             return overlapX && overlapY;
         }
 
         /// <summary>
-        /// Tests to see if the given entity is inside or outside the world
+        /// Tests to see if the given cframe is inside or outside the world
         /// </summary>
-        /// <param name="entity"></param>
+        /// <param name="cfr"></param>
         /// <returns></returns>
-        public static bool IsInsideWorld(CFrame entity)
+        public static bool IsInsideWorld(CFrame cfr)
         {
             int intMapSize = CHUNK_SIZE_IN_TILES * GameSettings.Current.ChunkAmountValue * OBSTACLE_SIZE;
             return
-                entity.Position.X >= 0 &&
-                entity.Position.Y >= 0 &&
-                entity.Position.X + entity.Size.Width <= intMapSize &&
-                entity.Position.Y + entity.Size.Height <= intMapSize;
+                cfr.Position.X >= 0 &&
+                cfr.Position.Y >= 0 &&
+                cfr.Position.X + cfr.Size.Width <= intMapSize &&
+                cfr.Position.Y + cfr.Size.Height <= intMapSize;
         }
 
         private void DrawBackground(Graphics g)
