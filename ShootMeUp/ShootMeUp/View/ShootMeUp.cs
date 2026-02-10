@@ -1170,9 +1170,6 @@ namespace ShootMeUp
         /// </summary>
         private void GenerateWorld()
         {
-            // Set the game state to true
-            _gameState = GameState.running;
-
             // Calculate the center of the map
             float fltMapSize = CHUNK_SIZE_IN_TILES * GameSettings.Current.ChunkAmountValue * OBSTACLE_SIZE;
 
