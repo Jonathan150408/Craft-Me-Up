@@ -1,11 +1,7 @@
 ﻿using ShootMeUp.Helpers;
 using ShootMeUp.Model;
 using System.ComponentModel;
-using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Xml.Serialization;
-using static ShootMeUp.Model.GameSettings;
-using Font = System.Drawing.Font;
 
 namespace ShootMeUp
 {
@@ -1627,6 +1623,60 @@ namespace ShootMeUp
         }
 
         /// <summary>
+        /// Draws an object whose parent class is CFrame's health
+        /// </summary>
+        /// <param name="cfrObject"></param>
+        private void RenderHealth(CFrame cfrObject, int intHealth, Bitmap HealthSprite, float fltHeartScale, int intMaxHeartsPerRow)
+        {
+            // Get CFrame related values
+            float fltPosX = (cfrObject.Position.X - CameraX);
+            float fltPosY = (cfrObject.Position.Y - CameraY);
+            float fltWidth = cfrObject.Size.Width;
+
+            // Get the total amount of rows
+            int intRows = (int)Math.Ceiling(intHealth / (float)intMaxHeartsPerRow);
+
+            // Get the heart size
+            float fltHeartSize = DEFAULT_CHARACTER_SIZE * fltHeartScale;
+
+            // Row padding
+            float fltRowSpacing = fltHeartSize * 0.1f;
+
+            // Get the starting position of hearts
+            float fltStartY = fltPosY - (intRows * fltHeartSize + (intRows - 1) * fltRowSpacing) - fltRowSpacing;
+
+            // Start the health generation
+            int intHeartIndex = 0;
+            for (int intRow = 0; intRow < intRows; intRow++)
+            {
+                // Get the amount of hearts to draw
+                int intHearts = Math.Min(intMaxHeartsPerRow, intHealth - intHeartIndex);
+
+                // Center hearts horizontally
+                float intRowWidth = intHearts * fltHeartSize;
+                float fltStartX = fltPosX + (fltWidth - intRowWidth) / 2f;
+
+                // Draw them one by one
+                for (int intCol = 0; intCol < intHearts; intCol++)
+                {
+                    float fltDrawX = fltStartX + intCol * fltHeartSize;
+                    float fltDrawY = fltStartY + intRow * (fltHeartSize - fltRowSpacing);
+
+                    bufferG.DrawImage(
+                        HealthSprite,
+                        fltDrawX * Zoom,
+                        fltDrawY * Zoom,
+                        fltHeartSize * Zoom,
+                        fltHeartSize * Zoom
+                    );
+
+                    intHeartIndex++;
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Render a new frame
         /// </summary>
         private void RenderFrame()
@@ -1697,7 +1747,7 @@ namespace ShootMeUp
                 foreach (Obstacle obstacle in Obstacles)
                 {
                     // Only continue if they're not from one of the floor types, and have collisions on
-                    if (FloorTypes.Contains(obstacle.ObstType) && !obstacle.CanCollide)
+                    if (FloorTypes.Contains(obstacle.ObstType) || !obstacle.CanCollide)
                         continue;
 
                     float drawX = obstacle.Position.X - CameraX;
@@ -1713,8 +1763,8 @@ namespace ShootMeUp
                 // Draw obstacle health
                 foreach (Obstacle obstacle in Obstacles)
                 {
-                    // Only continue if they're not from one of the floor types
-                    if (!(obstacle.ObstType == Obstacle.Type.Sand || obstacle.ObstType == Obstacle.Type.Grass || obstacle.ObstType == Obstacle.Type.Stone))
+                    // Only continue if they're not from one of the floor types, and aren't invincible
+                    if (!(obstacle.ObstType == Obstacle.Type.Sand || obstacle.ObstType == Obstacle.Type.Grass || obstacle.ObstType == Obstacle.Type.Stone) && !obstacle.Invincible)
                     {
                         float drawX = obstacle.Position.X - CameraX;
                         float drawY = obstacle.Position.Y - CameraY;
@@ -1728,16 +1778,19 @@ namespace ShootMeUp
 
                         SizeF textSize = bufferG.MeasureString($"{obstacle}", scaledFont);
 
-                        float centeredX = screenX + (obstacle.Size.Width * Zoom / 2f) - (textSize.Width / 2f);
+                        float obstacleScreenWidth = obstacle.Size.Width * Zoom;
+                        float obstacleScreenHeight = obstacle.Size.Height * Zoom;
+
+                        float centeredX = screenX + (obstacleScreenWidth / 2f) - (textSize.Width / 2f);
+                        float centeredY = screenY + (obstacleScreenHeight / 2f) - (textSize.Height / 2f);
 
                         bufferG.DrawString(
                             $"{obstacle}",
                             scaledFont,
                             TextHelpers.writingBrush,
                             centeredX,
-                            screenY - 16 * Zoom
+                            centeredY
                         );
-
                     }
                 }
 
@@ -1752,28 +1805,6 @@ namespace ShootMeUp
                     if (!IsOnScreen(drawX, drawY, character.Size.Width, character.Size.Height))
                         continue;
                     bufferG.DrawImage(GetSprite(character.CharType), drawX * Zoom, drawY * Zoom, character.Size.Width * Zoom, character.Size.Height * Zoom);
-                }
-
-                // Draw all characters' health (not including player)
-                foreach (Character character in Characters)
-                {
-                    if (character.CharType == Character.Type.Player) continue;
-
-                    // Draw its life
-                    float screenX = (character.Position.X - CameraX) * Zoom;
-                    float screenY = (character.Position.Y - CameraY) * Zoom;
-
-                    SizeF textSize = bufferG.MeasureString($"{character}", scaledFont);
-
-                    float centeredX = screenX + (character.Size.Width * Zoom / 2f) - (textSize.Width / 2f);
-
-                    bufferG.DrawString(
-                        $"{character}",
-                        scaledFont,
-                        TextHelpers.writingBrush,
-                        centeredX,
-                        screenY - 16 * Zoom
-                    );
                 }
 
                 // Draw projectiles
@@ -1797,11 +1828,35 @@ namespace ShootMeUp
                     bufferG.DrawImage(GetSprite(_player.CharType), px * Zoom, py * Zoom, _player.Size.Width * Zoom, _player.Size.Height * Zoom);
                 }
 
+                // Draw all characters' health (not including player)
+                foreach (Character character in Characters)
+                {
+                    if (character.CharType == Character.Type.Player || character is not Enemy enemy) continue;
+
+                    // Draw its health depending on its type
+                    Bitmap HeartType;
+
+                    switch (enemy.CharType)
+                    {
+                        case Character.Type.SpiderJockey:
+                        case Character.Type.WitherSkeleton:
+                        case Character.Type.Dragon:
+                        case Character.Type.Wither:
+                            HeartType = Sprites.BossHeart;
+                            break;
+                        default:
+                            HeartType = Sprites.EnemyHeart;
+                            break;
+                    }
+
+                    RenderHealth(character, character.Lives, HeartType, 0.4f, 10);
+                }
+
                 // Draw obstacles that has collisions off
                 foreach (Obstacle obstacle in Obstacles)
                 {
                     // Only continue if they're not from one of the floor types, and have collisions off
-                    if (FloorTypes.Contains(obstacle.ObstType) && !obstacle.CanCollide)
+                    if (FloorTypes.Contains(obstacle.ObstType) || obstacle.CanCollide)
                         continue;
 
                     float drawX = obstacle.Position.X - CameraX;
@@ -1867,7 +1922,7 @@ namespace ShootMeUp
                 for (int i = 0; i < _player.Lives; i++)
                 {
                     int x = 8 + (i * 20);
-                    g.DrawImage(Sprites.Heart, x, 32, 24, 24);
+                    g.DrawImage(Sprites.PlayerHeart, x, 32, 24, 24);
                 }
             }
         }

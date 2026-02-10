@@ -151,8 +151,14 @@
   <data name="Floor_Stone" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Floor_Stone.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Misc_Heart" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Misc_Heart.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Misc_BossHeart" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Misc_BossHeart.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Misc_EnemyHeart" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Misc_EnemyHeart.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Misc_PlayerHeart" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Misc_PlayerHeart.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Obstacle_Barrier" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Obstacle_Barrier.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>

@@ -173,9 +173,29 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Misc_Heart {
+        internal static System.Drawing.Bitmap Misc_BossHeart {
             get {
-                object obj = ResourceManager.GetObject("Misc_Heart", resourceCulture);
+                object obj = ResourceManager.GetObject("Misc_BossHeart", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Misc_EnemyHeart {
+            get {
+                object obj = ResourceManager.GetObject("Misc_EnemyHeart", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Misc_PlayerHeart {
+            get {
+                object obj = ResourceManager.GetObject("Misc_PlayerHeart", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

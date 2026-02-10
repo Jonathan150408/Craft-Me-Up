@@ -41,6 +41,8 @@ namespace ShootMeUp.Model
         public static readonly Bitmap Sand              = Resources.Floor_Sand;
 
         // Misc
-        public static readonly Bitmap Heart             = Resources.Misc_Heart;
+        public static readonly Bitmap PlayerHeart       = Resources.Misc_PlayerHeart;
+        public static readonly Bitmap EnemyHeart        = Resources.Misc_EnemyHeart;
+        public static readonly Bitmap BossHeart         = Resources.Misc_BossHeart;
     }
 }
