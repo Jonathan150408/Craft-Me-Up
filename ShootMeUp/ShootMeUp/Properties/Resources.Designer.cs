@@ -273,9 +273,9 @@ namespace ShootMeUp.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Obstacle_Wood_Planks {
+        internal static System.Drawing.Bitmap Obstacle_WoodPlanks {
             get {
-                object obj = ResourceManager.GetObject("Obstacle_Wood_Planks", resourceCulture);
+                object obj = ResourceManager.GetObject("Obstacle_WoodPlanks", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

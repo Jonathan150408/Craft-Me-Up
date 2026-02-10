@@ -854,7 +854,7 @@ namespace ShootMeUp
                     ReturnedImage = Sprites.Dirt;
                     break;
                 case Obstacle.Type.Wood:
-                    ReturnedImage = Sprites.Wooden_Planks;
+                    ReturnedImage = Sprites.WoodenPlanks;
                     break;
                 case Obstacle.Type.CobbleStone:
                     ReturnedImage = Sprites.Cobblestone;
