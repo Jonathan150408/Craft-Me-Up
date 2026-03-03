@@ -1,5 +1,4 @@
-﻿using ShootMeUp.Helpers;
-using ShootMeUp.Properties;
+﻿using ShootMeUp.Properties;
 using System.Numerics;
 
 namespace ShootMeUp.Model

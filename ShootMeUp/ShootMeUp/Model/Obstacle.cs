@@ -1,7 +1,6 @@
 ﻿///ETML
 ///10.11.2025
 ///This is the obstacle class
-using ShootMeUp.Helpers;
 using ShootMeUp.Properties;
 using System;
 using System.Collections.Generic;
@@ -45,7 +44,7 @@ namespace ShootMeUp.Model
         /// <summary>
         /// Whether the obstacle is invincible or not
         /// </summary>
-        private bool _invincible;
+        private readonly bool _invincible;
         public bool Invincible
         {
             get { return _invincible; }

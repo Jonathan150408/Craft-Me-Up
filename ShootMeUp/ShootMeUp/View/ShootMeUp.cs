@@ -138,7 +138,7 @@ namespace ShootMeUp
         /// <summary>
         /// The RNG seed
         /// </summary>
-        public static readonly int GAMESEED = (new Random()).Next(int.MinValue, int.MaxValue);
+        public int GAMESEED;
         private readonly Random rnd;
 
         /// <summary>
@@ -186,9 +186,12 @@ namespace ShootMeUp
         /// </summary>
         private bool _worldReady;
 
+
         public ShootMeUp()
         {
             InitializeComponent();
+
+            GAMESEED = (new Random()).Next(int.MinValue, int.MaxValue); // In the future, I'll make custom seeds work
 
             this.MaximizeBox = true;
             this.WindowState = FormWindowState.Maximized;
@@ -226,6 +229,7 @@ namespace ShootMeUp
                 Height = this.ClientRectangle.Height,
                 BackColor = Color.FromArgb(75, 100, 100, 100)
             };
+
             resumeButton = new()
             {
                 Height = 64,
@@ -233,7 +237,7 @@ namespace ShootMeUp
                 AutoSize = false,
                 Text = "Resume Game",
                 BackColor = Color.White,
-                Font = new Font("Consolas", 24, FontStyle.Bold),
+                Font = TextHelpers.GetCachedFont(24),
             };
 
             quitButton = new()
@@ -242,7 +246,7 @@ namespace ShootMeUp
                 Width = 64,
                 Text = "Quit",
                 BackColor = Color.White,
-                Font = new Font("Consolas", 12, FontStyle.Bold),
+                Font = TextHelpers.GetCachedFont(12),
             };
 
             resumeButton.Click += ResumeButton_Click;
@@ -340,7 +344,7 @@ namespace ShootMeUp
             _titleLabel = new Label
             {
                 Text = "Craft Me Up",
-                Font = new Font("Consolas", 48, FontStyle.Bold),
+                Font = TextHelpers.GetCachedFont(48),
                 ForeColor = Color.White,
                 AutoSize = true,
                 BackColor = Color.Transparent,
@@ -351,7 +355,7 @@ namespace ShootMeUp
             _playButton = new Button
             {
                 Text = "Play the game",
-                Font = new Font("Consolas", 24, FontStyle.Bold),
+                Font = TextHelpers.GetCachedFont(24),
                 BackColor = Color.White,
                 Size = new(384, 64),
                 AutoSize = false
@@ -361,7 +365,7 @@ namespace ShootMeUp
             _settingsButton = new Button
             {
                 Text = "Settings",
-                Font = new Font("Consolas", 18, FontStyle.Regular),
+                Font = TextHelpers.GetCachedFont(18),
                 BackColor = Color.White,
                 Size = new(224, 48),
                 AutoSize = false
@@ -531,7 +535,7 @@ namespace ShootMeUp
                 Text = text,
                 Size = size,
                 BackColor = selected ? Color.LightGreen : Color.White,
-                Font = new Font("Consolas", 12, FontStyle.Bold),
+                Font = TextHelpers.GetCachedFont(12),
                 FlatStyle = FlatStyle.Flat
             };
 
@@ -554,7 +558,7 @@ namespace ShootMeUp
             _settingsTitle = new Label
             {
                 Text = "Settings",
-                Font = new Font("Consolas", 32, FontStyle.Bold),
+                Font = TextHelpers.GetCachedFont(32),
                 ForeColor = Color.White,
                 AutoSize = true,
                 BackColor = Color.Transparent,
@@ -564,7 +568,7 @@ namespace ShootMeUp
             _settingsSpeedLabel = new()
             {
                 Text = "Game Speed",
-                Font = new Font("Consolas", 16, FontStyle.Bold),
+                Font = TextHelpers.GetCachedFont(16),
                 ForeColor = Color.White,
                 AutoSize = true,
                 BackColor = Color.Transparent,
@@ -603,7 +607,7 @@ namespace ShootMeUp
             _settingsChunkLabel = new()
             {
                 Text = "Chunk amount",
-                Font = new Font("Consolas", 16, FontStyle.Bold),
+                Font = TextHelpers.GetCachedFont(16),
                 ForeColor = Color.White,
                 AutoSize = true,
                 BackColor = Color.Transparent,
@@ -647,7 +651,7 @@ namespace ShootMeUp
             _settingsDone = new Button
             {
                 Text = "Done",
-                Font = new Font("Consolas", 18, FontStyle.Regular),
+                Font = TextHelpers.GetCachedFont(18),
                 BackColor = Color.White,
                 Size = new(224, 48),
                 AutoSize = false
@@ -876,7 +880,7 @@ namespace ShootMeUp
         /// <param name="y"></param>
         /// <param name="seed"></param>
         /// <returns></returns>
-        static float BiomeNoise(int x, int y)
+        private float BiomeNoise(int x, int y)
         {
             // Unchecked keyword used to ignore overflow and roll back to 0
             unchecked
@@ -888,7 +892,7 @@ namespace ShootMeUp
             }
         }
 
-        static float SmoothBiomeNoise(float x, float y)
+        private float SmoothBiomeNoise(float x, float y)
         {
             int x0 = (int)Math.Floor(x);
             int y0 = (int)Math.Floor(y);
@@ -948,7 +952,7 @@ namespace ShootMeUp
         /// <param name="chunkX"></param>
         /// <param name="chunkY"></param>
         /// <returns></returns>
-        private static Biome GetChunkBiome(int chunkX, int chunkY)
+        private Biome GetChunkBiome(int chunkX, int chunkY)
         {
             (int chunkX, int chunkY) key = (chunkX, chunkY);
 
@@ -1536,7 +1540,7 @@ namespace ShootMeUp
             {
                 bufferG.Clear(Color.Black);
 
-                using Font font = new("Consolas", 32, FontStyle.Bold);
+                Font font = TextHelpers.GetCachedFont(32);
                 SizeF textSize = bufferG.MeasureString("Loading...", font);
 
                 float x = (ClientSize.Width - textSize.Width) / 2f;
@@ -1801,8 +1805,9 @@ namespace ShootMeUp
             // Store the UI text
             string strText = $"Wave {_intWaveNumber} | Score: {Score}";
 
+            // Removing this line and putting TextHelpers.drawFont in the code instead of a variable causes "System.ArgumentException: Parameter is not valid." on .MeasureString,
+            // even though the font is valid. I have no idea why, but this fixes it so I'm not gonna question it.
             Font font = TextHelpers.drawFont;
-            Brush textBrush = TextHelpers.writingBrush;
 
             // Layout variables
             float fltPadding = 12f;
@@ -1843,7 +1848,7 @@ namespace ShootMeUp
             float textX = panelX + (panelWidth / 2f) - (textSize.Width / 2f);
             float textY = panelY + fltPadding;
 
-            g.DrawString(strText, font, textBrush, textX, textY);
+            g.DrawString(strText, TextHelpers.drawFont, TextHelpers.writingBrush, textX, textY);
 
             // Draw the hearts
             float heartsX = panelX + (panelWidth / 2f) - (heartsWidth / 2f);
