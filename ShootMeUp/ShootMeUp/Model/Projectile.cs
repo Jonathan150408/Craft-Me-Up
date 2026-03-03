@@ -218,13 +218,7 @@ namespace ShootMeUp.Model
             float stepX = _fltSpeed.X * ShootMeUp.DeltaTime;
             float stepY = _fltSpeed.Y * ShootMeUp.DeltaTime;
 
-            // Create a list that contains both obstacles (only if CanCollide is true) and characters
-            List<CFrame> listCFrames = [.. ShootMeUp.Characters.Cast<CFrame>()];
-
-            if (CanCollide)
-                listCFrames.AddRange([.. ShootMeUp.Obstacles.Cast<CFrame>()]);
-
-            foreach (CFrame singularCFrame in listCFrames)
+            foreach (CFrame singularCFrame in ShootMeUp.Characters)
             {
                 // Skip the ignored character
                 if (singularCFrame == (CFrame)_shotBy)
@@ -246,6 +240,29 @@ namespace ShootMeUp.Model
                 }
             }
 
+            if (CanCollide)
+                foreach (CFrame singularCFrame in ShootMeUp.Obstacles)
+                {
+                    // Skip the ignored character
+                    if (singularCFrame == (CFrame)_shotBy)
+                        continue;
+
+                    // Skip no collision obstacles
+                    if (singularCFrame is Obstacle obstacle && !obstacle.CanCollide)
+                        continue;
+
+
+                    if (ShootMeUp.IsOverlapping(singularCFrame, Position.X + stepX, Position.Y, Size.Width, Size.Height))
+                    {
+                        return singularCFrame;
+                    }
+
+                    if (ShootMeUp.IsOverlapping(singularCFrame, Position.X, Position.Y + stepY, Size.Width, Size.Height))
+                    {
+                        return singularCFrame;
+                    }
+                }
+            
             return null;
         }
     }
