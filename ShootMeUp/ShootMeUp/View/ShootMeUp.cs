@@ -190,6 +190,7 @@ namespace ShootMeUp
         public ShootMeUp()
         {
             InitializeComponent();
+            Sprites.InitializeProjectileRotations();
 
             GAMESEED = (new Random()).Next(int.MinValue, int.MaxValue); // In the future, I'll make custom seeds work
 

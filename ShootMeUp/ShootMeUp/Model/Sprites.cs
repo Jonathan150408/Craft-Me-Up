@@ -52,6 +52,11 @@ namespace ShootMeUp.Model
         // LOD (Level Of Detail) Cache
         private static readonly ConcurrentDictionary<Obstacle.Type, Bitmap> _lodSprites = new();
 
+
+        private const int RotationCount = 64; // 360 / 64 = 5.625 degrees
+        private static readonly Bitmap[,] ProjectileRotations = new Bitmap[Enum.GetValues(typeof(Projectile.Type)).Length, RotationCount];
+
+
         // Cache
         private static readonly ConcurrentDictionary<(Projectile.Type, int), Bitmap> _rotatedProjectiles = new();
 
@@ -60,6 +65,27 @@ namespace ShootMeUp.Model
 
         // Tiled floor cache: (floorType, size) -> bitmap
         private static readonly ConcurrentDictionary<(Obstacle.Type, int, int), Bitmap> _tiledFloors = new();
+
+        public static void InitializeProjectileRotations()
+        {
+            foreach (Projectile.Type type in Enum.GetValues(typeof(Projectile.Type)))
+            {
+                if (type == Projectile.Type.WitherSkull ||
+                    type == Projectile.Type.DragonFireball)
+                {
+                    // no rotation needed
+                    continue;
+                }
+
+                Bitmap baseSprite = GetBaseProjectile(type);
+
+                for (int i = 0; i < RotationCount; i++)
+                {
+                    float angle = i * (360f / RotationCount);
+                    ProjectileRotations[(int)type, i] = RotateSprite(baseSprite, angle);
+                }
+            }
+        }
 
         public static Bitmap GetCharacterSprite(Character.Type type)
         {
@@ -199,16 +225,16 @@ namespace ShootMeUp.Model
 
         public static Bitmap GetProjectileSprite(Projectile.Type type, float angle)
         {
-            // some projectiles do not rotate
-            if (type == Projectile.Type.WitherSkull || type == Projectile.Type.DragonFireball)
-                return GetBaseProjectile(type);
-
-            int keyAngle = (int)Math.Round(angle / 5f) * 5; // cache every 5 degrees
-            return _rotatedProjectiles.GetOrAdd((type, keyAngle), _ =>
+            if (type == Projectile.Type.WitherSkull ||
+                type == Projectile.Type.DragonFireball)
             {
-                Bitmap baseSprite = GetBaseProjectile(type);
-                return RotateSprite(baseSprite, keyAngle);
-            });
+                return GetBaseProjectile(type);
+            }
+
+            float normalized = (angle % 360 + 360) % 360;
+            int index = (int)(normalized / (360f / RotationCount));
+
+            return ProjectileRotations[(int)type, index];
         }
 
         /// <summary>
