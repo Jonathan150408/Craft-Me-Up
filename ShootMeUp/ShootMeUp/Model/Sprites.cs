@@ -49,6 +49,8 @@ namespace ShootMeUp.Model
         public static Bitmap BossHeart          => Resources.Misc_BossHeart;
 
 
+        // LOD (Level Of Detail) Cache
+        private static readonly ConcurrentDictionary<Obstacle.Type, Bitmap> _lodSprites = new();
 
         // Cache
         private static readonly ConcurrentDictionary<(Projectile.Type, int), Bitmap> _rotatedProjectiles = new();
@@ -74,6 +76,31 @@ namespace ShootMeUp.Model
                 Character.Type.Dragon => Dragon,
                 _ => Player
             };
+        }
+
+        private static Bitmap GetLODObstacle(Obstacle.Type type)
+        {
+            return _lodSprites.GetOrAdd(type, _ =>
+            {
+                Color color = type switch
+                {
+                    Obstacle.Type.Dirt => Color.SaddleBrown,
+                    Obstacle.Type.Wood => Color.Peru,
+                    Obstacle.Type.CobbleStone => Color.DarkGray,
+                    Obstacle.Type.Barrier => Color.Red,
+                    Obstacle.Type.Bedrock => Color.Black,
+                    Obstacle.Type.Spawner => Color.Purple,
+                    Obstacle.Type.Bush => Color.Green,
+                    Obstacle.Type.Grass => Color.FromArgb(145, 189, 89),
+                    Obstacle.Type.Stone => Color.Gray,
+                    Obstacle.Type.Sand => Color.Khaki,
+                    _ => Color.White
+                };
+
+                Bitmap bmp = new(1, 1);
+                bmp.SetPixel(0, 0, color);
+                return bmp;
+            });
         }
 
         private static Bitmap GetBaseObstacle(Obstacle.Type type)
@@ -128,8 +155,14 @@ namespace ShootMeUp.Model
             return tiled;
         }
 
-        public static Bitmap GetObstacleSprite(Obstacle.Type type, int width, int height)
+        public static Bitmap GetObstacleSprite(Obstacle.Type type, int width, int height, float Zoom)
         {
+            // Get a one pixel image
+            if (Zoom < 0.85f)
+            {
+                return GetLODObstacle(type);
+            }
+
             // Floor tiles need tiling
             if (type == Obstacle.Type.Grass || type == Obstacle.Type.Stone || type == Obstacle.Type.Sand)
             {
@@ -145,7 +178,7 @@ namespace ShootMeUp.Model
 
         private static Bitmap RotateSprite(Bitmap original, float angle)
         {
-            Bitmap rotated = new Bitmap(original.Width, original.Height);
+            Bitmap rotated = new(original.Width, original.Height);
             rotated.SetResolution(original.HorizontalResolution, original.VerticalResolution);
 
             using (Graphics g = Graphics.FromImage(rotated))
@@ -186,7 +219,7 @@ namespace ShootMeUp.Model
         /// <returns>The same image, but recolored</returns>
         private static Bitmap ApplyTint(Bitmap gray, Color tint)
         {
-            Bitmap result = new Bitmap(gray.Width, gray.Height);
+            Bitmap result = new(gray.Width, gray.Height);
 
             for (int x = 0; x < gray.Width; x++)
             {

@@ -47,7 +47,7 @@ namespace ShootMeUp
         /// <summary>
         /// The list of keys currently held down
         /// </summary>
-        private List<Keys> _keysHeldDown;
+        private readonly List<Keys> _keysHeldDown;
 
         /// <summary>
         /// The current wave number
@@ -153,9 +153,9 @@ namespace ShootMeUp
         public static float CameraY { get; private set; }
 
         //create a modal and a button for the pause menu
-        PictureBox pauseModale;
-        Button resumeButton;
-        Button quitButton;
+        private readonly PictureBox pauseModale;
+        private readonly Button resumeButton;
+        private readonly Button quitButton;
 
         // Variables used for time handling
         public static long LastFrameTime { get; set; }
@@ -250,8 +250,9 @@ namespace ShootMeUp
 
             backBuffer = new Bitmap(ClientSize.Width, ClientSize.Height);
             bufferG = Graphics.FromImage(backBuffer);
-
-            ResizeBackbuffer();
+            bufferG.InterpolationMode = InterpolationMode.NearestNeighbor;
+            bufferG.PixelOffsetMode = PixelOffsetMode.Half;
+            bufferG.SmoothingMode = SmoothingMode.None;
 
             ShowTitle();
         }
@@ -265,6 +266,7 @@ namespace ShootMeUp
             bufferG = Graphics.FromImage(backBuffer);
             bufferG.InterpolationMode = InterpolationMode.NearestNeighbor;
             bufferG.PixelOffsetMode = PixelOffsetMode.Half;
+            bufferG.SmoothingMode = SmoothingMode.None;
         }
 
         private void CenterTitleUI()
@@ -307,15 +309,17 @@ namespace ShootMeUp
         /// </summary>
         private void ShowTitle()
         {
-            if (BackgroundImage != null)
-                BackgroundImage.Dispose();
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.MaximizeBox = true;
+
+            BackgroundImage?.Dispose();
 
             BackgroundImage = new Bitmap(Sprites.Stone, ShootMeUp.OBSTACLE_SIZE, ShootMeUp.OBSTACLE_SIZE);
             BackgroundImageLayout = ImageLayout.Tile;
 
             // Remove any previous controls
             if (_titleLabel != null)
-            { 
+            {
                 Controls.Remove(_titleLabel);
                 _titleLabel.Dispose();
             }
@@ -325,7 +329,7 @@ namespace ShootMeUp
                 Controls.Remove(_playButton);
                 _playButton.Dispose();
             }
-            
+
             if (_settingsButton != null)
             {
                 Controls.Remove(_settingsButton);
@@ -406,7 +410,7 @@ namespace ShootMeUp
 
                 int spacing = 16;
 
-                List<Button> buttons = _settingsSpeedPanel.Controls.OfType<Button>().ToList();
+                List<Button> buttons = [.. _settingsSpeedPanel.Controls.OfType<Button>()];
 
                 if (buttons.Count > 0)
                 {
@@ -439,7 +443,7 @@ namespace ShootMeUp
 
                 int spacing = 16;
 
-                List<Button> buttons = _settingsChunkPanel.Controls.OfType<Button>().ToList();
+                List<Button> buttons = [.. _settingsChunkPanel.Controls.OfType<Button>()];
 
                 if (buttons.Count > 0)
                 {
@@ -784,7 +788,7 @@ namespace ShootMeUp
         /// <returns>A sprite</returns>
         private static Bitmap GetSprite(Obstacle.Type GivenType, (int Width, int Height) Size)
         {
-            return Sprites.GetObstacleSprite(GivenType, Size.Width, Size.Height);
+            return Sprites.GetObstacleSprite(GivenType, Size.Width, Size.Height, Zoom);
         }
 
         /// <summary>
@@ -807,12 +811,12 @@ namespace ShootMeUp
         {
             int chunkSizePx = CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE;
 
-            Obstacle.Type[] floorTypes = { Obstacle.Type.Grass, Obstacle.Type.Sand, Obstacle.Type.Stone };
+            Obstacle.Type[] floorTypes = [Obstacle.Type.Grass, Obstacle.Type.Sand, Obstacle.Type.Stone];
 
             foreach (Obstacle.Type type in floorTypes)
             {
                 // This will be cached inside Sprites already
-                FloorChunkCache[type] = Sprites.GetObstacleSprite(type, chunkSizePx, chunkSizePx);
+                FloorChunkCache[type] = Sprites.GetObstacleSprite(type, chunkSizePx, chunkSizePx, Zoom);
             }
         }
 
@@ -821,6 +825,9 @@ namespace ShootMeUp
         /// </summary>
         private async Task StartGame()
         {
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
+
             BackgroundImage = null;
             BackgroundImageLayout = ImageLayout.None;
 
@@ -840,9 +847,6 @@ namespace ShootMeUp
             Characters.Clear();
             Obstacles.Clear();
             Projectiles.Clear();
-
-            // Cache floor textures for easier render
-            InitializeFloorChunks();
 
             GenerateBiomeInfo();
 
@@ -997,12 +1001,12 @@ namespace ShootMeUp
                 for (int y = y0; y <= y1; y++)
                     yield return (x, y);
         }
-        private void AddObstacleToChunk(Obstacle obstacle)
+        private static void AddObstacleToChunk(Obstacle obstacle)
         {
             var chunk = GetChunkCoord(obstacle.Position.X, obstacle.Position.Y);
 
             if (!ChunkObstacleCache.TryGetValue(chunk, out var list))
-                ChunkObstacleCache[chunk] = list = new List<Obstacle>();
+                ChunkObstacleCache[chunk] = list = [];
 
             list.Add(obstacle);
         }
@@ -1029,10 +1033,10 @@ namespace ShootMeUp
             }
 
             int intChunkLength = CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE;
-            int intMaxHealthInAChunk = 180;
+            int intMaxHealthInAChunk = 160;
 
             // Precompute biome obstacles once
-            Dictionary<Obstacle.Type, Obstacle.Type[]> biomeObstacles = new Dictionary<Obstacle.Type, Obstacle.Type[]>
+            Dictionary<Obstacle.Type, Obstacle.Type[]> biomeObstacles = new()
             {
                 [Obstacle.Type.Grass] = [Obstacle.Type.Bush, Obstacle.Type.Wood],
                 [Obstacle.Type.Sand] = [Obstacle.Type.Dirt],
@@ -1060,7 +1064,7 @@ namespace ShootMeUp
                     Obstacles.Add(floor);
 
                     // Create a per-chunk obstacle list for fast collision checks
-                    List<Obstacle> localObstacles = new();
+                    List<Obstacle> localObstacles = [];
                     ChunkObstacleCache[(chunkX, chunkY)] = localObstacles;
 
                     float fltHealthInChunk = 0;
@@ -1069,13 +1073,12 @@ namespace ShootMeUp
                     {
                         float fltRemainingHealth = intMaxHealthInAChunk - fltHealthInChunk;
 
-                        Obstacle.Type[] valid = biomeObstacles[randomFloor]
+                        Obstacle.Type[] valid = [.. biomeObstacles[randomFloor]
                             .Where(t =>
                                 (t == Obstacle.Type.Bush && 1.25 <= fltRemainingHealth) ||
                                 (t == Obstacle.Type.Dirt && 10 <= fltRemainingHealth) ||
                                 (t == Obstacle.Type.Wood && 20 <= fltRemainingHealth) ||
-                                (t == Obstacle.Type.CobbleStone && 25 <= fltRemainingHealth))
-                            .ToArray();
+                                (t == Obstacle.Type.CobbleStone && 25 <= fltRemainingHealth))];
 
                         if (valid.Length == 0)
                             break;
@@ -1150,28 +1153,28 @@ namespace ShootMeUp
         private List<Enemy> GenerateWaves(int waveNumber)
         {
             if (_player == null || _player.Lives <= 0)
-                return new List<Enemy>();
+                return [];
 
-            List<Enemy> WaveEnemies = new List<Enemy>();
+            List<Enemy> WaveEnemies = [];
 
             // Base number of enemies plus some random variation
             int baseEnemies = 3;
             int totalEnemies = baseEnemies + rnd.Next(waveNumber, waveNumber * 3);
 
             // Define enemy types with score values
-            List<(Character.Type Type, int Weight, float SizeMultiplier)> enemyTypes = new List<(Character.Type Type, int Weight, float SizeMultiplier)>
-            {
+            List<(Character.Type Type, int Weight, float SizeMultiplier)> enemyTypes =
+            [
                 (Character.Type.Zombie,         1,       1f),
                 (Character.Type.Skeleton,       3,       1f),
                 (Character.Type.Baby_Zombie,    5,       0.75f),
                 (Character.Type.Zombie_Pigman,  10,      1f),
                 (Character.Type.Blaze,          20,      1f)
-            };
+            ];
 
             while (totalEnemies > 0)
             {
                 // Weighted probability for each enemy type
-                float[] weights = enemyTypes.Select(e =>
+                float[] weights = [.. enemyTypes.Select(e =>
                 {
                     // Base chance inversely proportional to Weight (rarer = lower chance)
                     float baseChance = 1f / e.Weight;
@@ -1180,7 +1183,7 @@ namespace ShootMeUp
                     float waveEffect = 1f + (waveNumber * 0.05f * e.Weight);
 
                     return baseChance * waveEffect;
-                }).ToArray();
+                })];
 
                 // Normalize and select enemy
                 float weightSum = weights.Sum();
@@ -1379,13 +1382,33 @@ namespace ShootMeUp
         /// <summary>
         /// Tests if 2 cframes are overlapping
         /// </summary>
-        /// <param name="cfr1"></param>
-        /// <param name="cfr2"></param>
         /// <returns>A bool that is true if the cframes are overlapping</returns>
         public static bool IsOverlapping(CFrame cfr1, CFrame cfr2)
         {
             bool overlapX = cfr1.Position.X < cfr2.Position.X + cfr2.Size.Width && cfr1.Position.X + cfr1.Size.Width > cfr2.Position.X;
             bool overlapY = cfr1.Position.Y < cfr2.Position.Y + cfr2.Size.Height && cfr1.Position.Y + cfr1.Size.Height > cfr2.Position.Y;
+            return overlapX && overlapY;
+        }
+
+        /// <summary>
+        /// Tests if 2 cframes are overlapping
+        /// </summary>
+        /// <returns>A bool that is true if the cframes are overlapping</returns>
+        public static bool IsOverlapping(CFrame cfr, float X1, float Y1, float Width1, float Height1)
+        {
+            bool overlapX = X1 < cfr.Position.X + cfr.Size.Width && X1 + Width1 > cfr.Position.X;
+            bool overlapY = Y1 < cfr.Position.Y + cfr.Size.Height && Y1 + Height1 > cfr.Position.Y;
+            return overlapX && overlapY;
+        }
+
+        /// <summary>
+        /// Tests if 2 cframes are overlapping
+        /// </summary>
+        /// <returns>A bool that is true if the cframes are overlapping</returns>
+        public static bool IsOverlapping(float X1, float Y1, float Width1, float Height1, float X2, float Y2, float Width2, float Height2)
+        {
+            bool overlapX = X1 < X2 + Width2 && X1 + Width1 > X2;
+            bool overlapY = Y1 < Y2 + Height2 && Y1 + Height1 > Y2;
             return overlapX && overlapY;
         }
 
@@ -1427,7 +1450,7 @@ namespace ShootMeUp
             }
         }
 
-        private bool IsOnScreen(float x, float y, float w, float h)
+        public bool IsOnScreen(float x, float y, float w, float h)
         {
             float screenW = ClientSize.Width;
             float screenH = ClientSize.Height;
@@ -1449,6 +1472,8 @@ namespace ShootMeUp
         /// <param name="cfrObject"></param>
         private void RenderHealth(CFrame cfrObject, int intHealth, Bitmap HealthSprite, float fltHeartScale, int intMaxHeartsPerRow)
         {
+            float fltHeartPadding = 1;
+
             // Get CFrame related values
             float fltPosX = (cfrObject.Position.X - CameraX);
             float fltPosY = (cfrObject.Position.Y - CameraY);
@@ -1468,20 +1493,24 @@ namespace ShootMeUp
 
             // Start the health generation
             int intHeartIndex = 0;
+
             for (int intRow = 0; intRow < intRows; intRow++)
             {
-                // Get the amount of hearts to draw
                 int intHearts = Math.Min(intMaxHeartsPerRow, intHealth - intHeartIndex);
 
-                // Center hearts horizontally
-                float intRowWidth = intHearts * fltHeartSize;
-                float fltStartX = fltPosX + (fltWidth - intRowWidth) / 2f;
+                // Row width including horizontal padding
+                float rowWidth = intHearts * fltHeartSize + (intHearts - 1) * fltHeartPadding;
 
-                // Draw them one by one
+                //TODO: make EmptyHeart appear if needed
+
+                // Center horizontally
+                float fltStartX = fltPosX + (fltWidth - rowWidth) / 2f;
+
                 for (int intCol = 0; intCol < intHearts; intCol++)
                 {
-                    float fltDrawX = fltStartX + intCol * fltHeartSize;
-                    float fltDrawY = fltStartY + intRow * (fltHeartSize - fltRowSpacing);
+                    float fltDrawX = fltStartX + intCol * (fltHeartSize + fltHeartPadding);
+
+                    float fltDrawY = fltStartY + intRow * (fltHeartSize + fltHeartPadding);
 
                     bufferG.DrawImage(
                         HealthSprite,
@@ -1507,7 +1536,7 @@ namespace ShootMeUp
             {
                 bufferG.Clear(Color.Black);
 
-                using Font font = new Font("Consolas", 32, FontStyle.Bold);
+                using Font font = new("Consolas", 32, FontStyle.Bold);
                 SizeF textSize = bufferG.MeasureString("Loading...", font);
 
                 float x = (ClientSize.Width - textSize.Width) / 2f;
@@ -1522,7 +1551,7 @@ namespace ShootMeUp
                 // Clear the frame
                 DrawBackground(bufferG);
 
-                using Font scaledFont = new Font(TextHelpers.drawFont.FontFamily, TextHelpers.drawFont.Size * Zoom, TextHelpers.drawFont.Style);
+                using Font scaledFont = new(TextHelpers.drawFont.FontFamily, TextHelpers.drawFont.Size * Zoom, TextHelpers.drawFont.Style);
 
                 // Draw all the background assets first
                 Obstacle.Type[] FloorTypes = [Obstacle.Type.Sand, Obstacle.Type.Grass, Obstacle.Type.Stone];
@@ -1538,16 +1567,21 @@ namespace ShootMeUp
                         if (!IsOnScreen(drawX, drawY, Floor.Size.Width, Floor.Size.Height))
                             continue;
 
-                        if (FloorChunkCache.TryGetValue(Floor.ObstType, out Bitmap? chunk))
-                        {
-                            bufferG.DrawImage(
-                                chunk,
-                                drawX * Zoom,
-                                drawY * Zoom,
-                                chunk.Width * Zoom,
-                                chunk.Height * Zoom
-                            );
-                        }
+                        bool blnZoomedOut = Zoom < 0.55;
+
+                        // Depending on the zoom, either get the cached floor type, or a 1px wide image
+                        Bitmap? chunk;
+
+                        if (blnZoomedOut)
+                            chunk = GetSprite(Floor.ObstType, Floor.Size);
+                        else
+                            FloorChunkCache.TryGetValue(Floor.ObstType, out chunk);
+
+                        // If the floor's sprite wasn't cached, then get it again
+                        chunk ??= GetSprite(Floor.ObstType, Floor.Size);
+
+
+                        bufferG.DrawImage(chunk, drawX * Zoom, drawY * Zoom, Floor.Size.Width * Zoom, Floor.Size.Height * Zoom);
                     }
                 }
 
@@ -1661,21 +1695,11 @@ namespace ShootMeUp
                     if (character.CharType == Character.Type.Player || character is not Enemy enemy) continue;
 
                     // Draw its health depending on its type
-                    Bitmap HeartType;
-
-                    switch (enemy.CharType)
+                    Bitmap HeartType = enemy.CharType switch
                     {
-                        case Character.Type.SpiderJockey:
-                        case Character.Type.WitherSkeleton:
-                        case Character.Type.Dragon:
-                        case Character.Type.Wither:
-                            HeartType = Sprites.BossHeart;
-                            break;
-                        default:
-                            HeartType = Sprites.EnemyHeart;
-                            break;
-                    }
-
+                        Character.Type.SpiderJockey or Character.Type.WitherSkeleton or Character.Type.Dragon or Character.Type.Wither => Sprites.BossHeart,
+                        _ => Sprites.EnemyHeart,
+                    };
                     RenderHealth(character, character.Lives, HeartType, 0.4f, 10);
                 }
 
@@ -1750,7 +1774,7 @@ namespace ShootMeUp
         public static GraphicsPath CreateRoundedRectangle(RectangleF rect, float radius)
         {
             float diameter = radius * 2f;
-            GraphicsPath path = new GraphicsPath();
+            GraphicsPath path = new();
 
             path.AddArc(rect.X, rect.Y, diameter, diameter, 180, 90);
             path.AddArc(rect.Right - diameter, rect.Y, diameter, diameter, 270, 90);
@@ -1770,6 +1794,10 @@ namespace ShootMeUp
             if (_player == null)
                 return;
 
+            g.InterpolationMode = InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = PixelOffsetMode.Half;
+            g.SmoothingMode = SmoothingMode.None;
+
             // Store the UI text
             string strText = $"Wave {_intWaveNumber} | Score: {Score}";
 
@@ -1783,7 +1811,7 @@ namespace ShootMeUp
             float fltSpacingY = 6f;
 
             int intHeartSize = 24;
-            int intHeartSpacing = 22;
+            int intHeartSpacing = 30;
 
             // Measure text
             SizeF textSize = g.MeasureString(strText, font);
@@ -1862,6 +1890,14 @@ namespace ShootMeUp
             Projectiles.RemoveAll(p => !p.Active);
 
             Obstacles.RemoveAll(o => o.Health <= 0 && !o.Invincible);
+            foreach ((int X, int Y) chunk in ChunkObstacleCache.Keys.ToList())
+            {
+                List<Obstacle> list = ChunkObstacleCache[chunk];
+                list.RemoveAll(o => o.Health <= 0 && !o.Invincible);
+
+                if (list.Count == 0)
+                    ChunkObstacleCache.Remove(chunk);
+            }
 
             // Change the score if there's a dead enemy
             Characters.RemoveAll(c =>

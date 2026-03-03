@@ -26,8 +26,8 @@ namespace ShootMeUp.Model
         protected float _arrowCooldownTimer = 0;
         protected float _fireballCooldownTimer = 0;
 
-        private float _arrowCooldown;
-        private float _fireballCooldown;
+        private readonly float _arrowCooldown;
+        private readonly float _fireballCooldown;
 
         protected Type _Type;
 
@@ -68,10 +68,10 @@ namespace ShootMeUp.Model
         /// <param name="y">Its starting Y position</param>
         /// <param name="length">The length of the character</param>
         /// <param name="type">The character's type (player, enemy)</param>
-        /// <param name="GameSettings.Current.GameSpeedValue">The game's speed</param>
-        public Character(float x, float y, int length, Character.Type type, int GameSpeedValue) : base(x - length / 2f, y - length / 2f, length)
+        /// <param name="GameSpeedValue">The game's speed</param>
+        public Character(float x, float y, int length, Character.Type type, int GameSpeedValue) : base(x - (length / 2f), y - length / 2f, length)
         {
-            _GAMESPEED = GameSettings.Current.GameSpeedValue;
+            _GAMESPEED = GameSpeedValue;
             Lives = 10;
             _Type = type;
             _fltBaseSpeed = 1;
@@ -84,22 +84,19 @@ namespace ShootMeUp.Model
         {
             (bool X, bool Y) blnColliding = (false, false);
 
-            // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new CFrame(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
-            CFrame cfrY = new CFrame(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
-
             foreach (Obstacle obstacle in ShootMeUp.Obstacles)
             {
                 // Skip the current obstacle if it has no collisions
                 if (!obstacle.CanCollide)
                     continue;
 
-                if (ShootMeUp.IsOverlapping(cfrX, obstacle))
+                // Collision checks that simulate movement
+                if (ShootMeUp.IsOverlapping(obstacle, Position.X + _fltSpeed.X, Position.Y, Size.Width, Size.Height))
                 {
                     blnColliding.X = true; // Collision if moved along X axis
                 }
 
-                if (ShootMeUp.IsOverlapping(cfrY, obstacle))
+                if (ShootMeUp.IsOverlapping(obstacle, Position.X, Position.Y + _fltSpeed.Y, Size.Width, Size.Height))
                 {
                     blnColliding.Y = true; // Collision if moved along Y axis
                 }
@@ -123,9 +120,6 @@ namespace ShootMeUp.Model
 
             _fltSpeed.X = x * _fltBaseSpeed;
             _fltSpeed.Y = y * _fltBaseSpeed;
-
-            float targetX = Position.X + _fltSpeed.X;
-            float targetY = Position.Y + _fltSpeed.Y;
 
             // Move along X axis
             if (_fltSpeed.X != 0)
@@ -171,15 +165,12 @@ namespace ShootMeUp.Model
                 // Handle collisions if needed
                 if (CanCollide)
                 {
-                    // Create a test CFrame at this new position
-                    CFrame testFrame = new CFrame(testX, testY, Size.Width, Size.Height);
-
                     bool colliding = false;
                     foreach (Obstacle obstacle in ShootMeUp.Obstacles)
                     {
                         if (!obstacle.CanCollide) continue;
 
-                        if (ShootMeUp.IsOverlapping(testFrame, obstacle))
+                        if (ShootMeUp.IsOverlapping(obstacle, testX, testY, Size.Width, Size.Height))
                         {
                             colliding = true;
                             break;

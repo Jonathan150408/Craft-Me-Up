@@ -60,13 +60,13 @@ namespace ShootMeUp.Model
 
             Position.X = X;
             Position.Y = Y;
-            this.Size.Width = intWidth;
-            this.Size.Height = intHeight;
+            Size.Width = intWidth;
+            Size.Height = intHeight;
         }
 
         public override string ToString()
         {
-            return $"{{{Position.X},{Position.Y}}},{{{this.Size.Height},{this.Size.Width}}}";
+            return $"{{{Position.X},{Position.Y}}},{{{Size.Height},{Size.Width}}}";
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
@@ -15,17 +16,17 @@ namespace ShootMeUp.Model
         /// <summary>
         /// The character that shot the projectile
         /// </summary>
-        private Character _shotBy;
+        private readonly Character _shotBy;
 
         /// <summary>
         /// The amount of damage the projectile deals (in HP)
         /// </summary>
-        private int _intDamage;
+        private readonly int _intDamage;
 
         /// <summary>
         /// The projectile's movement speed
         /// </summary>
-        private float _fltMovementSpeed;
+        private readonly float _fltMovementSpeed;
 
         /// <summary>
         ///  The projectile's speed in the X and Y axis
@@ -81,50 +82,50 @@ namespace ShootMeUp.Model
             switch (type)
             {
                 case Type.Arrow_Big:
-                    this.Size.Width = ShotBy.Size.Width;
-                    this.Size.Height = ShotBy.Size.Height;
+                    Size.Width = ShotBy.Size.Width;
+                    Size.Height = ShotBy.Size.Height;
                     _intDamage = 2;
                     _fltMovementSpeed = 3;
 
                     break;
                 case Type.Arrow_Small:
-                    this.Size.Width = ShotBy.Size.Width;
-                    this.Size.Height = ShotBy.Size.Height;
+                    Size.Width = ShotBy.Size.Width;
+                    Size.Height = ShotBy.Size.Height;
                     _intDamage = 1;
                     _fltMovementSpeed = 2;
 
                     break;
                 case Type.Arrow_Jockey:
-                    this.Size.Width = ShotBy.Size.Width / 2;
-                    this.Size.Height = ShotBy.Size.Height / 2;
+                    Size.Width = ShotBy.Size.Width / 2;
+                    Size.Height = ShotBy.Size.Height / 2;
                     _intDamage = 2;
                     _fltMovementSpeed = 1.8f;
 
                     break;
                 case Type.Fireball_Big:
-                    this.Size.Width = ShotBy.Size.Width;
-                    this.Size.Height = ShotBy.Size.Height;
+                    Size.Width = ShotBy.Size.Width;
+                    Size.Height = ShotBy.Size.Height;
                     _intDamage = 5;
                     _fltMovementSpeed = 1;
 
                     break;
                 case Type.Fireball_Small:
-                    this.Size.Width = ShotBy.Size.Width;
-                    this.Size.Height = ShotBy.Size.Height;
+                    Size.Width = ShotBy.Size.Width;
+                    Size.Height = ShotBy.Size.Height;
                     _intDamage = 2;
                     _fltMovementSpeed = 0.75f;
 
                     break;
                 case Type.WitherSkull:
-                    this.Size.Width = ShotBy.Size.Width / 4;
-                    this.Size.Height = ShotBy.Size.Height / 4;
+                    Size.Width = ShotBy.Size.Width / 4;
+                    Size.Height = ShotBy.Size.Height / 4;
                     _intDamage = 3;
                     _fltMovementSpeed = 1f;
 
                     break;
                 case Type.DragonFireball:
-                    this.Size.Width = ShotBy.Size.Width / 4;
-                    this.Size.Height = ShotBy.Size.Height / 4;
+                    Size.Width = ShotBy.Size.Width / 4;
+                    Size.Height = ShotBy.Size.Height / 4;
                     _intDamage = 5;
                     _fltMovementSpeed = 1;
 
@@ -132,8 +133,8 @@ namespace ShootMeUp.Model
 
                     break;
                 default:
-                    this.Size.Width = ShotBy.Size.Width;
-                    this.Size.Height = ShotBy.Size.Height;
+                    Size.Width = ShotBy.Size.Width;
+                    Size.Height = ShotBy.Size.Height;
                     _intDamage = 0;
                     _fltMovementSpeed = -1;
                     break;
@@ -178,49 +179,48 @@ namespace ShootMeUp.Model
         /// </summary>
         public void Update()
         {
-            // Check to see if the projectile is gonna hit anything
-            CFrame? Hit = GetColliding();
+            float moveX = _fltSpeed.X * ShootMeUp.DeltaTime;
+            float moveY = _fltSpeed.Y * ShootMeUp.DeltaTime;
 
-            // Move the arrow if it wouldn't hit anything
-            if (Hit == null)
+            int steps = (int)Math.Ceiling(Math.Max(Math.Abs(moveX), Math.Abs(moveY)));
+            steps = Math.Min(Math.Max(steps, 1), 10);
+
+            if (steps < 1)
+                steps = 1;
+
+            float stepX = moveX / steps;
+            float stepY = moveY / steps;
+
+            // Check step by step if the arrow will hit anything
+            for (int i = 0; i < steps; i++)
             {
-                Position.X += _fltSpeed.X * ShootMeUp.DeltaTime;
-                Position.Y += _fltSpeed.Y * ShootMeUp.DeltaTime;
-            }
-            else
-            {
-                // Mark the projectile as inactive
-                Active = false;
+                Position.X += stepX;
+                Position.Y += stepY;
 
-                if (Hit is Character)
+                CFrame? hit = GetColliding();
+
+                if (hit != null)
                 {
-                    Character characterHit = (Character)Hit;
+                    Active = false;
 
-                    // Deal damage to the character
-                    characterHit.Lives -= _intDamage;
-                }
-                else
-                {
-                    Obstacle obstacleHit = (Obstacle)Hit;
+                    if (hit is Character characterHit)
+                        characterHit.Lives -= _intDamage;
+                    else if (hit is Obstacle obstacleHit)
+                        obstacleHit.Health -= _intDamage;
 
-                    // Deal damage to the obstacle
-                    obstacleHit.Health -= _intDamage;
+                    return;
                 }
             }
         }
 
         public CFrame? GetColliding()
         {
-            // Create hypothetical CFrames to simulate movement along each axis independently
             float stepX = _fltSpeed.X * ShootMeUp.DeltaTime;
             float stepY = _fltSpeed.Y * ShootMeUp.DeltaTime;
 
-            CFrame cfrX = new(Position.X + stepX, Position.Y, Size.Width, Size.Height);
-            CFrame cfrY = new(Position.X, Position.Y + stepY, Size.Width, Size.Height);
-
             // Create a list that contains both obstacles (only if CanCollide is true) and characters
-            List<CFrame> listCFrames = new List<CFrame>();
-            listCFrames = [.. ShootMeUp.Characters.Cast<CFrame>()];
+            List<CFrame> listCFrames = [.. ShootMeUp.Characters.Cast<CFrame>()];
+
             if (CanCollide)
                 listCFrames.AddRange([.. ShootMeUp.Obstacles.Cast<CFrame>()]);
 
@@ -230,23 +230,17 @@ namespace ShootMeUp.Model
                 if (singularCFrame == (CFrame)_shotBy)
                     continue;
 
-                // Check to see if the current CFrame is an obstacle
-                if (singularCFrame is Obstacle)
-                {
-                    Obstacle obstacle = (Obstacle)singularCFrame;
-
-                    // Skip the current obstacle if it has no collisions
-                    if (!obstacle.CanCollide)
-                        continue;
-                }
+                // Skip no collision obstacles
+                if (singularCFrame is Obstacle obstacle && !obstacle.CanCollide)
+                    continue;
 
 
-                if (ShootMeUp.IsOverlapping(cfrX, singularCFrame))
+                if (ShootMeUp.IsOverlapping(singularCFrame, Position.X + stepX, Position.Y, Size.Width, Size.Height))
                 {
                     return singularCFrame;
                 }
 
-                if (ShootMeUp.IsOverlapping(cfrY, singularCFrame))
+                if (ShootMeUp.IsOverlapping(singularCFrame, Position.X, Position.Y + stepY, Size.Width, Size.Height))
                 {
                     return singularCFrame;
                 }

@@ -12,22 +12,22 @@ namespace ShootMeUp.Model
         /// <summary>
         /// Whether or not the enemy can shoot
         /// </summary>
-        private bool _blnShoots;
+        private readonly bool _blnShoots;
 
         /// <summary>
         /// The enemy's projectile type
         /// </summary>
-        private Projectile.Type _ProjectileType;
+        private readonly Projectile.Type _ProjectileType;
 
         /// <summary>
         /// The enemy's target
         /// </summary>
-        private Character _Target;
+        private readonly Character _Target;
 
         /// <summary>
         /// The cooldown that is used to check if enemies can attack or not (in seconds)
         /// </summary>
-        private float DamageCooldown;
+        private readonly float DamageCooldown;
 
         /// <summary>
         /// A timer used to determine if the enemy can attack
@@ -148,40 +148,19 @@ namespace ShootMeUp.Model
             }
 
             // Change the damage cooldown depending on the projectile type
-            switch (_ProjectileType)
+            DamageCooldown = _ProjectileType switch
             {
-                case Projectile.Type.Arrow_Small:
-                case Projectile.Type.Arrow_Big:
-                case Projectile.Type.Arrow_Jockey:
-                    DamageCooldown = 6f / GameSettings.Current.GameSpeedValue;
-                    break;
-                case Projectile.Type.Fireball_Small:
-                case Projectile.Type.Fireball_Big:
-                    DamageCooldown = 12f / GameSettings.Current.GameSpeedValue;
-                    break;
-                case Projectile.Type.WitherSkull:
-                    DamageCooldown = 4f / GameSettings.Current.GameSpeedValue;
-                    break;
-                case Projectile.Type.DragonFireball:
-                    DamageCooldown = 10f / GameSettings.Current.GameSpeedValue;
-                    break;
-                default:
-                    // No projectile, check the enemy type
-                    switch (type)
-                    {
-                        case Type.Baby_Zombie:
-                            DamageCooldown = 3f;
-                            break;
-                        case Type.Zombie_Pigman:
-                            DamageCooldown = 8f;
-                            break;
-                        default:
-                            DamageCooldown = 5;
-
-                            break;
-                    }
-                    break;
-            }
+                Projectile.Type.Arrow_Small or Projectile.Type.Arrow_Big or Projectile.Type.Arrow_Jockey => 6f / GameSettings.Current.GameSpeedValue,
+                Projectile.Type.Fireball_Small or Projectile.Type.Fireball_Big => 12f / GameSettings.Current.GameSpeedValue,
+                Projectile.Type.WitherSkull => 4f / GameSettings.Current.GameSpeedValue,
+                Projectile.Type.DragonFireball => 10f / GameSettings.Current.GameSpeedValue,
+                _ => type switch
+                {
+                    Type.Baby_Zombie => 3f,
+                    Type.Zombie_Pigman => 8f,
+                    _ => 5,
+                },// No projectile, check the enemy type
+            };
 
             // Add 60 to the cooldown
             DamageCooldown *= 60;
@@ -193,17 +172,14 @@ namespace ShootMeUp.Model
         {
             bool blnColliding = false;
 
-            // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
-            CFrame cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
 
-            // Check for collision
-            if (ShootMeUp.IsOverlapping(cfrX, _Target))
+            // Collision checks that simulate movement
+            if (ShootMeUp.IsOverlapping(_Target, Position.X + _fltSpeed.X, Position.Y, Size.Width, Size.Height))
             {
                 blnColliding = true;
             }
 
-            if (ShootMeUp.IsOverlapping(cfrY, _Target))
+            if (ShootMeUp.IsOverlapping(_Target, Position.X, Position.Y + _fltSpeed.Y, Size.Width, Size.Height))
             {
                 blnColliding = true;
             }
@@ -213,10 +189,6 @@ namespace ShootMeUp.Model
 
         public Obstacle? GetCollidingObstacle()
         {
-            // Create hypothetical CFrames to simulate movement along each axis independently
-            CFrame cfrX = new(Position.X + _fltSpeed.X, Position.Y, this.Size.Width, this.Size.Height);
-            CFrame cfrY = new(Position.X, Position.Y + _fltSpeed.Y, this.Size.Width, this.Size.Height);
-
             foreach (Obstacle obstacle in ShootMeUp.Obstacles)
             {
                 // Skip the current obstacle if it has no collisions or is invincible
@@ -224,12 +196,12 @@ namespace ShootMeUp.Model
                     continue;
 
 
-                if (ShootMeUp.IsOverlapping(cfrX, obstacle))
+                if (ShootMeUp.IsOverlapping(obstacle, Position.X + _fltSpeed.X, Position.Y, Size.Width, Size.Height))
                 {
                     return obstacle;
                 }
 
-                if (ShootMeUp.IsOverlapping(cfrY, obstacle))
+                if (ShootMeUp.IsOverlapping(obstacle, Position.X, Position.Y + _fltSpeed.Y, Size.Width, Size.Height))
                 {
                     return obstacle;
                 }
