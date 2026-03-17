@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Net.Security;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -240,28 +241,30 @@ namespace ShootMeUp.Model
                 }
             }
 
-            if (CanCollide)
-                foreach (CFrame singularCFrame in ShootMeUp.Obstacles)
+            if (!CanCollide) return null;
+
+            // Query only nearby chunks for better performance
+            foreach (CFrame singularCFrame in ShootMeUp.GetObstaclesNear(Position.X, Position.Y, Size.Width, Size.Height, expandChunks: 1))
+            {
+                // Skip the ignored character
+                if (singularCFrame == (CFrame)_shotBy)
+                    continue;
+
+                // Skip no collision obstacles
+                if (singularCFrame is Obstacle obstacle && !obstacle.CanCollide)
+                    continue;
+
+
+                if (ShootMeUp.IsOverlapping(singularCFrame, Position.X + stepX, Position.Y, Size.Width, Size.Height))
                 {
-                    // Skip the ignored character
-                    if (singularCFrame == (CFrame)_shotBy)
-                        continue;
-
-                    // Skip no collision obstacles
-                    if (singularCFrame is Obstacle obstacle && !obstacle.CanCollide)
-                        continue;
-
-
-                    if (ShootMeUp.IsOverlapping(singularCFrame, Position.X + stepX, Position.Y, Size.Width, Size.Height))
-                    {
-                        return singularCFrame;
-                    }
-
-                    if (ShootMeUp.IsOverlapping(singularCFrame, Position.X, Position.Y + stepY, Size.Width, Size.Height))
-                    {
-                        return singularCFrame;
-                    }
+                    return singularCFrame;
                 }
+
+                if (ShootMeUp.IsOverlapping(singularCFrame, Position.X, Position.Y + stepY, Size.Width, Size.Height))
+                {
+                    return singularCFrame;
+                }
+            }
             
             return null;
         }

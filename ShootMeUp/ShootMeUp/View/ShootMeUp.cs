@@ -141,13 +141,8 @@ namespace ShootMeUp
         public int GAMESEED;
         private readonly Random rnd;
 
-        /// <summary>
-        /// A cache for floor textures, as they can make the game lag
-        /// </summary>
-        private static readonly Dictionary<Obstacle.Type, Bitmap> FloorChunkCache = [];
-
-        private Bitmap backBuffer;
-        private Graphics bufferG;
+        private Bitmap? backBuffer;
+        private Graphics? bufferG;
 
         public static float CameraX { get; private set; }
         public static float CameraY { get; private set; }
@@ -190,7 +185,6 @@ namespace ShootMeUp
         public ShootMeUp()
         {
             InitializeComponent();
-            Sprites.InitializeProjectileRotations();
 
             GAMESEED = (new Random()).Next(int.MinValue, int.MaxValue); // In the future, I'll make custom seeds work
 
@@ -265,7 +259,9 @@ namespace ShootMeUp
         private void ResizeBackbuffer()
         {
             backBuffer?.Dispose();
+            backBuffer = null;
             bufferG?.Dispose();
+            bufferG = null;
 
             backBuffer = new Bitmap(ClientSize.Width, ClientSize.Height);
             bufferG = Graphics.FromImage(backBuffer);
@@ -298,14 +294,33 @@ namespace ShootMeUp
         private void StopRound()
         {
             _gameState = GameState.finished;
+
+            // Stop tickers / timers
+            ticker.Stop();
+
+            // Dispose sprite caches
+            Sprites.Reset();
+
+            // Dispose UI background images
+            BackgroundImage?.Dispose();
+            BackgroundImage = null;
+
+            // Clear game entities
             _player = null;
-
             Characters.Clear();
-            Projectiles.Clear();
             Obstacles.Clear();
+            Projectiles.Clear();
 
+            // Clear chunk cache
+            ClearChunkCaches();
+
+            // Force GC cleanup
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            // Recreate backbuffer fresh
             ResizeBackbuffer();
-
             ShowTitle();
         }
 
@@ -793,7 +808,7 @@ namespace ShootMeUp
         /// <returns>A sprite</returns>
         private static Bitmap GetSprite(Obstacle.Type GivenType, (int Width, int Height) Size)
         {
-            return Sprites.GetObstacleSprite(GivenType, Size.Width, Size.Height, Zoom);
+            return Sprites.GetObstacleSprite(GivenType, Size.Width, Zoom);
         }
 
         /// <summary>
@@ -812,24 +827,15 @@ namespace ShootMeUp
             return Sprites.GetProjectileSprite(GivenType, fltRotationAngle);
         }
 
-        private static void InitializeFloorChunks()
-        {
-            int chunkSizePx = CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE;
-
-            Obstacle.Type[] floorTypes = [Obstacle.Type.Grass, Obstacle.Type.Sand, Obstacle.Type.Stone];
-
-            foreach (Obstacle.Type type in floorTypes)
-            {
-                // This will be cached inside Sprites already
-                FloorChunkCache[type] = Sprites.GetObstacleSprite(type, chunkSizePx, chunkSizePx, Zoom);
-            }
-        }
-
         /// <summary>
         /// Start the game up
         /// </summary>
         private async Task StartGame()
         {
+            // Reset projectile rotations immediately
+            Sprites.InitializeProjectileRotations();
+
+
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
 
@@ -852,11 +858,9 @@ namespace ShootMeUp
             Characters.Clear();
             Obstacles.Clear();
             Projectiles.Clear();
+            ClearChunkCaches();
 
             GenerateBiomeInfo();
-
-            // Cache floor textures for easier render
-            InitializeFloorChunks();
 
             // Force redraw
             RenderFrame();
@@ -869,10 +873,28 @@ namespace ShootMeUp
 
             _worldReady = true;
             _gameState = GameState.running;
+
+
+            LastFrameTime = Environment.TickCount64;
+            ticker.Start();
         }
 
         private static readonly Dictionary<(int, int), Biome> ChunkBiomeCache = [];
         private static readonly Dictionary<(int, int), List<Obstacle>> ChunkObstacleCache = [];
+
+
+        // Clears all spatial caches so old obstacle references cannot linger
+        private static void ClearChunkCaches()
+        {
+            foreach (var kv in ChunkObstacleCache.ToList())
+            {
+                kv.Value.Clear();   // clear the per-chunk lists
+                                    // remove the dictionary entry
+                ChunkObstacleCache.Remove(kv.Key);
+            }
+            ChunkBiomeCache.Clear();
+        }
+
 
         /// <summary>
         /// Noise algorithm used for biome generation
@@ -982,6 +1004,31 @@ namespace ShootMeUp
 
             ChunkBiomeCache[key] = closest.Type;
             return closest.Type;
+        }
+
+        /// <summary>
+        /// Gets a list of obstacles near the given AABB, by checking the chunks that are covered by it. This is used for collision checks, to avoid checking every obstacle in the world.
+        /// </summary>
+        public static IEnumerable<Obstacle> GetObstaclesNear(float x, float y, float w, float h, int expandChunks = 1)
+        {
+            // Get chunk range covering the AABB, with a small expansion to be safe
+            var (cx0, cy0) = GetChunkCoord(x, y);
+            var (cx1, cy1) = GetChunkCoord(x + w, y + h);
+
+            cx0 -= expandChunks; cy0 -= expandChunks;
+            cx1 += expandChunks; cy1 += expandChunks;
+
+            for (int cx = cx0; cx <= cx1; cx++)
+            {
+                for (int cy = cy0; cy <= cy1; cy++)
+                {
+                    if (ChunkObstacleCache.TryGetValue((cx, cy), out var list))
+                    {
+                        foreach (var o in list)
+                            yield return o;
+                    }
+                }
+            }
         }
 
         private static readonly int CHUNK_SIZE_PX = CHUNK_SIZE_IN_TILES * OBSTACLE_SIZE;
@@ -1432,7 +1479,7 @@ namespace ShootMeUp
                 cfr.Position.Y + cfr.Size.Height <= intMapSize;
         }
 
-        private void DrawBackground(Graphics g)
+        private void DrawBackground(Graphics? g)
         {
             Bitmap tile = Sprites.Stone;
             int tileSize = OBSTACLE_SIZE;
@@ -1444,7 +1491,7 @@ namespace ShootMeUp
             {
                 for (int y = 0; y < tilesY; y++)
                 {
-                    g.DrawImage(
+                    g?.DrawImage(
                         tile,
                         x * tileSize,
                         y * tileSize,
@@ -1517,7 +1564,7 @@ namespace ShootMeUp
 
                     float fltDrawY = fltStartY + intRow * (fltHeartSize + fltHeartPadding);
 
-                    bufferG.DrawImage(
+                    bufferG?.DrawImage(
                         HealthSprite,
                         fltDrawX * Zoom,
                         fltDrawY * Zoom,
@@ -1536,6 +1583,9 @@ namespace ShootMeUp
         /// </summary>
         private void RenderFrame()
         {
+            if (bufferG == null)
+                return;
+
             // Show a loading text
             if (_gameState == GameState.loading || !_worldReady)
             {
@@ -1572,19 +1622,8 @@ namespace ShootMeUp
                         if (!IsOnScreen(drawX, drawY, Floor.Size.Width, Floor.Size.Height))
                             continue;
 
-                        bool blnZoomedOut = Zoom < 0.55;
-
                         // Depending on the zoom, either get the cached floor type, or a 1px wide image
-                        Bitmap? chunk;
-
-                        if (blnZoomedOut)
-                            chunk = GetSprite(Floor.ObstType, Floor.Size);
-                        else
-                            FloorChunkCache.TryGetValue(Floor.ObstType, out chunk);
-
-                        // If the floor's sprite wasn't cached, then get it again
-                        chunk ??= GetSprite(Floor.ObstType, Floor.Size);
-
+                        Bitmap? chunk = GetSprite(Floor.ObstType, Floor.Size);
 
                         bufferG.DrawImage(chunk, drawX * Zoom, drawY * Zoom, Floor.Size.Width * Zoom, Floor.Size.Height * Zoom);
                     }
@@ -1624,6 +1663,13 @@ namespace ShootMeUp
                             bufferG.DrawImage(GetSprite(obstacle.ObstType, obstacle.Size), drawX * Zoom, drawY * Zoom, obstacle.Size.Width * Zoom, obstacle.Size.Height * Zoom);
                         }
 
+                        // Create a new string format for centering text
+                        using var sfCenter = new StringFormat
+                        {
+                            Alignment = StringAlignment.Center,
+                            LineAlignment = StringAlignment.Center
+                        };
+
                         // Draw obstacle health
                         foreach (Obstacle obstacle in currentObstacles)
                         {
@@ -1636,25 +1682,19 @@ namespace ShootMeUp
                                 if (!IsOnScreen(drawX, drawY, obstacle.Size.Width, obstacle.Size.Height))
                                     continue;
 
-                                float screenX = (obstacle.Position.X - CameraX) * Zoom;
-                                float screenY = (obstacle.Position.Y - CameraY) * Zoom;
 
+                                string txt = $"{obstacle}";
+                                if (!string.IsNullOrEmpty(txt))
+                                {
+                                    float screenX = (obstacle.Position.X - CameraX) * Zoom;
+                                    float screenY = (obstacle.Position.Y - CameraY) * Zoom;
+                                    float obstacleScreenWidth = obstacle.Size.Width * Zoom;
+                                    float obstacleScreenHeight = obstacle.Size.Height * Zoom;
 
-                                SizeF textSize = bufferG.MeasureString($"{obstacle}", scaledFont);
+                                    var rect = new RectangleF(screenX, screenY, obstacleScreenWidth, obstacleScreenHeight);
+                                    bufferG.DrawString(txt, scaledFont, TextHelpers.writingBrush, rect, sfCenter);
+                                }
 
-                                float obstacleScreenWidth = obstacle.Size.Width * Zoom;
-                                float obstacleScreenHeight = obstacle.Size.Height * Zoom;
-
-                                float centeredX = screenX + (obstacleScreenWidth / 2f) - (textSize.Width / 2f);
-                                float centeredY = screenY + (obstacleScreenHeight / 2f) - (textSize.Height / 2f);
-
-                                bufferG.DrawString(
-                                    $"{obstacle}",
-                                    scaledFont,
-                                    TextHelpers.writingBrush,
-                                    centeredX,
-                                    centeredY
-                                );
                             }
                         }
                     }
@@ -1714,7 +1754,7 @@ namespace ShootMeUp
                     if (ChunkObstacleCache.TryGetValue(chunk, out List<Obstacle>? currentObstacles))
                     {
                         // Draw obstacles that has collisions off
-                        foreach (Obstacle obstacle in Obstacles)
+                        foreach (Obstacle obstacle in currentObstacles)
                         {
                             // Only continue if they're not from one of the floor types, and have collisions off
                             if (FloorTypes.Contains(obstacle.ObstType) || obstacle.CanCollide)

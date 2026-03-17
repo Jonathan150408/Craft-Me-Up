@@ -1,6 +1,7 @@
 ﻿using ShootMeUp.Properties;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ShootMeUp.Model
 {
@@ -83,7 +84,7 @@ namespace ShootMeUp.Model
         {
             (bool X, bool Y) blnColliding = (false, false);
 
-            foreach (Obstacle obstacle in ShootMeUp.Obstacles)
+            foreach (Obstacle obstacle in ShootMeUp.GetObstaclesNear(Position.X, Position.Y, Size.Width, Size.Height, expandChunks: 1))
             {
                 // Skip the current obstacle if it has no collisions
                 if (!obstacle.CanCollide)
@@ -165,7 +166,7 @@ namespace ShootMeUp.Model
                 if (CanCollide)
                 {
                     bool colliding = false;
-                    foreach (Obstacle obstacle in ShootMeUp.Obstacles)
+                    foreach (Obstacle obstacle in ShootMeUp.GetObstaclesNear(testX, testY, Size.Width, Size.Height, expandChunks: 1))
                     {
                         if (!obstacle.CanCollide) continue;
 

@@ -1,5 +1,6 @@
 ﻿using ShootMeUp.Properties;
 using System.Numerics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ShootMeUp.Model
 {
@@ -188,7 +189,8 @@ namespace ShootMeUp.Model
 
         public Obstacle? GetCollidingObstacle()
         {
-            foreach (Obstacle obstacle in ShootMeUp.Obstacles)
+            foreach (Obstacle obstacle in ShootMeUp.GetObstaclesNear(Position.X, Position.Y, Size.Width, Size.Height, expandChunks: 1))
+
             {
                 // Skip the current obstacle if it has no collisions or is invincible
                 if (!obstacle.CanCollide || obstacle.Invincible)

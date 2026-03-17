@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -56,29 +57,68 @@ namespace ShootMeUp.Model
         private const int RotationCount = 64; // 360 / 64 = 5.625 degrees
         private static readonly Bitmap[,] ProjectileRotations = new Bitmap[Enum.GetValues(typeof(Projectile.Type)).Length, RotationCount];
 
-
-        // Cache
-        private static readonly ConcurrentDictionary<(Projectile.Type, int), Bitmap> _rotatedProjectiles = new();
-
         // Tint cache for floors
         private static readonly ConcurrentDictionary<Color, Bitmap> _tintedFloors = new();
 
         // Tiled floor cache: (floorType, size) -> bitmap
-        private static readonly ConcurrentDictionary<(Obstacle.Type, int, int), Bitmap> _tiledFloors = new();
+        private const int MaxFloorTileCache = 32;
+
+        private static readonly LinkedList<(Obstacle.Type type, int size)> _tileLRU = new();
+
+        private static readonly Dictionary<(Obstacle.Type type, int size), Bitmap> _tiledFloors = [];
+
+        private static void AddToLRU((Obstacle.Type type, int size) key)
+        {
+            _tileLRU.Remove(key);      // remove if already existed
+            _tileLRU.AddFirst(key);    // put at front (most recently used)
+
+            if (_tileLRU.Count > MaxFloorTileCache)
+            {
+                // Evict least-recently-used key
+                var last = _tileLRU.Last?.Value;
+
+                if (last == null) return; // should never happen, but just in case
+
+                _tileLRU.RemoveLast();
+
+                if (_tiledFloors.TryGetValue(((Obstacle.Type type, int size))last, out Bitmap? oldBmp))
+                {
+                    oldBmp?.Dispose();
+                    _tiledFloors.Remove(((Obstacle.Type type, int size))last);
+                }
+            }
+        }
+
+        private static int QuantizeSize(int size)
+        {
+            // Round to nearest 32, 64, 128, 256
+            if (size <= 32) return 32;
+            if (size <= 64) return 64;
+            if (size <= 128) return 128;
+            if (size <= 256) return 256;
+
+            // For larger worlds, round to nearest 256 block
+            return (size + 255) / 256 * 256;
+        }
 
         public static void InitializeProjectileRotations()
         {
+            // Safety: dispose old rotations if any
+            for (int t = 0; t < ProjectileRotations.GetLength(0); t++)
+            {
+                for (int i = 0; i < ProjectileRotations.GetLength(1); i++)
+                {
+                    ProjectileRotations[t, i]?.Dispose();
+                    ProjectileRotations[t, i] = null!;
+                }
+            }
+
             foreach (Projectile.Type type in Enum.GetValues(typeof(Projectile.Type)))
             {
-                if (type == Projectile.Type.WitherSkull ||
-                    type == Projectile.Type.DragonFireball)
-                {
-                    // no rotation needed
-                    continue;
-                }
+                if (type == Projectile.Type.WitherSkull || type == Projectile.Type.DragonFireball)
+                    continue; // no rotation needed
 
                 Bitmap baseSprite = GetBaseProjectile(type);
-
                 for (int i = 0; i < RotationCount; i++)
                 {
                     float angle = i * (360f / RotationCount);
@@ -86,6 +126,7 @@ namespace ShootMeUp.Model
                 }
             }
         }
+
 
         public static Bitmap GetCharacterSprite(Character.Type type)
         {
@@ -181,25 +222,41 @@ namespace ShootMeUp.Model
             return tiled;
         }
 
-        public static Bitmap GetObstacleSprite(Obstacle.Type type, int width, int height, float Zoom)
+        public static Bitmap GetObstacleSprite(Obstacle.Type type, int intSize, float Zoom)
         {
-            // Get a one pixel image
-            if (Zoom < 0.85f)
-            {
+            // Low zoom → LOD mode (1×1 pixel)
+            if (Zoom < 0.7f)
                 return GetLODObstacle(type);
-            }
 
-            // Floor tiles need tiling
-            if (type == Obstacle.Type.Grass || type == Obstacle.Type.Stone || type == Obstacle.Type.Sand)
+            // Only tile floor materials (else return base)
+            if (type != Obstacle.Type.Grass &&
+                type != Obstacle.Type.Stone &&
+                type != Obstacle.Type.Sand)
             {
-                return _tiledFloors.GetOrAdd((type, width, height), _ =>
-                {
-                    Bitmap baseSprite = GetBaseObstacle(type);
-                    return TileSprite(baseSprite, width, height);
-                });
+                return GetBaseObstacle(type);
             }
 
-            return GetBaseObstacle(type);
+            // Normalize size
+            int size = QuantizeSize(intSize); // width == height for floors
+
+            var key = (type, size);
+
+            // Check if cached
+            if (_tiledFloors.TryGetValue(key, out Bitmap? bmp))
+            {
+                AddToLRU(key); // update LRU
+                return bmp;
+            }
+
+            // Build new tile
+            Bitmap baseSprite = GetBaseObstacle(type);
+            Bitmap tiled = TileSprite(baseSprite, size, size);
+
+            // Store into cache
+            _tiledFloors[key] = tiled;
+            AddToLRU(key);
+
+            return tiled;
         }
 
         private static Bitmap RotateSprite(Bitmap original, float angle)
@@ -209,9 +266,9 @@ namespace ShootMeUp.Model
 
             using (Graphics g = Graphics.FromImage(rotated))
             {
-                g.SmoothingMode = SmoothingMode.HighQuality;
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.SmoothingMode = SmoothingMode.None;
+                g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                g.PixelOffsetMode = PixelOffsetMode.Half;
 
                 g.TranslateTransform(original.Width / 2f, original.Height / 2f);
                 g.RotateTransform(angle);
@@ -268,6 +325,36 @@ namespace ShootMeUp.Model
         public static Bitmap GetGrass(Color tint)
         {
             return _tintedFloors.GetOrAdd(tint, _ => ApplyTint(Grass, tint));
+        }
+
+        public static void Reset()
+
+        {
+            // Dispose pre-rotated projectiles
+            for (int t = 0; t < ProjectileRotations.GetLength(0); t++)
+            {
+                for (int i = 0; i < ProjectileRotations.GetLength(1); i++)
+                {
+                    ProjectileRotations[t, i]?.Dispose();
+                    ProjectileRotations[t, i] = null!;
+                }
+            }
+
+            // Dispose LOD 1x1 images
+            foreach (var kv in _lodSprites)
+                kv.Value.Dispose();
+            _lodSprites.Clear();
+
+            // Dispose tinted floors
+            foreach (var kv in _tintedFloors)
+                kv.Value.Dispose();
+            _tintedFloors.Clear();
+
+            // Dispose tiled floor cache (LRU + map)
+            foreach (var kv in _tiledFloors)
+                kv.Value.Dispose();
+            _tiledFloors.Clear();
+            _tileLRU.Clear();
         }
     }
 }
